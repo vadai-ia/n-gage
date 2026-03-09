@@ -53,22 +53,28 @@ export async function GET(req: Request) {
   return NextResponse.json({ users, total, page, pages: Math.ceil(total / limit) });
 }
 
-// PATCH /api/v1/admin/users — suspender/activar usuario
+// PATCH /api/v1/admin/users — suspend/activate/change_role/delete
 export async function PATCH(req: Request) {
   const admin = await requireAdmin();
   if (!admin) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
 
-  const { userId, action } = await req.json() as { userId: string; action: "suspend" | "activate" | "make_organizer" };
+  const { userId, action, role } = await req.json() as {
+    userId: string;
+    action: "suspend" | "activate" | "make_organizer" | "change_role" | "delete";
+    role?: "SUPER_ADMIN" | "EVENT_ORGANIZER" | "EVENT_HOST" | "GUEST";
+  };
 
   const supabaseAdmin = getAdminClient();
 
   if (action === "suspend") {
-    await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "876600h" }); // ~100 años
+    await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "876600h" });
+    await prisma.user.update({ where: { id: userId }, data: { is_active: false } });
     return NextResponse.json({ ok: true });
   }
 
   if (action === "activate") {
     await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "none" });
+    await prisma.user.update({ where: { id: userId }, data: { is_active: true } });
     return NextResponse.json({ ok: true });
   }
 
@@ -80,5 +86,26 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
+  if (action === "change_role" && role) {
+    const validRoles = ["SUPER_ADMIN", "EVENT_ORGANIZER", "EVENT_HOST", "GUEST"];
+    if (!validRoles.includes(role)) {
+      return NextResponse.json({ error: "Rol no valido" }, { status: 400 });
+    }
+    await prisma.user.update({ where: { id: userId }, data: { role } });
+    await supabaseAdmin.auth.admin.updateUserById(userId, {
+      user_metadata: { role },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "delete") {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { is_active: false, deleted_at: new Date() },
+    });
+    await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "876600h" });
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: "Accion no valida" }, { status: 400 });
 }

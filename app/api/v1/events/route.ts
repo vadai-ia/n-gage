@@ -12,6 +12,8 @@ const CreateEventSchema = z.object({
   venue_name: z.string().optional(),
   venue_city: z.string().optional(),
   search_duration_minutes: z.number().min(15).max(480).default(60),
+  search_start_time: z.string().nullable().optional(),
+  search_end_time: z.string().nullable().optional(),
   expiry_type: z.enum(["next_day", "custom_days", "never"]).default("custom_days"),
   expiry_days: z.number().min(1).max(30).default(3),
   max_guests: z.number().optional(),
@@ -50,7 +52,7 @@ export async function POST(req: Request) {
   const d = parsed.data;
   const eventDate = new Date(d.event_date);
 
-  // Calcular fechas
+  // Calculate dates
   const albumReleaseAt = new Date(eventDate);
   albumReleaseAt.setDate(albumReleaseAt.getDate() + 1);
   albumReleaseAt.setHours(0, 0, 0, 0);
@@ -69,21 +71,25 @@ export async function POST(req: Request) {
     spark: 50, connect: 100, vibe: 200, luxe: 350, elite: 500, exclusive: 9999,
   };
 
-  // Generar slug único
+  // Generate unique slug
   const baseSlug = d.name.toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").slice(0, 40);
   const unique_slug = `${baseSlug}-${Date.now().toString(36)}`;
 
-  // URL del app
+  // App URL
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const eventUrl = `${appUrl}/e/${unique_slug}?code=${d.access_code}`;
 
-  // Generar QR
+  // Generate QR
   const qrDataUrl = await QRCode.toDataURL(eventUrl, {
     width: 400, margin: 2,
     color: { dark: "#FF3CAC", light: "#0A0A0F" },
   });
+
+  // Build optional search window fields
+  const searchStartTime = d.search_start_time ? new Date(d.search_start_time) : undefined;
+  const searchEndTime = d.search_end_time ? new Date(d.search_end_time) : undefined;
 
   const event = await prisma.event.create({
     data: {
@@ -97,6 +103,8 @@ export async function POST(req: Request) {
       language: d.language,
       gender_extended_mode: d.gender_extended_mode,
       search_duration_minutes: d.search_duration_minutes,
+      search_start_time: searchStartTime,
+      search_end_time: searchEndTime,
       expiry_type: d.expiry_type as never,
       expiry_days: d.expiry_days,
       expiry_at: expiryAt,

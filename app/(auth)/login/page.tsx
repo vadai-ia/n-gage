@@ -31,11 +31,22 @@ export default function LoginPage() {
   }
 
   async function handleGoogle() {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+    setError("Conectando con Google...");
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) {
+        setError("Error Google: " + error.message);
+      } else {
+        setError("Redirigiendo a: " + (data?.url ?? "sin URL"));
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError("Catch error: " + msg);
+    }
   }
 
   return (

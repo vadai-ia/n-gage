@@ -1,11 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  _req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
+  const { searchParams } = new URL(req.url);
+  const code = searchParams.get("code");
 
   const event = await prisma.event.findUnique({
     where: { unique_slug: slug },
@@ -29,6 +31,10 @@ export async function GET(
       unique_slug: true,
       organizer: { select: { full_name: true } },
       _count: { select: { registrations: true } },
+      access_codes: {
+        where: { is_active: true },
+        select: { code: true, type: true },
+      },
     },
   });
 
@@ -40,11 +46,31 @@ export async function GET(
     return NextResponse.json({ error: "Este evento ha expirado" }, { status: 410 });
   }
 
-  // Verificar capacidad
+  // Check capacity
   const limit = event.plan_guest_limit ?? event.max_guests;
-  if (limit && event._count.registrations >= limit) {
-    return NextResponse.json({ error: "Evento lleno" }, { status: 409 });
+  const isFull = limit ? event._count.registrations >= limit : false;
+  if (isFull) {
+    return NextResponse.json({ error: "Evento lleno", eventFull: true }, { status: 409 });
   }
 
-  return NextResponse.json({ event });
+  // Determine if event requires access code
+  const requiresCode = event.access_codes.length > 0;
+
+  // Validate access code if provided
+  let accessValid: boolean | undefined;
+  if (code && requiresCode) {
+    accessValid = event.access_codes.some(
+      (ac) => ac.code.toLowerCase() === code.toLowerCase()
+    );
+  }
+
+  // Remove access_codes from the response (don't expose codes to client)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { access_codes: _codes, ...eventData } = event;
+
+  return NextResponse.json({
+    event: eventData,
+    requiresCode,
+    accessValid: code ? accessValid : undefined,
+  });
 }

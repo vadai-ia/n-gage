@@ -1,68 +1,240 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@source "../app/**/*.{ts,tsx}";
+@source "../components/**/*.{ts,tsx}";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-playfair), serif;
+  --font-sans: 'Satoshi', system-ui, -apple-system, sans-serif;
+  --font-display: 'Clash Display', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ========================================
+   N'GAGE DESIGN TOKENS
+   ======================================== */
+
 :root {
   --radius: 0.625rem;
-  --background: #0A0A0F;
-  --foreground: #ffffff;
-  --card: #16161F;
-  --card-foreground: #ffffff;
-  --primary: #FF3CAC;
+
+  /* === BACKGROUNDS === */
+  --background: #07070F;
+  --bg-base: #07070F;
+  --bg-surface: #0F0F1A;
+  --bg-elevated: #161625;
+  --bg-overlay: rgba(7,7,15,0.85);
+  --foreground: #F0F0FF;
+
+  /* === BRAND === */
+  --brand-pink: #FF2D78;
+  --brand-purple: #7B2FBE;
+  --brand-blue: #1A6EFF;
+  --brand-gold: #FFB800;
+
+  /* === GRADIENTS === */
+  --gradient-brand: linear-gradient(135deg, #FF2D78 0%, #7B2FBE 50%, #1A6EFF 100%);
+  --gradient-brand-soft: linear-gradient(135deg, rgba(255,45,120,0.15) 0%, rgba(123,47,190,0.15) 100%);
+  --gradient-gold: linear-gradient(135deg, #FFB800, #FF6B00);
+  --gradient-card-overlay: linear-gradient(to top, rgba(7,7,15,0.95) 0%, rgba(7,7,15,0.5) 40%, transparent 70%);
+
+  /* === TEXT === */
+  --text-primary: #F0F0FF;
+  --text-secondary: #8585A8;
+  --text-muted: #44445A;
+
+  /* === GLASS / BORDERS === */
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-brand: rgba(255,45,120,0.3);
+  --glass-bg: rgba(15,15,26,0.7);
+  --glass-blur: blur(20px);
+  --glass-border: 1px solid rgba(255,255,255,0.08);
+
+  /* === SHADOWS === */
+  --shadow-pink: 0 0 40px rgba(255,45,120,0.25);
+  --shadow-blue: 0 0 40px rgba(26,110,255,0.2);
+  --shadow-gold: 0 0 40px rgba(255,184,0,0.25);
+  --shadow-card: 0 20px 60px rgba(0,0,0,0.6);
+
+  /* === SHADCN COMPAT === */
+  --card: #0F0F1A;
+  --card-foreground: #F0F0FF;
+  --primary: #FF2D78;
   --primary-foreground: #ffffff;
-  --secondary: #784BA0;
+  --secondary: #7B2FBE;
   --secondary-foreground: #ffffff;
-  --accent: #2B86C5;
+  --accent: #1A6EFF;
   --accent-foreground: #ffffff;
-  --muted: #1a1a28;
-  --muted-foreground: #A0A0B0;
-  --border: rgba(255,255,255,0.08);
+  --muted: #161625;
+  --muted-foreground: #8585A8;
+  --border: rgba(255,255,255,0.06);
   --input: rgba(255,255,255,0.05);
-  --ring: #FF3CAC;
+  --ring: #FF2D78;
   --destructive: #ef4444;
 
-  /* N'GAGE */
-  --ngage-primary: #FF3CAC;
-  --ngage-secondary: #784BA0;
-  --ngage-accent: #2B86C5;
-  --ngage-surface: #16161F;
-  --ngage-gradient: linear-gradient(225deg, #FF3CAC 0%, #784BA0 50%, #2B86C5 100%);
+  /* === FONTS === */
+  --font-display: 'Clash Display', system-ui, -apple-system, sans-serif;
+  --font-body: 'Satoshi', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
 }
 
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Gradient text */
 .gradient-text {
-  background: var(--ngage-gradient);
+  background: var(--gradient-brand);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* Gradient background */
 .gradient-bg {
-  background: var(--ngage-gradient);
+  background: var(--gradient-brand);
 }
 
-/* Scrollbar */
+/* Gold gradient text */
+.gradient-text-gold {
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glassmorphism */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: var(--glass-border);
+}
+
+@supports not (backdrop-filter: blur(20px)) {
+  .glass {
+    background: rgba(15, 15, 26, 0.95);
+  }
+}
+
+/* Glow effects */
+.glow-pink {
+  box-shadow: var(--shadow-pink);
+}
+
+.glow-blue {
+  box-shadow: var(--shadow-blue);
+}
+
+.glow-gold {
+  box-shadow: var(--shadow-gold);
+}
+
+/* Brand border */
+.border-brand {
+  border: 1px solid var(--border-brand);
+}
+
+/* Surface cards */
+.surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.surface-elevated {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Shimmer skeleton loader */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    rgba(255,255,255,0.05) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* ========================================
+   SCROLLBAR
+   ======================================== */
+
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #0A0A0F; }
-::-webkit-scrollbar-thumb { background: #784BA0; border-radius: 2px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--brand-purple); border-radius: 2px; }
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-brand {
+  0%, 100% { box-shadow: 0 0 20px rgba(255,45,120,0.3); }
+  50% { box-shadow: 0 0 40px rgba(255,45,120,0.6); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes glow {
+  0% { text-shadow: 0 0 10px rgba(255,45,120,0.5); }
+  100% { text-shadow: 0 0 30px rgba(255,45,120,0.9); }
+}
+
+/* ========================================
+   REDUCED MOTION
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
