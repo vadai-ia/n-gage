@@ -1,0 +1,432 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  EVENT_ORGANIZER
+  EVENT_HOST
+  GUEST
+}
+
+enum EventType {
+  wedding
+  birthday
+  corporate
+  graduation
+  concert
+  cruise
+  other
+}
+
+enum EventStatus {
+  draft
+  active
+  closed
+  expired
+}
+
+enum ExpiryType {
+  next_day
+  custom_days
+  never
+}
+
+enum RelationType {
+  friend_bride
+  friend_groom
+  family_bride
+  family_groom
+  coworker
+  other
+}
+
+enum LikeType {
+  like
+  dislike
+  super_like
+}
+
+enum AccessCodeType {
+  global
+  individual
+}
+
+enum PhotoReportStatus {
+  pending
+  resolved
+  dismissed
+}
+
+enum Gender {
+  male
+  female
+  non_binary
+  prefer_not_say
+}
+
+enum LookingFor {
+  men
+  women
+  everyone
+  non_binary
+}
+
+enum Plan {
+  spark
+  connect
+  vibe
+  luxe
+  elite
+  exclusive
+}
+
+// ─────────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────────
+
+model User {
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  phone               String?
+  full_name           String
+  avatar_url          String?
+  role                Role      @default(GUEST)
+  google_id           String?   @unique
+  is_active           Boolean   @default(true)
+  onboarding_completed Boolean  @default(false)
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+  deleted_at          DateTime?
+
+  // Relations
+  profile             UserProfile?
+  organized_events    Event[]              @relation("OrganizerEvents")
+  hosted_events       EventHost[]
+  registrations       EventRegistration[]
+  likes_sent          EventLike[]          @relation("LikesSent")
+  likes_received      EventLike[]          @relation("LikesReceived")
+  matches_a           EventMatch[]         @relation("MatchUserA")
+  matches_b           EventMatch[]         @relation("MatchUserB")
+  matches_initiated   EventMatch[]         @relation("MatchInitiator")
+  messages            MatchMessage[]
+  photos              EventPhoto[]
+  webhooks            Webhook[]
+  api_keys            ApiKey[]
+  photo_reports       PhotoReport[]
+  used_access_codes   EventAccessCode[]    @relation("UsedAccessCodes")
+
+  @@map("users")
+}
+
+model UserProfile {
+  id            String       @id @default(uuid())
+  user_id       String       @unique
+  age           Int?
+  relation_type RelationType?
+  interests     Json?
+  bio           String?      @db.VarChar(160)
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+
+  user          User         @relation(fields: [user_id], references: [id])
+
+  @@map("user_profiles")
+}
+
+// ─────────────────────────────────────────────
+// EVENTS
+// ─────────────────────────────────────────────
+
+model Event {
+  id                    String      @id @default(uuid())
+  organizer_id          String
+  name                  String
+  type                  EventType   @default(other)
+  event_date            DateTime    @db.Date
+  venue_name            String?
+  venue_city            String?
+  cover_image_url       String?
+  status                EventStatus @default(draft)
+  language              String      @default("es-MX")
+  gender_extended_mode  Boolean     @default(false)
+
+  // Timer
+  search_duration_minutes Int       @default(60)
+  search_start_time     DateTime?
+  search_end_time       DateTime?
+
+  // Expiry
+  expiry_type           ExpiryType  @default(custom_days)
+  expiry_days           Int         @default(3)
+  expiry_at             DateTime?
+
+  // Album
+  album_release_at      DateTime?
+
+  // Access
+  qr_code_url           String?
+  unique_slug           String      @unique
+  max_guests            Int?
+
+  // Plan
+  plan                  Plan        @default(vibe)
+  plan_guest_limit      Int?
+
+  created_at            DateTime    @default(now())
+  updated_at            DateTime    @updatedAt
+
+  // Relations
+  organizer             User        @relation("OrganizerEvents", fields: [organizer_id], references: [id])
+  hosts                 EventHost[]
+  registrations         EventRegistration[]
+  likes                 EventLike[]
+  matches               EventMatch[]
+  photos                EventPhoto[]
+  webhooks              Webhook[]
+  access_codes          EventAccessCode[]
+
+  @@map("events")
+}
+
+model EventHost {
+  id         String   @id @default(uuid())
+  event_id   String
+  user_id    String
+  label      String?
+  created_at DateTime @default(now())
+
+  event      Event    @relation(fields: [event_id], references: [id])
+  user       User     @relation(fields: [user_id], references: [id])
+
+  @@unique([event_id, user_id])
+  @@map("event_hosts")
+}
+
+// ─────────────────────────────────────────────
+// EVENT REGISTRATIONS
+// ─────────────────────────────────────────────
+
+model EventRegistration {
+  id                String       @id @default(uuid())
+  event_id          String
+  user_id           String
+  selfie_url        String
+  table_number      String?
+  relation_type     RelationType?
+  interests         Json?
+  gender            Gender
+  looking_for       LookingFor
+  search_started_at DateTime?
+  search_expires_at DateTime?
+  is_visible        Boolean      @default(true)
+  photos_taken      Int          @default(0)
+  super_like_used   Boolean      @default(false)
+  created_at        DateTime     @default(now())
+  updated_at        DateTime     @updatedAt
+
+  event             Event        @relation(fields: [event_id], references: [id])
+  user              User         @relation(fields: [user_id], references: [id])
+
+  @@unique([event_id, user_id])
+  @@map("event_registrations")
+}
+
+// ─────────────────────────────────────────────
+// LIKES & MATCHES
+// ─────────────────────────────────────────────
+
+model EventLike {
+  id           String   @id @default(uuid())
+  event_id     String
+  from_user_id String
+  to_user_id   String
+  type         LikeType @default(like)
+  created_at   DateTime @default(now())
+
+  event        Event    @relation(fields: [event_id], references: [id])
+  from_user    User     @relation("LikesSent", fields: [from_user_id], references: [id])
+  to_user      User     @relation("LikesReceived", fields: [to_user_id], references: [id])
+
+  @@unique([event_id, from_user_id, to_user_id])
+  @@map("event_likes")
+}
+
+model EventMatch {
+  id           String   @id @default(uuid())
+  event_id     String
+  user_a_id    String
+  user_b_id    String
+  matched_at   DateTime @default(now())
+  initiated_by String?
+
+  event        Event    @relation(fields: [event_id], references: [id])
+  user_a       User     @relation("MatchUserA", fields: [user_a_id], references: [id])
+  user_b       User     @relation("MatchUserB", fields: [user_b_id], references: [id])
+  initiator    User?    @relation("MatchInitiator", fields: [initiated_by], references: [id])
+  messages     MatchMessage[]
+
+  @@unique([event_id, user_a_id, user_b_id])
+  @@map("event_matches")
+}
+
+model MatchMessage {
+  id         String    @id @default(uuid())
+  match_id   String
+  sender_id  String
+  content    String
+  read_at    DateTime?
+  created_at DateTime  @default(now())
+
+  match      EventMatch @relation(fields: [match_id], references: [id])
+  sender     User       @relation(fields: [sender_id], references: [id])
+
+  @@map("match_messages")
+}
+
+// ─────────────────────────────────────────────
+// PHOTOS
+// ─────────────────────────────────────────────
+
+model EventPhoto {
+  id                   String   @id @default(uuid())
+  event_id             String
+  user_id              String
+  cloudinary_public_id String
+  cloudinary_url       String
+  thumbnail_url        String?
+  taken_at             DateTime
+  device_info          String?
+  is_visible           Boolean  @default(false)
+  created_at           DateTime @default(now())
+
+  event                Event    @relation(fields: [event_id], references: [id])
+  user                 User     @relation(fields: [user_id], references: [id])
+  reports              PhotoReport[]
+
+  @@map("event_photos")
+}
+
+model PhotoReport {
+  id          String            @id @default(uuid())
+  photo_id    String
+  reported_by String
+  reason      String
+  status      PhotoReportStatus @default(pending)
+  created_at  DateTime          @default(now())
+
+  photo       EventPhoto        @relation(fields: [photo_id], references: [id])
+  reporter    User              @relation(fields: [reported_by], references: [id])
+
+  @@map("photo_reports")
+}
+
+// ─────────────────────────────────────────────
+// ACCESS CONTROL
+// ─────────────────────────────────────────────
+
+model EventAccessCode {
+  id                  String         @id @default(uuid())
+  event_id            String
+  code                String
+  type                AccessCodeType @default(global)
+  assigned_to_email   String?
+  used_by             String?
+  used_at             DateTime?
+  is_active           Boolean        @default(true)
+  created_at          DateTime       @default(now())
+
+  event               Event          @relation(fields: [event_id], references: [id])
+  user                User?          @relation("UsedAccessCodes", fields: [used_by], references: [id])
+
+  @@map("event_access_codes")
+}
+
+// ─────────────────────────────────────────────
+// WEBHOOKS & API KEYS
+// ─────────────────────────────────────────────
+
+model Webhook {
+  id         String       @id @default(uuid())
+  owner_id   String
+  event_id   String?
+  url        String
+  secret     String
+  events     String[]
+  is_active  Boolean      @default(true)
+  created_at DateTime     @default(now())
+
+  owner      User         @relation(fields: [owner_id], references: [id])
+  event      Event?       @relation(fields: [event_id], references: [id])
+  logs       WebhookLog[]
+
+  @@map("webhooks")
+}
+
+model WebhookLog {
+  id              String   @id @default(uuid())
+  webhook_id      String
+  event_type      String
+  payload         Json
+  response_status Int?
+  response_body   String?
+  sent_at         DateTime @default(now())
+  success         Boolean  @default(false)
+
+  webhook         Webhook  @relation(fields: [webhook_id], references: [id])
+
+  @@map("webhook_logs")
+}
+
+model ApiKey {
+  id           String    @id @default(uuid())
+  owner_id     String
+  name         String?
+  key_hash     String
+  scopes       String[]
+  last_used_at DateTime?
+  expires_at   DateTime?
+  is_active    Boolean   @default(true)
+  created_at   DateTime  @default(now())
+
+  owner        User      @relation(fields: [owner_id], references: [id])
+
+  @@map("api_keys")
+}
+
+// ─────────────────────────────────────────────
+// INTERESTS CATALOG
+// ─────────────────────────────────────────────
+
+model InterestCategory {
+  id      String           @id @default(uuid())
+  slug    String           @unique
+  label   String
+  emoji   String
+  order   Int              @default(0)
+
+  options InterestOption[]
+
+  @@map("interest_categories")
+}
+
+model InterestOption {
+  id          String           @id @default(uuid())
+  category_id String
+  slug        String           @unique
+  label       String
+  emoji       String
+
+  category    InterestCategory @relation(fields: [category_id], references: [id])
+
+  @@map("interest_options")
+}
