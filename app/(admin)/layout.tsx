@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import ViewSwitcher from "@/components/admin/ViewSwitcher";
 
 const NAV = [
   { href: "/admin",         icon: "📊", label: "Inicio" },
@@ -23,6 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#0A0A0F" }}>
+      <ViewSwitcher />
       {/* Top bar */}
       <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-50"
         style={{

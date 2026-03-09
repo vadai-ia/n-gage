@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/is-admin";
 import { z } from "zod";
 import QRCode from "qrcode";
 
@@ -25,8 +26,9 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
+  const admin = await isAdmin(user.id);
   const events = await prisma.event.findMany({
-    where: { organizer_id: user.id },
+    where: admin ? {} : { organizer_id: user.id },
     orderBy: { created_at: "desc" },
     include: { _count: { select: { registrations: true, matches: true } } },
   });

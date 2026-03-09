@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import ViewSwitcher from "@/components/admin/ViewSwitcher";
 
 export default function HostLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,6 +26,7 @@ export default function HostLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen flex flex-col pb-20" style={{ background: "#0A0A0F" }}>
+      <ViewSwitcher />
       <header className="flex items-center justify-between px-4 py-3 sticky top-0 z-50"
         style={{ background: "rgba(10,10,15,0.9)", backdropFilter: "blur(12px)",
           borderBottom: "1px solid rgba(255,255,255,0.06)" }}>

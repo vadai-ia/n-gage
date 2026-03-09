@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/is-admin";
 import { v2 as cloudinary } from "cloudinary";
 
 cloudinary.config({
@@ -73,17 +74,20 @@ export async function GET(
   const all = searchParams.get("all") === "true";
 
   if (all) {
-    // Solo hosts y organizers pueden ver todas las fotos
-    const event = await prisma.event.findFirst({
-      where: {
-        id: eventId,
-        OR: [
-          { organizer_id: user.id },
-          { hosts: { some: { user_id: user.id } } },
-        ],
-      },
-    });
-    if (!event) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
+    // Solo hosts, organizers y admins pueden ver todas las fotos
+    const admin = await isAdmin(user.id);
+    if (!admin) {
+      const event = await prisma.event.findFirst({
+        where: {
+          id: eventId,
+          OR: [
+            { organizer_id: user.id },
+            { hosts: { some: { user_id: user.id } } },
+          ],
+        },
+      });
+      if (!event) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
+    }
 
     const photos = await prisma.eventPhoto.findMany({
       where: { event_id: eventId },

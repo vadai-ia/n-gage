@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/is-admin";
 
 export async function GET(
   _req: Request,
@@ -11,7 +12,8 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
-  const event = await prisma.event.findFirst({ where: { id, organizer_id: user.id } });
+  const admin = await isAdmin(user.id);
+  const event = await prisma.event.findFirst({ where: admin ? { id } : { id, organizer_id: user.id } });
   if (!event) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
   const [registrations, searchesStarted, likes, matches, photos] = await Promise.all([
