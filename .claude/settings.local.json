@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Path ''.next'' -Recurse -Force -ErrorAction SilentlyContinue; npm run build 2>&1\")",
+      "Bash(powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Path ''.next'' -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -Path ''node_modules/.cache'' -Recurse -Force -ErrorAction SilentlyContinue; npm run build 2>&1\")",
+      "Bash(powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Path ''.next'' -Recurse -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; npm run build 2>&1\")",
+      "Bash(node -e \"try { require\\(''./.next/server/chunks/6543.js''\\); console.log\\(''OK''\\) } catch\\(e\\) { console.log\\(e.message\\) }\")"
+    ]
+  }
+}

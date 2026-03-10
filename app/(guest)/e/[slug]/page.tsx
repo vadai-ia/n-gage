@@ -265,7 +265,6 @@ export default function EventLandingPage() {
   const pink = "#FF2D78";
   const purple = "#7B2FBE";
   const blue = "#1A6EFF";
-  const green = "#10B981";
   const gradientCta = `linear-gradient(135deg, ${pink}, ${purple})`;
   const gradientTriple = `linear-gradient(135deg, ${pink}, ${purple}, ${blue})`;
   const borderSubtle = "rgba(255,255,255,0.05)";

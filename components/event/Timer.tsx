@@ -29,6 +29,7 @@ export default function Timer({ expiresAt, totalMinutes, onExpire, variant = "co
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
+  // Aesthetic thresholds (Silent Luxury)
   const isUrgent = remaining > 0 && remaining < 2 * 60 * 1000;
   const isWarning = remaining > 0 && remaining < 10 * 60 * 1000;
 
@@ -36,8 +37,9 @@ export default function Timer({ expiresAt, totalMinutes, onExpire, variant = "co
   const totalMs = totalMinutes ? totalMinutes * 60 * 1000 : undefined;
   const progress = totalMs ? Math.min(1, remaining / totalMs) : undefined;
 
-  const color = isUrgent ? "#FF2D78" : isWarning ? "#FFB800" : "#F0F0FF";
-  const glowColor = isUrgent ? "rgba(255,45,120,0.5)" : isWarning ? "rgba(255,184,0,0.3)" : "none";
+  // Elegant colors
+  const color = isUrgent ? "#D6285A" : isWarning ? "#D4AF37" : "#E0E0E0";
+  const glowColor = isUrgent ? "rgba(214,40,90,0.3)" : isWarning ? "rgba(212,175,55,0.2)" : "transparent";
   const pad = (n: number) => String(n).padStart(2, "0");
 
   if (variant === "full") {
@@ -46,24 +48,24 @@ export default function Timer({ expiresAt, totalMinutes, onExpire, variant = "co
     const dashOffset = progress !== undefined ? circumference * (1 - progress) : 0;
 
     return (
-      <div className="flex flex-col items-center gap-3">
-        {/* Circular progress */}
+      <div className="flex flex-col items-center gap-4">
+        {/* Circular progress (Thin, Elegant Ring) */}
         <div className="relative w-36 h-36 flex items-center justify-center">
           <svg className="absolute inset-0 -rotate-90" width="144" height="144" viewBox="0 0 120 120">
             {/* Track */}
-            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4" />
+            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="2" />
             {/* Progress */}
             {progress !== undefined && (
               <circle
                 cx="60" cy="60" r="52" fill="none"
                 stroke={color}
-                strokeWidth="4"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={dashOffset}
                 style={{
-                  transition: "stroke-dashoffset 1s linear, stroke 0.5s",
-                  filter: isUrgent ? `drop-shadow(0 0 6px ${color})` : "none",
+                  transition: "stroke-dashoffset 1s linear, stroke 1s ease",
+                  filter: `drop-shadow(0 0 10px ${glowColor})`,
                 }}
               />
             )}
@@ -72,10 +74,11 @@ export default function Timer({ expiresAt, totalMinutes, onExpire, variant = "co
           {/* Time display */}
           <div className="text-center z-10">
             <span
-              className="font-mono font-black text-3xl tracking-wider block"
+              className="font-mono font-medium text-3xl tracking-widest block"
               style={{
                 color,
-                textShadow: isUrgent ? `0 0 20px ${glowColor}` : "none",
+                textShadow: `0 0 20px ${glowColor}`,
+                transition: "color 1s ease",
               }}
             >
               {hours > 0 && `${pad(hours)}:`}{pad(minutes)}:{pad(seconds)}
@@ -83,71 +86,53 @@ export default function Timer({ expiresAt, totalMinutes, onExpire, variant = "co
           </div>
         </div>
 
-        {/* Status label */}
-        {isUrgent && remaining > 0 && (
-          <span
-            className="text-xs font-bold px-3 py-1 rounded-full animate-pulse"
-            style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}
-          >
-            ¡Últimos minutos!
-          </span>
-        )}
-        {isWarning && !isUrgent && (
-          <span
-            className="text-xs font-bold px-3 py-1 rounded-full"
-            style={{ background: "rgba(255,184,0,0.12)", color: "#FFB800" }}
-          >
-            ¡Apúrate!
-          </span>
-        )}
+        {/* Status label (Subtle fade, NO aggressive pulsing) */}
+        <div className="h-6 flex items-center justify-center transition-opacity duration-1000" style={{ opacity: isWarning || isUrgent ? 1 : 0 }}>
+             <span
+                className="text-xs uppercase tracking-widest px-4 py-1.5 rounded-full"
+                style={{
+                    background: isUrgent ? "rgba(214,40,90,0.08)" : "rgba(212,175,55,0.08)",
+                    border: `1px solid ${isUrgent ? "rgba(214,40,90,0.2)" : "rgba(212,175,55,0.2)"}`,
+                    color: isUrgent ? "#D6285A" : "#D4AF37",
+                }}
+            >
+                {isUrgent ? "Tiempo Final" : "Aprovecha el momento"}
+            </span>
+        </div>
       </div>
     );
   }
 
   // Compact variant — inline in header
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
       {/* Mini circular indicator */}
       {progress !== undefined && (
-        <svg width="24" height="24" viewBox="0 0 24 24" className="-rotate-90">
-          <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
+        <svg width="16" height="16" viewBox="0 0 24 24" className="-rotate-90">
+          <circle cx="12" cy="12" r="10" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5" />
           <circle
             cx="12" cy="12" r="10" fill="none"
             stroke={color}
-            strokeWidth="2"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeDasharray={2 * Math.PI * 10}
             strokeDashoffset={2 * Math.PI * 10 * (1 - (progress ?? 0))}
             style={{
-              transition: "stroke-dashoffset 1s linear, stroke 0.5s",
-              filter: isUrgent ? `drop-shadow(0 0 3px ${color})` : "none",
+              transition: "stroke-dashoffset 1s linear, stroke 1s ease",
             }}
           />
         </svg>
       )}
 
       <span
-        className="font-mono font-bold text-sm tracking-widest"
+        className="font-mono font-medium text-xs tracking-widest"
         style={{
           color,
-          textShadow: isUrgent ? `0 0 8px ${glowColor}` : "none",
+          transition: "color 1s ease",
         }}
       >
         {hours > 0 && `${pad(hours)}:`}{pad(minutes)}:{pad(seconds)}
       </span>
-
-      {isWarning && !isUrgent && (
-        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-          style={{ background: "rgba(255,184,0,0.12)", color: "#FFB800" }}>
-          !
-        </span>
-      )}
-      {isUrgent && remaining > 0 && (
-        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse"
-          style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}>
-          !!
-        </span>
-      )}
     </div>
   );
 }

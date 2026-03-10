@@ -1,7 +1,10 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { motion } from "framer-motion";
 
 type EventData = {
   id: string;
@@ -58,14 +61,8 @@ export default function HostHomePage() {
 
   if (loading || !event) {
     return (
-      <div className="p-4 lg:p-8 max-w-2xl mx-auto">
-        <div className="h-32 rounded-2xl mb-4 skeleton" />
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 rounded-2xl skeleton" />
-          ))}
-        </div>
-        <div className="h-24 rounded-2xl skeleton" />
+      <div className="min-h-screen p-4 lg:p-8 flex justify-center items-center" style={{ background: "#07070F" }}>
+        <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#FF2D78", borderTopColor: "transparent" }} />
       </div>
     );
   }
@@ -86,141 +83,193 @@ export default function HostHomePage() {
   const typeIcon = TYPE_ICONS[event.type] ?? TYPE_ICONS.default;
 
   const METRICS = [
-    { label: "Registrados", value: stats?.registrations ?? 0, sub: stats?.capacity ? `de ${stats.capacity}` : null, color: "#1A6EFF",
-      icon: <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg> },
-    { label: "Matches", value: stats?.matches ?? 0, sub: null, color: "#FF2D78",
-      icon: <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" /></svg> },
-    { label: "Likes", value: stats?.likes ?? 0, sub: null, color: "#FFB800",
-      icon: <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path d="M14 9V5a3 3 0 00-6 0v4M5 11h14a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg> },
-    { label: "Fotos", value: stats?.photos ?? 0, sub: `de ${(stats?.registrations ?? 0) * 10} posibles`, color: "#7B2FBE",
-      icon: <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg> },
+    { label: "Registrados", value: stats?.registrations ?? 0, sub: stats?.capacity ? `de ${stats.capacity}` : null, color: "#1A6EFF", bgGlow: "rgba(26,110,255,0.08)",
+      icon: <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg> },
+    { label: "Matches", value: stats?.matches ?? 0, sub: "conexiones", color: "#FF2D78", bgGlow: "rgba(255,45,120,0.08)",
+      icon: <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" /></svg> },
+    { label: "Likes", value: stats?.likes ?? 0, sub: "interacciones", color: "#FFB800", bgGlow: "rgba(255,184,0,0.08)",
+      icon: <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path d="M14 9V5a3 3 0 00-6 0v4M5 11h14a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2z" /></svg> },
+    { label: "Cámara", value: stats?.photos ?? 0, sub: "fotos capturadas", color: "#7B2FBE", bgGlow: "rgba(123,47,190,0.08)",
+      icon: <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg> },
   ];
 
   const searchRate = stats?.registrations
     ? Math.round(((stats.searches_started ?? 0) / stats.registrations) * 100)
     : 0;
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
+  };
+
   return (
-    <div className="p-4 lg:p-8 max-w-2xl mx-auto">
-      {/* Event header card */}
-      <div
-        className="rounded-2xl p-5 mb-6"
-        style={{
-          background: "linear-gradient(135deg, rgba(123,47,190,0.12), rgba(255,45,120,0.06))",
-          border: "1px solid rgba(123,47,190,0.15)",
-        }}
+    <div className="min-h-screen p-4 lg:p-8" style={{ background: "#07070F" }}>
+      <motion.div 
+        className="max-w-4xl mx-auto"
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
       >
-        <div className="flex items-start gap-4">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "rgba(123,47,190,0.12)", color: "#7B2FBE" }}
-          >
-            {typeIcon}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-black leading-tight tracking-tight" style={{ color: "#F0F0FF" }}>{event.name}</h1>
-            <p className="text-xs font-medium mt-1" style={{ color: "#8585A8" }}>
-              {eventDate}
-              {event.venue_city ? ` · ${event.venue_city}` : ""}
+        {/* Header Section */}
+        <motion.div variants={itemVariants} className="mb-10 text-center lg:text-left flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl lg:text-4xl font-black tracking-tight mb-2" style={{ color: "#F0F0FF" }}>
+              Host Dashboard
+            </h1>
+            <p className="text-sm font-medium" style={{ color: "#8585A8" }}>
+              Panel de control en vivo para el evento de hoy.
             </p>
-            <div className="flex items-center gap-2 mt-2">
-              <span
-                className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
-                style={{ background: `${statusInfo.color}15`, color: statusInfo.color, border: `1px solid ${statusInfo.color}25` }}
-              >
-                {statusInfo.label}
-              </span>
-            </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        {METRICS.map((m) => (
-          <div
-            key={m.label}
-            className="rounded-2xl p-4 transition-all"
-            style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.04)" }}
-          >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
-              style={{ background: `${m.color}0A`, color: m.color }}
-            >
-              {m.icon}
-            </div>
-            <div className="text-2xl font-black tabular-nums" style={{ color: m.color }}>
-              {m.value.toLocaleString()}
-            </div>
-            <div className="text-xs font-semibold mt-0.5" style={{ color: "#F0F0FF" }}>{m.label}</div>
-            {m.sub && <div className="text-[10px] font-medium" style={{ color: "#44445A" }}>{m.sub}</div>}
-          </div>
-        ))}
-      </div>
-
-      {/* Connection rate */}
-      {(stats?.registrations ?? 0) > 0 && (
-        <div
-          className="rounded-2xl p-4 mb-6"
-          style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.04)" }}
+        {/* Event Info Card (Velvet Rope Style) */}
+        <motion.div
+          variants={itemVariants}
+          className="relative rounded-3xl p-6 lg:p-8 mb-8 overflow-hidden"
+          style={{
+            background: "rgba(15,15,26,0.6)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+          }}
         >
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "#8585A8" }}>Tasa de conexión</p>
-            <span className="text-sm font-black" style={{ color: "#FF2D78" }}>{searchRate}%</span>
+          {/* Subtle gradient orb behind event title */}
+          <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full pointer-events-none blur-[80px]" style={{ background: "rgba(255,45,120,0.15)" }} />
+          
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.15), rgba(123,47,190,0.15))", color: "#FF2D78", border: "1px solid rgba(255,45,120,0.2)" }}
+              >
+                {typeIcon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-2xl font-black leading-tight tracking-tight mb-1" style={{ color: "#F0F0FF" }}>{event.name}</h2>
+                <p className="text-sm font-medium" style={{ color: "#8585A8" }}>
+                  {eventDate} {event.venue_city ? ` · ${event.venue_city}` : ""}
+                </p>
+              </div>
+            </div>
+            <div className="flex lg:flex-col items-center lg:items-end gap-2">
+               <span
+                  className="text-xs px-3 py-1.5 rounded-full font-bold uppercase tracking-widest"
+                  style={{ background: `${statusInfo.color}15`, color: statusInfo.color, border: `1px solid ${statusInfo.color}30` }}
+                >
+                  {statusInfo.label}
+                </span>
+            </div>
           </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-            <div
-              className="h-full rounded-full transition-all"
-              style={{
-                background: "linear-gradient(90deg, #FF2D78, #7B2FBE)",
-                width: `${Math.min(100, searchRate)}%`,
-              }}
-            />
-          </div>
-          <p className="text-[10px] font-medium mt-2" style={{ color: "#44445A" }}>
-            {stats?.searches_started ?? 0} de {stats?.registrations ?? 0} iniciaron búsqueda
-          </p>
-        </div>
-      )}
+        </motion.div>
 
-      {/* Album status */}
-      <div
-        className="rounded-2xl p-4"
-        style={{
-          background: isAlbumReady ? "rgba(16,185,129,0.06)" : "rgba(255,45,120,0.04)",
-          border: `1px solid ${isAlbumReady ? "rgba(16,185,129,0.15)" : "rgba(255,45,120,0.1)"}`,
-        }}
-      >
-        <div className="flex items-center gap-3 mb-1">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
+        {/* Dynamic Metric Grid */}
+        <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {METRICS.map((m) => (
+            <div
+              key={m.label}
+              className="group rounded-3xl p-5 relative overflow-hidden transition-all duration-500 hover:scale-[1.02]"
+              style={{ background: "rgba(15,15,26,0.5)", border: "1px solid rgba(255,255,255,0.05)", backdropFilter: "blur(12px)" }}
+            >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" style={{ background: `radial-gradient(circle at top right, ${m.bgGlow}, transparent 70%)` }} />
+              
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                    style={{ background: `${m.color}15`, color: m.color, border: `1px solid ${m.color}20` }}
+                  >
+                    {m.icon}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-3xl font-black tabular-nums tracking-tight mb-1" style={{ color: "#F0F0FF" }}>
+                    {m.value.toLocaleString()}
+                  </div>
+                  <div className="text-sm font-semibold mb-0.5" style={{ color: m.color }}>{m.label}</div>
+                  {m.sub && <div className="text-xs font-medium" style={{ color: "#44445A" }}>{m.sub}</div>}
+                </div>
+              </div>
+            </div>
+          ))}
+        </motion.div>
+
+        <div className="grid lg:grid-cols-2 gap-4">
+          {/* Connection rate (Editorial Panel) */}
+          {(stats?.registrations ?? 0) > 0 && (
+            <motion.div
+              variants={itemVariants}
+              className="rounded-3xl p-6 lg:p-8 flex flex-col justify-center"
+              style={{ background: "rgba(15,15,26,0.5)", border: "1px solid rgba(255,255,255,0.05)" }}
+            >
+              <div className="flex flex-col mb-5">
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#44445A" }}>Tasa de Conexión</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-black tracking-tight" style={{ color: "#F0F0FF" }}>{searchRate}%</span>
+                  <span className="text-sm font-medium" style={{ color: "#8585A8" }}>participación activa</span>
+                </div>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden mb-3" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div
+                  className="h-full rounded-full transition-all duration-1000 ease-out"
+                  style={{
+                    background: "linear-gradient(90deg, #FF2D78, #7B2FBE)",
+                    width: `${Math.min(100, searchRate)}%`,
+                  }}
+                />
+              </div>
+              <p className="text-xs font-medium" style={{ color: "#8585A8" }}>
+                <strong style={{ color: "#F0F0FF" }}>{stats?.searches_started ?? 0}</strong> de <strong style={{ color: "#F0F0FF" }}>{stats?.registrations ?? 0}</strong> registrados iniciaron la búsqueda.
+              </p>
+            </motion.div>
+          )}
+
+          {/* Album status */}
+          <motion.div
+            variants={itemVariants}
+            className="rounded-3xl p-6 lg:p-8 flex items-center"
             style={{
-              background: isAlbumReady ? "rgba(16,185,129,0.1)" : "rgba(255,45,120,0.08)",
-              color: isAlbumReady ? "#10B981" : "#FF2D78",
+              background: isAlbumReady ? "rgba(16,185,129,0.05)" : "rgba(15,15,26,0.5)",
+              border: `1px solid ${isAlbumReady ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.05)"}`,
             }}
           >
-            {isAlbumReady ? (
-              <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-            ) : (
-              <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-            )}
-          </div>
-          <div>
-            <p className="font-bold text-sm" style={{ color: isAlbumReady ? "#10B981" : "#FF2D78" }}>
-              {isAlbumReady ? "Álbum disponible" : "Álbum en preparación"}
-            </p>
-            <p className="text-xs font-medium" style={{ color: "#8585A8" }}>
-              {isAlbumReady
-                ? "Ve a la pestaña Álbum para ver y descargar todas las fotos."
-                : `Las fotos estarán disponibles el ${albumDate}.`}
-            </p>
-          </div>
+            <div className="flex items-start gap-5">
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: isAlbumReady ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.03)",
+                  color: isAlbumReady ? "#10B981" : "#44445A",
+                  border: `1px solid ${isAlbumReady ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.08)"}`
+                }}
+              >
+                {isAlbumReady ? (
+                  <svg width={22} height={22} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                ) : (
+                  <svg width={22} height={22} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                )}
+              </div>
+              <div>
+                <p className="font-black text-lg tracking-tight mb-1" style={{ color: isAlbumReady ? "#10B981" : "#F0F0FF" }}>
+                  {isAlbumReady ? "Cámara Revelada" : "Laboratorio en Proceso"}
+                </p>
+                <p className="text-sm font-medium leading-relaxed" style={{ color: "#8585A8" }}>
+                  {isAlbumReady
+                    ? "El álbum oficial del evento ya está generado. Dirígete a la pestaña 'Álbum' para revisar las capturas de tus invitados."
+                    : `Las fotos desechables se están procesando y se revelarán oficialmente el ${albumDate}.`}
+                </p>
+              </div>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

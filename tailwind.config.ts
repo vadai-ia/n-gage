@@ -12,20 +12,20 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
         brand: {
-          pink: "#FF2D78",
-          purple: "#7B2FBE",
-          blue: "#1A6EFF",
-          gold: "#FFB800",
+          pink: "#D6285A",
+          purple: "#4A1C73",
+          blue: "#1449A8",
+          gold: "#D4AF37",
         },
         surface: {
-          base: "#07070F",
-          card: "#0F0F1A",
-          elevated: "#161625",
+          base: "#000000",
+          card: "#0A0A0A",
+          elevated: "#121212",
         },
         txt: {
-          primary: "#F0F0FF",
-          secondary: "#8585A8",
-          muted: "#44445A",
+          primary: "#FAFAFA",
+          secondary: "#999999",
+          muted: "#555555",
         },
       },
       fontFamily: {
@@ -35,12 +35,12 @@ const config: Config = {
       },
       backgroundImage: {
         "brand-gradient":
-          "linear-gradient(135deg, #FF2D78 0%, #7B2FBE 50%, #1A6EFF 100%)",
+          "linear-gradient(135deg, #D6285A 0%, #4A1C73 50%, #1449A8 100%)",
         "brand-gradient-soft":
-          "linear-gradient(135deg, rgba(255,45,120,0.15) 0%, rgba(123,47,190,0.15) 100%)",
-        "gold-gradient": "linear-gradient(135deg, #FFB800, #FF6B00)",
+          "linear-gradient(135deg, rgba(214,40,90,0.1) 0%, rgba(74,28,115,0.1) 100%)",
+        "gold-gradient": "linear-gradient(135deg, #D4AF37, #B5952F)",
         "card-overlay":
-          "linear-gradient(to top, rgba(7,7,15,0.95) 0%, rgba(7,7,15,0.5) 40%, transparent 70%)",
+          "linear-gradient(to top, #000000 0%, rgba(0,0,0,0.6) 40%, transparent 80%)",
       },
       borderRadius: {
         "2xl": "16px",
