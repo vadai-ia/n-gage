@@ -41,7 +41,8 @@ export async function GET(
 
   // Enriquecer con selfie del evento
   const enriched = await Promise.all(
-    matches.map(async (m) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    matches.map(async (m: any) => {
       const otherId = m.user_a_id === user.id ? m.user_b_id : m.user_a_id;
       const otherUser = m.user_a_id === user.id ? m.user_b : m.user_a;
       const reg = await prisma.eventRegistration.findUnique({
