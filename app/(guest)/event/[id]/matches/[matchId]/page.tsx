@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { motion } from "motion/react";
 
 type Message = {
   id: string;
@@ -18,21 +19,19 @@ export default function ChatPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [messages, setMessages]   = useState<Message[]>([]);
-  const [myUserId, setMyUserId]   = useState("");
-  const [text, setText]           = useState("");
-  const [sending, setSending]     = useState(false);
-  const [loading, setLoading]     = useState(true);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [myUserId, setMyUserId] = useState("");
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [otherName, setOtherName] = useState("");
   const [otherPhoto, setOtherPhoto] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Cargar mensajes y usuario actual
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) setMyUserId(user.id);
-
       const res = await fetch(`/api/v1/matches/${matchId}/messages`);
       const data = await res.json();
       setMessages(data.messages ?? []);
@@ -42,7 +41,6 @@ export default function ChatPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
-  // Cargar info del match (nombre del otro)
   useEffect(() => {
     fetch(`/api/v1/events/${eventId}/matches`)
       .then((r) => r.json())
@@ -55,12 +53,10 @@ export default function ChatPage() {
       });
   }, [eventId, matchId]);
 
-  // Scroll al fondo
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Supabase Realtime — escuchar nuevos mensajes
   useEffect(() => {
     const channel = supabase
       .channel(`match-${matchId}`)
@@ -76,7 +72,6 @@ export default function ChatPage() {
         }
       )
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
@@ -84,6 +79,7 @@ export default function ChatPage() {
   const sendMessage = useCallback(async () => {
     if (!text.trim() || sending) return;
     setSending(true);
+    if (navigator.vibrate) navigator.vibrate(10);
     const content = text.trim();
     setText("");
 
@@ -109,75 +105,141 @@ export default function ChatPage() {
   const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
 
+  const firstName = otherName.split(" ")[0] || "Match";
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#0A0A0F" }}>
-        <div className="text-3xl animate-pulse">💬</div>
+      <div className="flex items-center justify-center" style={{ height: "100dvh", background: "#07070F" }}>
+        <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: "#FF2D78", borderTopColor: "transparent" }} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col" style={{ height: "100dvh", background: "#0A0A0F" }}>
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
-        style={{ background: "rgba(22,22,31,0.97)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-        <button onClick={() => router.push(`/event/${eventId}/matches`)} aria-label="Volver"
-          style={{ color: "#A0A0B0", fontSize: "20px" }}>←</button>
+    <div className="flex flex-col" style={{ height: "100dvh", background: "#07070F" }}>
+      {/* Header — glassmorphism */}
+      <div
+        className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
+        style={{
+          background: "rgba(7,7,15,0.85)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <button
+          onClick={() => router.push(`/event/${eventId}/matches`)}
+          aria-label="Volver"
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90"
+          style={{ background: "rgba(255,255,255,0.05)" }}
+        >
+          <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="#8585A8" strokeWidth={2}>
+            <path d="M19 12H5M12 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
 
         <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0"
-          style={{ border: "2px solid #FF3CAC" }}>
+          style={{ border: "2px solid rgba(255,45,120,0.3)" }}>
           {otherPhoto ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={otherPhoto} alt={otherName} className="w-full h-full object-cover" />
+            <img src={otherPhoto} alt={firstName} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center"
-              style={{ background: "rgba(255,60,172,0.1)", fontSize: "18px" }}>👤</div>
+              style={{ background: "rgba(255,45,120,0.08)" }}>
+              <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="#FF2D78" strokeWidth={1.5}>
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
           )}
         </div>
 
-        <div className="flex-1">
-          <p className="font-bold text-sm">{otherName || "Match"}</p>
-          <p className="text-xs" style={{ color: "#FF3CAC" }}>● Conectado/a</p>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm truncate" style={{ color: "#F0F0FF" }}>{firstName}</p>
+          <div className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#10B981" }} />
+            <span className="text-[10px] font-medium" style={{ color: "#10B981" }}>En línea</span>
+          </div>
         </div>
       </div>
 
-      {/* Mensajes */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2">
-        {messages.map((msg) => {
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1.5">
+        {messages.length === 0 && (
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-10">
+            <div className="w-16 h-16 rounded-full mb-4 flex items-center justify-center"
+              style={{ background: "rgba(255,45,120,0.08)" }}>
+              <svg width={24} height={24} fill="none" viewBox="0 0 24 24" stroke="#FF2D78" strokeWidth={1.5}>
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+              </svg>
+            </div>
+            <p className="text-sm font-semibold mb-1" style={{ color: "#F0F0FF" }}>
+              Di hola a {firstName}
+            </p>
+            <p className="text-xs" style={{ color: "#44445A" }}>
+              Hicieron match — el primer mensaje marca la diferencia
+            </p>
+          </div>
+        )}
+
+        {messages.map((msg, i) => {
           const isMe = msg.sender_id === myUserId;
+          const showTime = i === messages.length - 1 ||
+            messages[i + 1]?.sender_id !== msg.sender_id ||
+            new Date(messages[i + 1]?.created_at).getTime() - new Date(msg.created_at).getTime() > 120000;
+
           return (
-            <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-              <div className="max-w-[78%]">
-                <div className="px-4 py-2.5 rounded-2xl text-sm"
+            <motion.div
+              key={msg.id}
+              initial={{ opacity: 0, y: 8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.2 }}
+              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+            >
+              <div className="max-w-[80%]">
+                <div
+                  className="px-4 py-2.5 text-sm leading-relaxed"
                   style={{
                     background: isMe
-                      ? "linear-gradient(135deg, #FF3CAC, #784BA0)"
-                      : "#16161F",
-                    color: "#fff",
-                    borderBottomRightRadius: isMe ? "4px" : "16px",
-                    borderBottomLeftRadius: isMe ? "16px" : "4px",
-                    border: isMe ? "none" : "1px solid rgba(255,255,255,0.07)",
-                  }}>
+                      ? "linear-gradient(135deg, #FF2D78, #7B2FBE)"
+                      : "rgba(255,255,255,0.04)",
+                    color: isMe ? "#fff" : "#F0F0FF",
+                    borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                    border: isMe ? "none" : "1px solid rgba(255,255,255,0.06)",
+                    boxShadow: isMe ? "0 2px 12px rgba(255,45,120,0.15)" : "none",
+                  }}
+                >
                   {msg.content}
                 </div>
-                <p className={`text-xs mt-1 ${isMe ? "text-right" : "text-left"}`}
-                  style={{ color: "#555" }}>
-                  {formatTime(msg.created_at)}
-                  {isMe && (
-                    <span className="ml-1">{msg.read_at ? " ✓✓" : " ✓"}</span>
-                  )}
-                </p>
+                {showTime && (
+                  <p className={`text-[10px] mt-1 px-1 font-medium ${isMe ? "text-right" : "text-left"}`}
+                    style={{ color: "#44445A" }}>
+                    {formatTime(msg.created_at)}
+                    {isMe && (
+                      <span className="ml-1" style={{ color: msg.read_at ? "#1A6EFF" : "#44445A" }}>
+                        {msg.read_at ? "✓✓" : "✓"}
+                      </span>
+                    )}
+                  </p>
+                )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="flex-shrink-0 px-4 py-3 flex items-end gap-2"
-        style={{ background: "rgba(22,22,31,0.97)", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+      {/* Input — glassmorphism */}
+      <div
+        className="flex-shrink-0 px-4 py-3 flex items-end gap-2.5"
+        style={{
+          background: "rgba(7,7,15,0.85)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -186,9 +248,9 @@ export default function ChatPage() {
           rows={1}
           className="flex-1 rounded-2xl px-4 py-2.5 text-sm resize-none outline-none"
           style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "#fff",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "#F0F0FF",
             maxHeight: "100px",
           }}
         />
@@ -196,11 +258,17 @@ export default function ChatPage() {
           onClick={sendMessage}
           disabled={!text.trim() || sending}
           aria-label="Enviar mensaje"
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-40"
-          style={{ background: "linear-gradient(135deg, #FF3CAC, #784BA0)" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" stroke="white" strokeWidth="2"
-              strokeLinecap="round" strokeLinejoin="round"/>
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-transform active:scale-90"
+          style={{
+            background: text.trim()
+              ? "linear-gradient(135deg, #FF2D78, #7B2FBE)"
+              : "rgba(255,255,255,0.05)",
+            boxShadow: text.trim() ? "0 2px 12px rgba(255,45,120,0.3)" : "none",
+          }}
+        >
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9L22 2" stroke="white" strokeWidth={2}
+              strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
       </div>

@@ -83,29 +83,59 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-4 lg:p-8 max-w-6xl mx-auto">
-      <h1 className="text-2xl lg:text-3xl font-bold mb-1" style={{ color: "#F0F0FF" }}>
-        Usuarios
-      </h1>
-      <p className="text-sm mb-5" style={{ color: "#8585A8" }}>
-        <span style={{ color: "#FFB800", fontWeight: 700 }}>{total}</span> usuarios en la plataforma
-      </p>
+      {/* Header */}
+      <div className="mb-8">
+        <p
+          className="text-[10px] font-bold uppercase tracking-wider mb-3"
+          style={{ color: "#8585A8" }}
+        >
+          Gestion
+        </p>
+        <h1
+          className="text-3xl lg:text-4xl font-black tracking-tight mb-2"
+          style={{ color: "#F0F0FF" }}
+        >
+          Usuarios
+        </h1>
+        <p className="text-sm" style={{ color: "#8585A8" }}>
+          <span style={{ color: "#FFB800", fontWeight: 700 }}>{total}</span>{" "}
+          usuarios registrados en la plataforma
+        </p>
+      </div>
 
       {/* Search */}
-      <form onSubmit={handleSearch} className="flex gap-2 mb-4">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar nombre o email..."
-          className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none"
-          style={{
-            background: "#0F0F1A",
-            border: "1px solid rgba(255,255,255,0.06)",
-            color: "#F0F0FF",
-          }}
-        />
+      <form onSubmit={handleSearch} className="flex gap-2 mb-5">
+        <div className="relative flex-1">
+          <svg
+            width={16}
+            height={16}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: "#44445A" }}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o email..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none transition-all focus:ring-1"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              color: "#F0F0FF",
+              // @ts-expect-error CSS custom properties
+              "--tw-ring-color": "rgba(255,45,120,0.3)",
+            }}
+          />
+        </div>
         <button
           type="submit"
-          className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+          className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all hover:brightness-110"
           style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}
         >
           Buscar
@@ -113,24 +143,39 @@ export default function AdminUsersPage() {
       </form>
 
       {/* Role Filters */}
-      <div className="flex gap-2 mb-5 flex-wrap">
-        {["", ...ALL_ROLES].map((r) => (
-          <button
-            key={r}
-            onClick={() => {
-              setRole(r);
-              setPage(1);
-            }}
-            className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors"
-            style={{
-              background: role === r ? "rgba(255,45,120,0.15)" : "rgba(255,255,255,0.04)",
-              border: `1px solid ${role === r ? "#FF2D78" : "rgba(255,255,255,0.06)"}`,
-              color: role === r ? "#FF2D78" : "#8585A8",
-            }}
-          >
-            {r === "" ? "Todos" : ROLE_LABEL[r]}
-          </button>
-        ))}
+      <div className="mb-6">
+        <p
+          className="text-[10px] font-bold uppercase tracking-wider mb-2.5"
+          style={{ color: "#44445A" }}
+        >
+          Filtrar por rol
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          {["", ...ALL_ROLES].map((r) => {
+            const isActive = role === r;
+            return (
+              <button
+                key={r}
+                onClick={() => {
+                  setRole(r);
+                  setPage(1);
+                }}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
+                style={{
+                  background: isActive
+                    ? "rgba(255,45,120,0.15)"
+                    : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${
+                    isActive ? "rgba(255,45,120,0.3)" : "rgba(255,255,255,0.04)"
+                  }`,
+                  color: isActive ? "#FF2D78" : "#8585A8",
+                }}
+              >
+                {r === "" ? "Todos" : ROLE_LABEL[r]}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Users List */}
@@ -139,52 +184,78 @@ export default function AdminUsersPage() {
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-24 rounded-2xl animate-pulse"
-              style={{ background: "#0F0F1A" }}
+              className="skeleton rounded-2xl"
+              style={{
+                height: 88,
+                background: "#0F0F1A",
+                border: "1px solid rgba(255,255,255,0.04)",
+              }}
             />
           ))}
         </div>
       ) : users.length === 0 ? (
-        <div className="text-center py-20">
-          <svg
-            width={48}
-            height={48}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            className="mx-auto mb-4"
-            style={{ color: "#44445A" }}
+        <div
+          className="rounded-2xl text-center py-20"
+          style={{
+            background: "#0F0F1A",
+            border: "1px solid rgba(255,255,255,0.04)",
+          }}
+        >
+          <div
+            className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: "rgba(255,255,255,0.03)" }}
           >
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-          </svg>
-          <p style={{ color: "#8585A8" }}>No se encontraron usuarios</p>
+            <svg
+              width={28}
+              height={28}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              style={{ color: "#44445A" }}
+            >
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 00-3-3.87" />
+              <path d="M16 3.13a4 4 0 010 7.75" />
+            </svg>
+          </div>
+          <p className="text-sm font-bold mb-1" style={{ color: "#8585A8" }}>
+            Sin resultados
+          </p>
+          <p className="text-xs" style={{ color: "#44445A" }}>
+            No se encontraron usuarios con estos filtros
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
           {users.map((u) => (
             <div
               key={u.id}
-              className="rounded-2xl p-4"
+              className="rounded-2xl transition-all"
               style={{
                 background: "#0F0F1A",
-                border: "1px solid rgba(255,255,255,0.06)",
+                border: `1px solid ${
+                  expanded === u.id
+                    ? "rgba(255,255,255,0.06)"
+                    : "rgba(255,255,255,0.04)"
+                }`,
               }}
             >
               {/* User row */}
               <button
-                className="w-full text-left"
+                className="w-full text-left p-4"
                 onClick={() => setExpanded(expanded === u.id ? null : u.id)}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     {/* Avatar */}
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold overflow-hidden"
+                      className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold overflow-hidden"
                       style={{
-                        background: `${ROLE_COLOR[u.role]}20`,
+                        background: `${ROLE_COLOR[u.role]}15`,
                         color: ROLE_COLOR[u.role],
+                        border: `1px solid ${ROLE_COLOR[u.role]}20`,
                       }}
                     >
                       {u.avatar_url ? (
@@ -199,77 +270,103 @@ export default function AdminUsersPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <p
-                          className="font-semibold text-sm truncate"
+                          className="font-bold text-sm truncate"
                           style={{ color: "#F0F0FF" }}
                         >
                           {u.full_name}
                         </p>
                         <span
-                          className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
+                          className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex-shrink-0"
                           style={{
-                            background: `${ROLE_COLOR[u.role]}22`,
+                            background: `${ROLE_COLOR[u.role]}15`,
                             color: ROLE_COLOR[u.role],
+                            border: `1px solid ${ROLE_COLOR[u.role]}20`,
                           }}
                         >
                           {ROLE_LABEL[u.role] ?? u.role}
                         </span>
                         {!u.is_active && (
                           <span
-                            className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                            style={{ background: "rgba(239,68,68,0.15)", color: "#EF4444" }}
+                            className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
+                            style={{
+                              background: "rgba(239,68,68,0.12)",
+                              color: "#EF4444",
+                              border: "1px solid rgba(239,68,68,0.2)",
+                            }}
                           >
                             Inactivo
                           </span>
                         )}
                       </div>
-                      <p className="text-xs truncate" style={{ color: "#8585A8" }}>
+                      <p
+                        className="text-xs truncate mb-0.5"
+                        style={{ color: "#8585A8" }}
+                      >
                         {u.email}
                       </p>
-                      <p className="text-xs mt-0.5" style={{ color: "#44445A" }}>
+                      <p className="text-[11px]" style={{ color: "#44445A" }}>
                         {u._count.organized_events > 0 &&
-                          `${u._count.organized_events} eventos organizados / `}
-                        {u._count.registrations} registros /&nbsp;
-                        {new Date(u.created_at).toLocaleDateString("es-MX")}
+                          `${u._count.organized_events} eventos organizados  ·  `}
+                        {u._count.registrations} registros  ·  {new Date(u.created_at).toLocaleDateString("es-MX")}
                       </p>
                     </div>
                   </div>
-                  <svg
-                    width={16}
-                    height={16}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    className="flex-shrink-0 transition-transform"
-                    style={{
-                      color: "#44445A",
-                      transform: expanded === u.id ? "rotate(180deg)" : "rotate(0deg)",
-                    }}
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{ background: "rgba(255,255,255,0.03)" }}
                   >
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
+                    <svg
+                      width={14}
+                      height={14}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      className="transition-transform duration-200"
+                      style={{
+                        color: "#44445A",
+                        transform:
+                          expanded === u.id
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
+                      }}
+                    >
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </div>
                 </div>
               </button>
 
               {/* Expanded Actions */}
               {expanded === u.id && (
                 <div
-                  className="mt-3 pt-3 border-t"
-                  style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                  className="mx-4 mb-4 pt-3"
+                  style={{
+                    borderTop: "1px solid rgba(255,255,255,0.04)",
+                  }}
                 >
+                  <p
+                    className="text-[10px] font-bold uppercase tracking-wider mb-2.5"
+                    style={{ color: "#44445A" }}
+                  >
+                    Acciones
+                  </p>
                   <div className="flex gap-2 flex-wrap">
                     {/* Role change dropdown */}
                     <div className="relative">
                       <button
                         onClick={() =>
-                          setRoleDropdown(roleDropdown === u.id ? null : u.id)
+                          setRoleDropdown(
+                            roleDropdown === u.id ? null : u.id
+                          )
                         }
-                        className="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1"
+                        className="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all hover:brightness-125"
                         style={{
-                          background: "rgba(26,110,255,0.15)",
+                          background: "rgba(26,110,255,0.12)",
                           color: "#1A6EFF",
+                          border: "1px solid rgba(26,110,255,0.15)",
                         }}
                       >
                         Cambiar Rol
@@ -279,29 +376,54 @@ export default function AdminUsersPage() {
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
-                          strokeWidth={2}
+                          strokeWidth={2.5}
+                          className="transition-transform duration-200"
+                          style={{
+                            transform:
+                              roleDropdown === u.id
+                                ? "rotate(180deg)"
+                                : "rotate(0deg)",
+                          }}
                         >
                           <path d="M6 9l6 6 6-6" />
                         </svg>
                       </button>
                       {roleDropdown === u.id && (
                         <div
-                          className="absolute top-full left-0 mt-1 rounded-xl overflow-hidden z-10 min-w-[160px]"
+                          className="absolute top-full left-0 mt-1.5 rounded-xl overflow-hidden z-10 min-w-[180px]"
                           style={{
-                            background: "#16162a",
-                            border: "1px solid rgba(255,255,255,0.1)",
+                            background: "rgba(22,22,42,0.85)",
+                            backdropFilter: "blur(20px)",
+                            WebkitBackdropFilter: "blur(20px)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            boxShadow:
+                              "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset",
                           }}
                         >
-                          {ALL_ROLES.filter((r) => r !== u.role).map((r) => (
-                            <button
-                              key={r}
-                              onClick={() => doAction(u.id, "change_role", r)}
-                              className="w-full px-3 py-2 text-left text-xs font-semibold hover:brightness-125 block"
-                              style={{ color: ROLE_COLOR[r] }}
-                            >
-                              {ROLE_LABEL[r]}
-                            </button>
-                          ))}
+                          {ALL_ROLES.filter((r) => r !== u.role).map(
+                            (r, idx, arr) => (
+                              <button
+                                key={r}
+                                onClick={() =>
+                                  doAction(u.id, "change_role", r)
+                                }
+                                className="w-full px-4 py-2.5 text-left text-xs font-bold flex items-center gap-2.5 transition-all hover:brightness-125"
+                                style={{
+                                  color: ROLE_COLOR[r],
+                                  borderBottom:
+                                    idx < arr.length - 1
+                                      ? "1px solid rgba(255,255,255,0.04)"
+                                      : "none",
+                                }}
+                              >
+                                <span
+                                  className="w-2 h-2 rounded-full flex-shrink-0"
+                                  style={{ background: ROLE_COLOR[r] }}
+                                />
+                                {ROLE_LABEL[r]}
+                              </button>
+                            )
+                          )}
                         </div>
                       )}
                     </div>
@@ -312,10 +434,11 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => doAction(u.id, "suspend")}
                             disabled={acting === u.id + "suspend"}
-                            className="px-3 py-1.5 rounded-xl text-xs font-semibold"
+                            className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all hover:brightness-125 disabled:opacity-50"
                             style={{
-                              background: "rgba(239,68,68,0.15)",
+                              background: "rgba(239,68,68,0.12)",
                               color: "#EF4444",
+                              border: "1px solid rgba(239,68,68,0.15)",
                             }}
                           >
                             {acting === u.id + "suspend"
@@ -326,10 +449,11 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => doAction(u.id, "activate")}
                             disabled={acting === u.id + "activate"}
-                            className="px-3 py-1.5 rounded-xl text-xs font-semibold"
+                            className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all hover:brightness-125 disabled:opacity-50"
                             style={{
-                              background: "rgba(16,185,129,0.15)",
+                              background: "rgba(16,185,129,0.12)",
                               color: "#10B981",
+                              border: "1px solid rgba(16,185,129,0.15)",
                             }}
                           >
                             {acting === u.id + "activate"
@@ -349,11 +473,11 @@ export default function AdminUsersPage() {
                             }
                           }}
                           disabled={acting === u.id + "delete"}
-                          className="px-3 py-1.5 rounded-xl text-xs font-semibold"
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all hover:brightness-125 disabled:opacity-50"
                           style={{
-                            background: "rgba(239,68,68,0.08)",
+                            background: "rgba(239,68,68,0.06)",
                             color: "#EF4444",
-                            border: "1px solid rgba(239,68,68,0.2)",
+                            border: "1px solid rgba(239,68,68,0.15)",
                           }}
                         >
                           {acting === u.id + "delete" ? "..." : "Eliminar"}
@@ -370,29 +494,35 @@ export default function AdminUsersPage() {
 
       {/* Pagination */}
       {pages > 1 && (
-        <div className="flex justify-center items-center gap-3 mt-6">
+        <div className="flex justify-center items-center gap-3 mt-8">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-4 py-2 rounded-xl text-sm font-semibold"
+            className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-30"
             style={{
               background: "#0F0F1A",
-              border: "1px solid rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.04)",
               color: page === 1 ? "#44445A" : "#F0F0FF",
             }}
           >
             Anterior
           </button>
-          <span className="text-sm" style={{ color: "#8585A8" }}>
+          <span
+            className="text-xs font-bold px-3 py-1.5 rounded-lg"
+            style={{
+              color: "#8585A8",
+              background: "rgba(255,255,255,0.03)",
+            }}
+          >
             {page} / {pages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(pages, p + 1))}
             disabled={page === pages}
-            className="px-4 py-2 rounded-xl text-sm font-semibold"
+            className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-30"
             style={{
               background: "#0F0F1A",
-              border: "1px solid rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.04)",
               color: page === pages ? "#44445A" : "#F0F0FF",
             }}
           >

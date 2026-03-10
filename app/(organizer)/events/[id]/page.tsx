@@ -128,12 +128,12 @@ function toLocalDatetimeStr(isoStr: string | null): string {
 
 const cardStyle = {
   background: "#0F0F1A",
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.04)",
 };
 
 const inputStyle = {
   background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.04)",
   color: "#F0F0FF",
   colorScheme: "dark" as const,
 };
@@ -296,15 +296,15 @@ export default function EventDetailPage() {
   if (loading || !event) {
     return (
       <div className="p-4">
-        <div className="h-6 w-24 rounded-lg mb-4 animate-pulse" style={{ background: "#0F0F1A" }} />
-        <div className="h-10 w-64 rounded-xl mb-2 animate-pulse" style={{ background: "#0F0F1A" }} />
-        <div className="h-5 w-48 rounded-lg mb-6 animate-pulse" style={{ background: "#0F0F1A" }} />
+        <div className="skeleton h-6 w-24 rounded-lg mb-4" />
+        <div className="skeleton h-10 w-64 rounded-xl mb-2" />
+        <div className="skeleton h-5 w-48 rounded-lg mb-6" />
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: "#0F0F1A" }} />
+            <div key={i} className="skeleton h-24 rounded-2xl" />
           ))}
         </div>
-        <div className="h-64 rounded-2xl animate-pulse" style={{ background: "#0F0F1A" }} />
+        <div className="skeleton h-64 rounded-2xl" />
       </div>
     );
   }
@@ -334,7 +334,7 @@ export default function EventDetailPage() {
       {/* ─── Header ─────────────────────────────────────── */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex-1">
-          <h1 className="text-2xl font-bold leading-tight" style={{ color: "#F0F0FF" }}>
+          <h1 className="text-2xl font-black tracking-tight leading-tight" style={{ color: "#F0F0FF" }}>
             {event.name}
           </h1>
           <p className="text-sm mt-1" style={{ color: "#8585A8" }}>
@@ -400,7 +400,7 @@ export default function EventDetailPage() {
             {s.sub && <div className="text-xs" style={{ color: "#44445A" }}>{s.sub}</div>}
             {/* Capacity bar for registrations */}
             {s.label === "Registros" && capacity && (
-              <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
                 <div
                   className="h-full rounded-full transition-all"
                   style={{
@@ -430,7 +430,7 @@ export default function EventDetailPage() {
       {/* ─── QR Code Section ────────────────────────────── */}
       {event.qr_code_url && (
         <div className="rounded-2xl p-4 mb-4 text-center" style={cardStyle}>
-          <p className="text-sm font-bold mb-3" style={{ color: "#F0F0FF" }}>Codigo QR del evento</p>
+          <p className="text-sm font-black tracking-tight mb-3" style={{ color: "#F0F0FF" }}>Codigo QR del evento</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={event.qr_code_url}
@@ -445,7 +445,7 @@ export default function EventDetailPage() {
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
               style={{
                 background: copied ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${copied ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.06)"}`,
+                border: `1px solid ${copied ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.04)"}`,
                 color: copied ? "#10B981" : "#8585A8",
               }}
             >
@@ -482,7 +482,7 @@ export default function EventDetailPage() {
 
       {/* ─── Hosts Section ──────────────────────────────── */}
       <div className="rounded-2xl p-4 mb-6" style={cardStyle}>
-        <h3 className="text-sm font-bold mb-3" style={{ color: "#F0F0FF" }}>Hosts del evento</h3>
+        <h3 className="text-sm font-black tracking-tight mb-3" style={{ color: "#F0F0FF" }}>Hosts del evento</h3>
         {event.hosts.length === 0 ? (
           <p className="text-xs" style={{ color: "#44445A" }}>
             Sin hosts asignados. Puedes asignar hosts desde el panel de administracion.
@@ -533,7 +533,7 @@ export default function EventDetailPage() {
       {/* ─── Config Tab ─────────────────────────────────── */}
       {activeTab === "config" && (
         <div className="rounded-2xl p-4" style={cardStyle}>
-          <h3 className="text-sm font-bold mb-4" style={{ color: "#F0F0FF" }}>Configuracion del evento</h3>
+          <h3 className="text-sm font-black tracking-tight mb-4" style={{ color: "#F0F0FF" }}>Configuracion del evento</h3>
 
           <div className="flex flex-col gap-4">
             {/* Name */}
@@ -767,7 +767,7 @@ export default function EventDetailPage() {
       {/* ─── Registrations Tab ──────────────────────────── */}
       {activeTab === "registrations" && (
         <div className="rounded-2xl p-4" style={cardStyle}>
-          <h3 className="text-sm font-bold mb-4" style={{ color: "#F0F0FF" }}>
+          <h3 className="text-sm font-black tracking-tight mb-4" style={{ color: "#F0F0FF" }}>
             Invitados registrados ({event.registrations?.length ?? 0})
           </h3>
 
@@ -786,7 +786,7 @@ export default function EventDetailPage() {
                   style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}
                 >
                   {/* Selfie */}
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.04)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={reg.selfie_url}
@@ -840,7 +840,7 @@ export default function EventDetailPage() {
       {/* ─── Matches Tab ────────────────────────────────── */}
       {activeTab === "matches" && (
         <div className="rounded-2xl p-4" style={cardStyle}>
-          <h3 className="text-sm font-bold mb-4" style={{ color: "#F0F0FF" }}>
+          <h3 className="text-sm font-black tracking-tight mb-4" style={{ color: "#F0F0FF" }}>
             Matches ({matches.length})
           </h3>
 

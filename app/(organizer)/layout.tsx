@@ -7,39 +7,27 @@ import { useState, useEffect } from "react";
 
 const NAV = [
   { href: "/dashboard", label: "Mis Eventos", icon: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+    <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" />
     </svg>
   )},
-  { href: "/events/new", label: "Crear Evento", icon: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" />
+  { href: "/events/new", label: "Nuevo Evento", icon: (
+    <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" />
     </svg>
   )},
 ];
 
-type UserRole = "admin" | "organizer" | "host" | "guest";
-
-const ROLE_ROUTES: Record<UserRole, { label: string; href: string }> = {
-  admin:     { label: "Super Admin",  href: "/admin" },
-  organizer: { label: "Organizador",  href: "/dashboard" },
-  host:      { label: "Host",         href: "/dashboard" },
-  guest:     { label: "Invitado",     href: "/dashboard" },
-};
-
 export default function OrganizerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [showRoles, setShowRoles] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.user_metadata?.role === "SUPER_ADMIN") {
-        setIsSuperAdmin(true);
-      }
+      if (user?.user_metadata?.role === "SUPER_ADMIN") setIsSuperAdmin(true);
     });
   }, []);
 
@@ -49,111 +37,83 @@ export default function OrganizerLayout({ children }: { children: React.ReactNod
     router.push("/login");
   }
 
-  const availableRoles: UserRole[] = isSuperAdmin
-    ? ["admin", "organizer"]
-    : ["organizer"];
-
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#07070F" }}>
-      {/* Sticky header */}
+      {/* Header — glassmorphism */}
       <header
         className="flex items-center justify-between px-4 py-3 sticky top-0 z-50"
         style={{
-          background: "rgba(7,7,15,0.92)",
-          backdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          background: "rgba(7,7,15,0.85)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderBottom: "1px solid rgba(255,255,255,0.04)",
         }}
       >
         <Link href="/dashboard" className="flex items-center gap-2">
-          <span
-            className="text-lg font-bold"
-            style={{
-              background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              fontFamily: "var(--font-playfair)",
-            }}
-          >
-            N&apos;GAGE
-          </span>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs"
+            style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}>N</div>
+          <span className="font-black text-sm tracking-tight" style={{
+            background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          }}>N&apos;GAGE</span>
         </Link>
 
-        <div className="flex items-center gap-3">
-          <span
-            className="text-xs px-2.5 py-1 rounded-full font-medium"
-            style={{ background: "rgba(255,45,120,0.12)", color: "#FF2D78", border: "1px solid rgba(255,45,120,0.2)" }}
-          >
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider"
+            style={{ background: "rgba(255,45,120,0.08)", color: "#FF2D78", border: "1px solid rgba(255,45,120,0.1)" }}>
             Organizador
           </span>
 
-          {availableRoles.length > 1 && (
-            <div className="relative">
-              <button
-                onClick={() => setShowRoles((v) => !v)}
-                className="text-xs px-2 py-1 rounded-lg transition-colors"
-                style={{ color: "#8585A8", background: showRoles ? "rgba(255,255,255,0.06)" : "transparent" }}
-              >
-                Cambiar vista
-              </button>
-              {showRoles && (
-                <div
-                  className="absolute right-0 top-8 w-44 rounded-xl p-2 shadow-xl z-50"
-                  style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.06)" }}
-                >
-                  {availableRoles.map((role) => (
-                    <button
-                      key={role}
-                      onClick={() => {
-                        setShowRoles(false);
-                        router.push(ROLE_ROUTES[role].href);
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors"
-                      style={{
-                        color: role === "organizer" ? "#FF2D78" : "#F0F0FF",
-                        background: role === "organizer" ? "rgba(255,45,120,0.08)" : "transparent",
-                      }}
-                    >
-                      {ROLE_ROUTES[role].label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+          {isSuperAdmin && (
+            <button
+              onClick={() => router.push("/admin")}
+              className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider transition-all active:scale-95"
+              style={{ background: "rgba(123,47,190,0.08)", color: "#7B2FBE", border: "1px solid rgba(123,47,190,0.1)" }}
+            >
+              Admin
+            </button>
           )}
 
           <button
             onClick={handleLogout}
-            className="text-xs px-2 py-1 rounded-lg transition-colors"
-            style={{ color: "#8585A8" }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90"
+            style={{ background: "rgba(255,255,255,0.03)" }}
           >
-            Salir
+            <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="#44445A" strokeWidth={1.8}>
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
           </button>
         </div>
       </header>
 
-      {/* Content */}
       <main className="flex-1 pb-24">{children}</main>
 
-      {/* Bottom nav */}
+      {/* Bottom nav — glassmorphism */}
       <nav
-        className="fixed bottom-0 left-0 right-0 flex justify-around py-3 px-2 z-40"
+        className="fixed bottom-0 left-0 right-0 flex justify-around py-2.5 px-2 z-40"
         style={{
-          background: "rgba(15,15,26,0.95)",
-          backdropFilter: "blur(16px)",
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          background: "rgba(7,7,15,0.9)",
+          backdropFilter: "blur(20px) saturate(180%)",
+          WebkitBackdropFilter: "blur(20px) saturate(180%)",
+          borderTop: "1px solid rgba(255,255,255,0.04)",
+          paddingBottom: "calc(10px + env(safe-area-inset-bottom, 0px))",
         }}
       >
         {NAV.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isDashActive = item.href === "/dashboard" && (pathname === "/dashboard" || pathname.startsWith("/events/"));
+          const isActive = active || isDashActive;
+
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center gap-1 px-6 py-1 rounded-xl transition-all"
-              style={{ color: active ? "#FF2D78" : "#8585A8" }}
+              className="flex flex-col items-center gap-0.5 px-6 py-1 transition-all active:scale-95"
             >
-              {item.icon}
-              <span className="text-xs font-medium">{item.label}</span>
+              <span style={{ color: isActive ? "#FF2D78" : "#44445A" }}>{item.icon}</span>
+              <span className="text-[10px] font-semibold" style={{ color: isActive ? "#FF2D78" : "#44445A" }}>
+                {item.label}
+              </span>
             </Link>
           );
         })}

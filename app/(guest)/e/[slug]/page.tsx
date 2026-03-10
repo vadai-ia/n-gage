@@ -256,16 +256,54 @@ export default function EventLandingPage() {
     ? GENDER_OPTIONS
     : GENDER_OPTIONS.filter((g) => g.value === "male" || g.value === "female");
 
+  /* ── shared style constants ── */
+  const bg = "#07070F";
+  const surface = "#0F0F1A";
+  const textPrimary = "#F0F0FF";
+  const textSecondary = "#8585A8";
+  const textMuted = "#44445A";
+  const pink = "#FF2D78";
+  const purple = "#7B2FBE";
+  const blue = "#1A6EFF";
+  const green = "#10B981";
+  const gradientCta = `linear-gradient(135deg, ${pink}, ${purple})`;
+  const gradientTriple = `linear-gradient(135deg, ${pink}, ${purple}, ${blue})`;
+  const borderSubtle = "rgba(255,255,255,0.05)";
+  const borderLight = "rgba(255,255,255,0.06)";
+  const inputBg = "rgba(255,255,255,0.03)";
+  const inputBorder = "rgba(255,255,255,0.08)";
+  const selectionBg = `rgba(255,45,120,0.12)`;
+  const selectionBgBlue = `rgba(26,110,255,0.12)`;
+  const selectionBgPurple = `rgba(123,47,190,0.15)`;
+  const glowShadow = `0 8px 32px rgba(255,45,120,0.35)`;
+  const glowShadowStrong = `0 8px 40px rgba(255,45,120,0.45)`;
+
+  const backButton = (
+    <button
+      onClick={() => setStep(step === "auth" ? "landing" : step === "interests" ? "selfie" : "landing")}
+      className="flex items-center gap-1.5 text-sm mb-6 transition-colors"
+      style={{ color: textSecondary }}
+    >
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Volver
+    </button>
+  );
+
   // ─────────────────────────────────────────────
   // RENDERS
   // ─────────────────────────────────────────────
 
   if (step === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "#07070F" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: bg }}>
         <div className="text-center">
-          <div className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderColor: "#FF2D78", borderTopColor: "transparent" }} />
-          <p style={{ color: "#8585A8" }}>Cargando evento...</p>
+          <div
+            className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+            style={{ borderColor: pink, borderTopColor: "transparent" }}
+          />
+          <p className="text-sm" style={{ color: textSecondary }}>Cargando evento...</p>
         </div>
       </div>
     );
@@ -273,13 +311,24 @@ export default function EventLandingPage() {
 
   if (error || !event) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#07070F" }}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: bg }}>
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: "rgba(255,45,120,0.1)" }}>
-            <span className="text-2xl" style={{ color: "#FF2D78" }}>!</span>
+          <div
+            className="w-16 h-16 rounded-2xl mx-auto mb-5 flex items-center justify-center"
+            style={{ background: "rgba(255,45,120,0.06)" }}
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke={pink} strokeWidth="1.5"/>
+              <path d="M12 8v5" stroke={pink} strokeWidth="1.5" strokeLinecap="round"/>
+              <circle cx="12" cy="16" r="0.75" fill={pink}/>
+            </svg>
           </div>
-          <h2 className="text-xl font-bold mb-2" style={{ color: "#F0F0FF" }}>Evento no disponible</h2>
-          <p style={{ color: "#8585A8" }}>{error || "Este evento no existe o ya expiro."}</p>
+          <h2 className="text-xl font-black tracking-tight mb-2" style={{ color: textPrimary }}>
+            Evento no disponible
+          </h2>
+          <p className="text-sm" style={{ color: textSecondary }}>
+            {error || "Este evento no existe o ya expiro."}
+          </p>
         </div>
       </div>
     );
@@ -289,18 +338,40 @@ export default function EventLandingPage() {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-  // STEP: Access Code
+  // ── STEP: Access Code ──
   if (step === "access_code") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#07070F" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: bg }}>
         <div className="w-full max-w-sm text-center">
-          <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ background: "rgba(255,45,120,0.1)" }}>
-            <span className="text-2xl">🔑</span>
+          {/* Inline gradient N'GAGE logo */}
+          <div className="mb-6">
+            <span
+              className="text-3xl font-black tracking-tight"
+              style={{
+                background: gradientCta,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              N&apos;GAGE
+            </span>
           </div>
-          <h2 className="text-2xl font-bold mb-2" style={{ color: "#F0F0FF", fontFamily: "var(--font-playfair)" }}>
+
+          <div
+            className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            style={{ background: "rgba(255,45,120,0.06)" }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="11" width="14" height="10" rx="2" stroke={pink} strokeWidth="1.5"/>
+              <path d="M8 11V7a4 4 0 118 0v4" stroke={pink} strokeWidth="1.5" strokeLinecap="round"/>
+              <circle cx="12" cy="16" r="1.5" fill={pink}/>
+            </svg>
+          </div>
+
+          <h2 className="text-2xl font-black tracking-tight mb-2" style={{ color: textPrimary }}>
             Codigo de acceso
           </h2>
-          <p className="text-sm mb-6" style={{ color: "#8585A8" }}>
+          <p className="text-sm mb-6" style={{ color: textSecondary }}>
             Ingresa el codigo que recibiste en tu invitacion
           </p>
 
@@ -311,21 +382,33 @@ export default function EventLandingPage() {
               value={accessCode}
               onChange={(e) => { setAccessCode(e.target.value.toUpperCase()); setCodeError(""); }}
               autoFocus
-              className="w-full rounded-xl px-4 py-3 text-center text-lg font-bold tracking-widest outline-none"
-              style={{ background: "rgba(255,255,255,0.05)", border: `1px solid ${codeError ? "#FF2D78" : "rgba(255,255,255,0.1)"}`, color: "#F0F0FF" }}
+              className="w-full rounded-xl px-4 py-3.5 text-center text-lg font-bold tracking-widest outline-none transition-all focus:ring-1"
+              style={{
+                background: inputBg,
+                border: `1px solid ${codeError ? pink : inputBorder}`,
+                color: textPrimary,
+                ...(codeError ? {} : { focusRingColor: pink }),
+              }}
             />
 
             {codeError && (
-              <p className="text-sm" style={{ color: "#FF2D78" }}>{codeError}</p>
+              <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,45,120,0.06)" }}>
+                <p className="text-sm font-medium" style={{ color: pink }}>{codeError}</p>
+              </div>
             )}
 
             <button
               type="submit"
               disabled={codeValidating || !accessCode.trim()}
-              className="w-full py-3 rounded-xl font-bold text-sm disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #FF2D78, #784BA0)", color: "#fff" }}
+              className="w-full py-3.5 rounded-xl font-bold text-sm disabled:opacity-40 active:scale-[0.98] transition-transform"
+              style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}
             >
-              {codeValidating ? "Validando..." : "Verificar codigo"}
+              {codeValidating ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
+                  Validando...
+                </span>
+              ) : "Verificar codigo"}
             </button>
           </form>
         </div>
@@ -333,28 +416,48 @@ export default function EventLandingPage() {
     );
   }
 
-  // STEP: Landing del evento
+  // ── STEP: Landing del evento ──
   if (step === "landing") {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "#07070F" }}>
+      <div className="min-h-screen flex flex-col" style={{ background: bg }}>
         {/* Cover */}
-        <div className="relative h-56 flex-shrink-0"
-          style={{ background: event.cover_image_url ? `url(${event.cover_image_url}) center/cover` : "linear-gradient(225deg, #FF2D78 0%, #784BA0 50%, #2B86C5 100%)" }}>
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, #07070F 100%)" }} />
+        <div
+          className="relative h-60 flex-shrink-0"
+          style={{
+            background: event.cover_image_url
+              ? `url(${event.cover_image_url}) center/cover`
+              : `linear-gradient(225deg, ${pink} 0%, ${purple} 50%, ${blue} 100%)`,
+          }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(to bottom, transparent 30%, ${bg} 100%)` }}
+          />
           <div className="absolute bottom-4 left-4 right-4">
-            <span className="text-xs font-bold px-2 py-1 rounded-full"
-              style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", color: "#F0F0FF" }}>
+            <span
+              className="text-xs font-bold px-3 py-1.5 rounded-full"
+              style={{
+                background: "rgba(255,255,255,0.1)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                color: textPrimary,
+                border: `1px solid ${borderSubtle}`,
+              }}
+            >
               {EVENT_TYPE_LABELS[event.type] || "Evento"}
             </span>
           </div>
         </div>
 
         {/* Info */}
-        <div className="flex-1 px-4 pt-2 pb-8">
-          <h1 className="text-3xl font-bold mb-1" style={{ fontFamily: "var(--font-playfair)", color: "#F0F0FF" }}>
+        <div className="flex-1 px-4 pt-3 pb-8">
+          <h1
+            className="text-3xl font-black tracking-tight mb-1"
+            style={{ color: textPrimary }}
+          >
             {event.name}
           </h1>
-          <p className="text-sm mb-4" style={{ color: "#8585A8" }}>
+          <p className="text-sm mb-5" style={{ color: textSecondary }}>
             {eventDate}
             {event.venue_name && ` · ${event.venue_name}`}
             {event.venue_city && `, ${event.venue_city}`}
@@ -366,29 +469,37 @@ export default function EventLandingPage() {
               { label: "Tiempo de busqueda", value: `${event.search_duration_minutes} min` },
               { label: "Participantes", value: `${event._count.registrations} registrados` },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl p-3"
-                style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <div className="text-xs mb-1" style={{ color: "#8585A8" }}>{s.label}</div>
-                <div className="font-bold text-sm" style={{ color: "#F0F0FF" }}>{s.value}</div>
+              <div
+                key={s.label}
+                className="rounded-2xl p-3.5"
+                style={{ background: surface, border: `1px solid ${borderSubtle}` }}
+              >
+                <div className="text-xs font-medium mb-1" style={{ color: textSecondary }}>{s.label}</div>
+                <div className="font-bold text-sm" style={{ color: textPrimary }}>{s.value}</div>
               </div>
             ))}
           </div>
 
-          <div className="rounded-xl p-4 mb-6"
-            style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.2)" }}>
-            <p className="text-sm" style={{ color: "#FF2D78", fontWeight: 600 }}>
+          <div
+            className="rounded-2xl p-4 mb-6"
+            style={{ background: "rgba(255,45,120,0.06)", border: `1px solid rgba(255,45,120,0.15)` }}
+          >
+            <p className="text-sm font-bold" style={{ color: pink }}>
               Estas soltero/a y buscas conectar?
             </p>
-            <p className="text-sm mt-1" style={{ color: "#8585A8" }}>
+            <p className="text-sm mt-1.5" style={{ color: textSecondary }}>
               Registrate, haz swipe y conecta con personas del mismo evento. Tu perfil expira en {event.expiry_days} dias.
             </p>
           </div>
 
           <button
             onClick={() => setStep("auth")}
-            className="w-full py-4 rounded-2xl font-bold text-lg"
-            style={{ background: "linear-gradient(135deg, #FF2D78, #784BA0)", color: "#fff",
-              boxShadow: "0 8px 30px rgba(255,45,120,0.4)" }}
+            className="w-full py-4 rounded-2xl font-bold text-lg active:scale-[0.98] transition-transform"
+            style={{
+              background: gradientCta,
+              color: "#fff",
+              boxShadow: glowShadow,
+            }}
           >
             Quiero participar!
           </button>
@@ -397,67 +508,102 @@ export default function EventLandingPage() {
     );
   }
 
-  // STEP: Auth
+  // ── STEP: Auth ──
   if (step === "auth") {
     return (
-      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: "#07070F" }}>
-        <button onClick={() => setStep("landing")} className="text-sm mb-6 flex items-center gap-1" style={{ color: "#8585A8" }}>
-          &larr; Volver
-        </button>
+      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
+        {backButton}
 
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold mb-1" style={{ color: "#F0F0FF" }}>Crea tu cuenta</h2>
-          <p style={{ color: "#8585A8", fontSize: "14px" }}>para participar en <strong style={{ color: "#F0F0FF" }}>{event.name}</strong></p>
+          <h2 className="text-2xl font-black tracking-tight mb-1" style={{ color: textPrimary }}>
+            Crea tu cuenta
+          </h2>
+          <p className="text-sm" style={{ color: textSecondary }}>
+            para participar en <strong style={{ color: textPrimary }}>{event.name}</strong>
+          </p>
         </div>
 
         {/* Toggle */}
-        <div className="flex rounded-xl p-1 mb-6" style={{ background: "#0F0F1A" }}>
+        <div className="flex rounded-xl p-1 mb-6" style={{ background: surface, border: `1px solid ${borderSubtle}` }}>
           {(["register", "login"] as const).map((m) => (
-            <button key={m} onClick={() => setAuthMode(m)}
-              className="flex-1 py-2 rounded-lg text-sm font-semibold transition-all"
+            <button
+              key={m}
+              onClick={() => setAuthMode(m)}
+              className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all"
               style={{
-                background: authMode === m ? "linear-gradient(135deg, #FF2D78, #784BA0)" : "transparent",
-                color: authMode === m ? "#fff" : "#8585A8",
-              }}>
+                background: authMode === m ? gradientCta : "transparent",
+                color: authMode === m ? "#fff" : textSecondary,
+              }}
+            >
               {m === "register" ? "Crear cuenta" : "Ya tengo cuenta"}
             </button>
           ))}
         </div>
 
-        <form onSubmit={handleAuth} className="flex flex-col gap-4">
+        <form onSubmit={handleAuth} className="flex flex-col gap-3.5">
           {authMode === "register" && (
-            <input type="text" placeholder="Tu nombre completo" value={authName}
-              onChange={(e) => setAuthName(e.target.value)} required
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#F0F0FF" }} />
+            <input
+              type="text"
+              placeholder="Tu nombre completo"
+              value={authName}
+              onChange={(e) => setAuthName(e.target.value)}
+              required
+              className="w-full rounded-xl px-4 py-3.5 text-sm outline-none transition-all"
+              style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+            />
           )}
-          <input type="email" placeholder="tu@correo.com" value={authEmail}
-            onChange={(e) => setAuthEmail(e.target.value)} required
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#F0F0FF" }} />
-          <input type="password" placeholder="Contrasena" value={authPassword}
-            onChange={(e) => setAuthPassword(e.target.value)} required minLength={8}
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#F0F0FF" }} />
+          <input
+            type="email"
+            placeholder="tu@correo.com"
+            value={authEmail}
+            onChange={(e) => setAuthEmail(e.target.value)}
+            required
+            className="w-full rounded-xl px-4 py-3.5 text-sm outline-none transition-all"
+            style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+          />
+          <input
+            type="password"
+            placeholder="Contrasena"
+            value={authPassword}
+            onChange={(e) => setAuthPassword(e.target.value)}
+            required
+            minLength={8}
+            className="w-full rounded-xl px-4 py-3.5 text-sm outline-none transition-all"
+            style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+          />
 
-          {authError && <p className="text-sm text-center" style={{ color: "#FF2D78" }}>{authError}</p>}
+          {authError && (
+            <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,45,120,0.06)" }}>
+              <p className="text-sm text-center font-medium" style={{ color: pink }}>{authError}</p>
+            </div>
+          )}
 
-          <button type="submit" disabled={authLoading}
-            className="w-full py-3 rounded-xl font-bold text-sm disabled:opacity-60"
-            style={{ background: "linear-gradient(135deg, #FF2D78, #784BA0)", color: "#fff" }}>
-            {authLoading ? "Un momento..." : authMode === "register" ? "Crear cuenta" : "Ingresar"}
+          <button
+            type="submit"
+            disabled={authLoading}
+            className="w-full py-3.5 rounded-xl font-bold text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
+            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}
+          >
+            {authLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
+                Un momento...
+              </span>
+            ) : authMode === "register" ? "Crear cuenta" : "Ingresar"}
           </button>
         </form>
 
-        <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
-          <span className="text-xs" style={{ color: "#8585A8" }}>o</span>
-          <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px" style={{ background: borderLight }} />
+          <span className="text-xs font-medium" style={{ color: textMuted }}>o</span>
+          <div className="flex-1 h-px" style={{ background: borderLight }} />
         </div>
 
-        <button onClick={handleGoogle}
-          className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#F0F0FF" }}>
+        <button
+          onClick={handleGoogle}
+          className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform"
+          style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+        >
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -470,23 +616,39 @@ export default function EventLandingPage() {
     );
   }
 
-  // STEP: Selfie + basic data
+  // ── Progress bar component for selfie/interests ──
+  const ProgressBar = ({ activeIndex }: { activeIndex: number }) => (
+    <div className="flex gap-2 mb-8">
+      {["Selfie", "Intereses", "Listo"].map((label, i) => (
+        <div key={label} className="flex-1">
+          <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: i <= activeIndex ? "100%" : "0%",
+                background: `linear-gradient(90deg, ${pink}, ${purple})`,
+              }}
+            />
+          </div>
+          <p className="text-xs font-medium mt-1.5 text-center" style={{ color: i <= activeIndex ? pink : textMuted }}>
+            {label}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+
+  // ── STEP: Selfie + basic data ──
   if (step === "selfie") {
     return (
-      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: "#07070F" }}>
-        {/* Progress */}
-        <div className="flex gap-2 mb-8">
-          {["Selfie", "Intereses", "Listo"].map((label, i) => (
-            <div key={label} className="flex-1">
-              <div className="h-1 rounded-full" style={{ background: i === 0 ? "#FF2D78" : "rgba(255,255,255,0.1)" }} />
-              <p className="text-xs mt-1 text-center" style={{ color: i === 0 ? "#FF2D78" : "#555" }}>{label}</p>
-            </div>
-          ))}
-        </div>
+      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
+        <ProgressBar activeIndex={0} />
 
-        <h2 className="text-2xl font-bold mb-1" style={{ color: "#F0F0FF" }}>Tu selfie del dia</h2>
-        <p className="text-sm mb-6" style={{ color: "#8585A8" }}>
-          Esta foto te representara en <strong style={{ color: "#F0F0FF" }}>{event.name}</strong>. Solo desde camara, no galeria.
+        <h2 className="text-2xl font-black tracking-tight mb-1" style={{ color: textPrimary }}>
+          Tu selfie del dia
+        </h2>
+        <p className="text-sm mb-6" style={{ color: textSecondary }}>
+          Esta foto te representara en <strong style={{ color: textPrimary }}>{event.name}</strong>. Solo desde camara, no galeria.
         </p>
 
         <div className="flex justify-center mb-6">
@@ -498,30 +660,39 @@ export default function EventLandingPage() {
         </div>
 
         {selfieDataUrl && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
             {/* Mesa */}
             <div>
-              <label className="text-sm mb-1 block" style={{ color: "#8585A8" }}>
-                Numero de mesa <span style={{ color: "#555" }}>(opcional)</span>
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
+                Numero de mesa <span style={{ color: textMuted }}>(opcional)</span>
               </label>
-              <input type="text" placeholder="Ej. Mesa 5" value={tableNumber}
+              <input
+                type="text"
+                placeholder="Ej. Mesa 5"
+                value={tableNumber}
                 onChange={(e) => setTableNumber(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#F0F0FF" }} />
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
+                style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
+              />
             </div>
 
             {/* Relation type */}
             <div>
-              <label className="text-sm mb-2 block" style={{ color: "#8585A8" }}>Como conoces a los anfitriones?</label>
+              <label className="text-xs font-medium mb-2 block" style={{ color: textSecondary }}>
+                Como conoces a los anfitriones?
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 {RELATION_TYPE_OPTIONS.map((r) => (
-                  <button key={r.value} onClick={() => setRelationType(r.value)}
-                    className="py-2 px-3 rounded-xl text-sm font-medium text-left transition-all"
+                  <button
+                    key={r.value}
+                    onClick={() => setRelationType(r.value)}
+                    className="py-2.5 px-3 rounded-xl text-sm font-medium text-left transition-all active:scale-[0.98]"
                     style={{
-                      background: relationType === r.value ? "rgba(255,45,120,0.15)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${relationType === r.value ? "#FF2D78" : "rgba(255,255,255,0.08)"}`,
-                      color: relationType === r.value ? "#FF2D78" : "#ccc",
-                    }}>
+                      background: relationType === r.value ? selectionBg : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${relationType === r.value ? pink : borderSubtle}`,
+                      color: relationType === r.value ? pink : textSecondary,
+                    }}
+                  >
                     {r.label}
                   </button>
                 ))}
@@ -530,16 +701,19 @@ export default function EventLandingPage() {
 
             {/* Gender */}
             <div>
-              <label className="text-sm mb-2 block" style={{ color: "#8585A8" }}>Soy</label>
+              <label className="text-xs font-medium mb-2 block" style={{ color: textSecondary }}>Soy</label>
               <div className="grid grid-cols-2 gap-2">
                 {genderOptions.map((g) => (
-                  <button key={g.value} onClick={() => setGender(g.value)}
-                    className="py-2 px-3 rounded-xl text-sm font-medium transition-all"
+                  <button
+                    key={g.value}
+                    onClick={() => setGender(g.value)}
+                    className="py-2.5 px-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98]"
                     style={{
-                      background: gender === g.value ? "rgba(255,45,120,0.15)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${gender === g.value ? "#FF2D78" : "rgba(255,255,255,0.08)"}`,
-                      color: gender === g.value ? "#FF2D78" : "#ccc",
-                    }}>
+                      background: gender === g.value ? selectionBg : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${gender === g.value ? pink : borderSubtle}`,
+                      color: gender === g.value ? pink : textSecondary,
+                    }}
+                  >
                     {g.label}
                   </button>
                 ))}
@@ -548,16 +722,19 @@ export default function EventLandingPage() {
 
             {/* Looking for */}
             <div>
-              <label className="text-sm mb-2 block" style={{ color: "#8585A8" }}>Me interesan</label>
+              <label className="text-xs font-medium mb-2 block" style={{ color: textSecondary }}>Me interesan</label>
               <div className="grid grid-cols-2 gap-2">
                 {LOOKING_FOR_OPTIONS.map((l) => (
-                  <button key={l.value} onClick={() => setLookingFor(l.value)}
-                    className="py-2 px-3 rounded-xl text-sm font-medium transition-all"
+                  <button
+                    key={l.value}
+                    onClick={() => setLookingFor(l.value)}
+                    className="py-2.5 px-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98]"
                     style={{
-                      background: lookingFor === l.value ? "rgba(43,134,197,0.15)" : "rgba(255,255,255,0.04)",
-                      border: `1px solid ${lookingFor === l.value ? "#2B86C5" : "rgba(255,255,255,0.08)"}`,
-                      color: lookingFor === l.value ? "#2B86C5" : "#ccc",
-                    }}>
+                      background: lookingFor === l.value ? selectionBgBlue : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${lookingFor === l.value ? blue : borderSubtle}`,
+                      color: lookingFor === l.value ? blue : textSecondary,
+                    }}
+                  >
                     {l.label}
                   </button>
                 ))}
@@ -567,8 +744,9 @@ export default function EventLandingPage() {
             <button
               onClick={() => setStep("interests")}
               disabled={!gender || !lookingFor}
-              className="w-full py-3 rounded-xl font-bold text-sm mt-2 disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, #FF2D78, #784BA0)", color: "#fff" }}>
+              className="w-full py-3.5 rounded-xl font-bold text-sm mt-1 disabled:opacity-40 active:scale-[0.98] transition-transform"
+              style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}
+            >
               Continuar
             </button>
           </div>
@@ -577,44 +755,46 @@ export default function EventLandingPage() {
     );
   }
 
-  // STEP: Interests (3 steps)
+  // ── STEP: Interests (3 steps) ──
   if (step === "interests") {
     const currentCatalog = INTERESTS_CATALOG[interestStep];
     const isLastStep = interestStep === INTERESTS_CATALOG.length - 1;
 
     return (
-      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: "#07070F" }}>
-        {/* Progress */}
-        <div className="flex gap-2 mb-8">
-          {["Selfie", "Intereses", "Listo"].map((label, i) => (
-            <div key={label} className="flex-1">
-              <div className="h-1 rounded-full" style={{ background: i <= 1 ? "#FF2D78" : "rgba(255,255,255,0.1)" }} />
-              <p className="text-xs mt-1 text-center" style={{ color: i <= 1 ? "#FF2D78" : "#555" }}>{label}</p>
-            </div>
-          ))}
-        </div>
+      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
+        <ProgressBar activeIndex={1} />
 
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}>
+          <span
+            className="text-xs font-bold px-2.5 py-1 rounded-full"
+            style={{ background: "rgba(255,45,120,0.08)", color: pink }}
+          >
             Paso {interestStep + 1} de {INTERESTS_CATALOG.length}
           </span>
         </div>
-        <h2 className="text-2xl font-bold mb-1" style={{ color: "#F0F0FF" }}>{currentCatalog.title}</h2>
-        <p className="text-sm mb-6" style={{ color: "#8585A8" }}>Elige todos los que quieras</p>
+        <h2 className="text-2xl font-black tracking-tight mb-1" style={{ color: textPrimary }}>
+          {currentCatalog.title}
+        </h2>
+        <p className="text-sm mb-6" style={{ color: textSecondary }}>Elige todos los que quieras</p>
 
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-2.5 mb-6">
           {currentCatalog.options.map((opt) => {
             const selected = selectedInterests.includes(opt.value);
             return (
-              <button key={opt.value} onClick={() => toggleInterest(opt.value)}
-                className="flex flex-col items-center gap-1 py-3 px-2 rounded-xl transition-all"
+              <button
+                key={opt.value}
+                onClick={() => toggleInterest(opt.value)}
+                className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all active:scale-[0.96]"
                 style={{
-                  background: selected ? "rgba(255,45,120,0.15)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${selected ? "#FF2D78" : "rgba(255,255,255,0.08)"}`,
-                  transform: selected ? "scale(1.03)" : "scale(1)",
-                }}>
+                  background: selected ? selectionBg : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${selected ? pink : borderSubtle}`,
+                  transform: selected ? "scale(1.02)" : "scale(1)",
+                }}
+              >
                 <span className="text-2xl">{opt.emoji}</span>
-                <span className="text-xs text-center" style={{ color: selected ? "#FF2D78" : "#ccc" }}>{opt.label}</span>
+                <span className="text-xs font-medium text-center" style={{ color: selected ? pink : textSecondary }}>
+                  {opt.label}
+                </span>
               </button>
             );
           })}
@@ -623,16 +803,19 @@ export default function EventLandingPage() {
         {/* Drink on last step */}
         {isLastStep && (
           <div className="mb-6">
-            <p className="text-sm mb-3 font-semibold" style={{ color: "#F0F0FF" }}>Tu bebida favorita?</p>
+            <p className="text-xs font-bold mb-3" style={{ color: textPrimary }}>Tu bebida favorita?</p>
             <div className="flex flex-wrap gap-2">
               {DRINK_OPTIONS.map((d) => (
-                <button key={d.value} onClick={() => setDrink(d.value)}
-                  className="py-2 px-4 rounded-xl text-sm transition-all"
+                <button
+                  key={d.value}
+                  onClick={() => setDrink(d.value)}
+                  className="py-2 px-4 rounded-xl text-sm font-medium transition-all active:scale-[0.98]"
                   style={{
-                    background: drink === d.value ? "rgba(120,75,160,0.25)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${drink === d.value ? "#784BA0" : "rgba(255,255,255,0.08)"}`,
-                    color: drink === d.value ? "#c48dff" : "#ccc",
-                  }}>
+                    background: drink === d.value ? selectionBgPurple : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${drink === d.value ? purple : borderSubtle}`,
+                    color: drink === d.value ? purple : textSecondary,
+                  }}
+                >
                   {d.label}
                 </button>
               ))}
@@ -642,45 +825,80 @@ export default function EventLandingPage() {
 
         <div className="flex gap-3 mt-auto">
           {interestStep > 0 && (
-            <button onClick={() => setInterestStep((s) => s - 1)}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#ccc" }}>
-              &larr; Atras
+            <button
+              onClick={() => setInterestStep((s) => s - 1)}
+              className="flex-1 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+              style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Atras
             </button>
           )}
           <button
             onClick={() => isLastStep ? handleSubmit() : setInterestStep((s) => s + 1)}
             disabled={submitting}
-            className="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-60"
-            style={{ background: "linear-gradient(135deg, #FF2D78, #784BA0)", color: "#fff" }}>
-            {submitting ? "Registrando..." : isLastStep ? "Listo! Entrar al evento" : "Siguiente"}
+            className="flex-1 py-3.5 rounded-xl font-bold text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
+            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}
+          >
+            {submitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
+                Registrando...
+              </span>
+            ) : isLastStep ? "Listo! Entrar al evento" : "Siguiente"}
           </button>
         </div>
       </div>
     );
   }
 
-  // STEP: Done
+  // ── STEP: Done ──
   if (step === "done") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ background: "#07070F" }}>
-        <div className="w-20 h-20 rounded-full mb-6 flex items-center justify-center" style={{ background: "rgba(255,45,120,0.15)" }}>
-          <span className="text-3xl" style={{ color: "#FF2D78" }}>&#10003;</span>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ background: bg }}>
+        {/* Gradient checkmark icon */}
+        <div
+          className="w-20 h-20 rounded-3xl mb-6 flex items-center justify-center"
+          style={{ background: `linear-gradient(135deg, rgba(255,45,120,0.12), rgba(123,47,190,0.12))` }}
+        >
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <defs>
+              <linearGradient id="checkGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+                <stop stopColor={pink}/>
+                <stop offset="1" stopColor={purple}/>
+              </linearGradient>
+            </defs>
+            <path
+              d="M10 18L16 24L26 12"
+              stroke="url(#checkGrad)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </div>
-        <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: "var(--font-playfair)", color: "#F0F0FF" }}>
+
+        <h1 className="text-3xl font-black tracking-tight mb-2" style={{ color: textPrimary }}>
           Ya estas adentro!
         </h1>
-        <p className="mb-2" style={{ color: "#8585A8" }}>
-          Bienvenido a <strong style={{ color: "#F0F0FF" }}>{event.name}</strong>
+        <p className="text-sm mb-2" style={{ color: textSecondary }}>
+          Bienvenido a <strong style={{ color: textPrimary }}>{event.name}</strong>
         </p>
-        <p className="text-sm mb-8" style={{ color: "#555" }}>
+        <p className="text-sm mb-8" style={{ color: textMuted }}>
           Cuando estes listo, presiona el boton para empezar a buscar conexiones
         </p>
+
         <button
           onClick={() => router.push(`/event/${event.id}/search`)}
-          className="px-8 py-4 rounded-2xl font-bold text-xl"
-          style={{ background: "linear-gradient(135deg, #FF2D78, #784BA0, #2B86C5)",
-            boxShadow: "0 8px 40px rgba(255,45,120,0.5)", color: "#fff" }}>
+          className="px-8 py-4 rounded-2xl font-bold text-lg active:scale-[0.98] transition-transform"
+          style={{
+            background: gradientTriple,
+            boxShadow: glowShadowStrong,
+            color: "#fff",
+          }}
+        >
           INICIAR BUSQUEDA
         </button>
       </div>
