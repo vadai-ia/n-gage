@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { motion } from "motion/react";
 
 type LikeEntry = {
   id: string;
@@ -22,7 +23,7 @@ type LikeEntry = {
 const RELATION_LABELS: Record<string, string> = {
   friend_bride: "Amigo/a de la novia", friend_groom: "Amigo/a del novio",
   family_bride: "Familia de la novia", family_groom: "Familia del novio",
-  coworker: "Compañero/a de trabajo", other: "Invitado/a",
+  coworker: "Compañero/a", other: "Invitado/a",
 };
 
 export default function LikesPage() {
@@ -40,6 +41,7 @@ export default function LikesPage() {
 
   async function handleMatch(fromUserId: string) {
     setMatching(fromUserId);
+    if (navigator.vibrate) navigator.vibrate(20);
     const res = await fetch(`/api/v1/events/${eventId}/matches`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,11 +55,11 @@ export default function LikesPage() {
 
   if (loading) {
     return (
-      <div className="p-4">
-        <div className="h-7 w-36 rounded-xl mb-4 animate-pulse" style={{ background: "#16161F" }} />
+      <div className="p-4 pt-6">
+        <div className="h-7 w-40 rounded-lg mb-6 skeleton" />
         <div className="grid grid-cols-2 gap-3">
-          {[1,2,3,4].map((i) => (
-            <div key={i} className="h-52 rounded-2xl animate-pulse" style={{ background: "#16161F" }} />
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="aspect-[3/4] rounded-2xl skeleton" />
           ))}
         </div>
       </div>
@@ -65,62 +67,114 @@ export default function LikesPage() {
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-1">Likes recibidos</h1>
-      <p className="text-sm mb-5" style={{ color: "#A0A0B0" }}>
-        {likes.length === 0 ? "Aún no tienes likes" : `${likes.length} persona${likes.length !== 1 ? "s" : ""} te dieron like`}
+    <div className="p-4 pt-6">
+      <h1 className="text-2xl font-black mb-0.5" style={{ color: "#F0F0FF" }}>Likes</h1>
+      <p className="text-xs font-medium mb-5" style={{ color: "#44445A" }}>
+        {likes.length === 0 ? "Aún no tienes likes" : `${likes.length} persona${likes.length !== 1 ? "s" : ""} te ${likes.length !== 1 ? "dieron" : "dio"} like`}
       </p>
 
       {likes.length === 0 ? (
         <div className="text-center py-20">
-          <div className="text-5xl mb-4">💔</div>
-          <p style={{ color: "#A0A0B0" }}>Sigue haciendo swipe para recibir likes</p>
+          <div className="w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center"
+            style={{ background: "rgba(255,45,120,0.08)" }}>
+            <svg width={32} height={32} fill="none" viewBox="0 0 24 24" stroke="#FF2D78" strokeWidth={1.5}>
+              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+            </svg>
+          </div>
+          <p className="font-semibold text-sm mb-1" style={{ color: "#F0F0FF" }}>Sin likes todavía</p>
+          <p className="text-xs" style={{ color: "#44445A" }}>
+            Sigue haciendo swipe para recibir likes
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {likes.map((like) => {
+          {likes.map((like, i) => {
             const reg = like.event.registrations.find((r) => r.user_id === like.from_user_id);
             const photo = reg?.selfie_url || like.from_user.avatar_url;
             const isSuperLike = like.type === "super_like";
+            const firstName = like.from_user.full_name.split(" ")[0];
 
             return (
-              <div key={like.id} className="rounded-2xl overflow-hidden relative"
-                style={{ background: "#16161F", border: `1px solid ${isSuperLike ? "#F59E0B44" : "rgba(255,255,255,0.07)"}` }}>
-                {/* Foto */}
-                <div className="relative h-44">
+              <motion.div
+                key={like.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.06, duration: 0.3 }}
+                className="rounded-2xl overflow-hidden relative"
+                style={{
+                  background: "#0F0F1A",
+                  border: isSuperLike
+                    ? "1px solid rgba(255,184,0,0.2)"
+                    : "1px solid rgba(255,255,255,0.05)",
+                }}
+              >
+                {/* Photo */}
+                <div className="relative aspect-[3/4]">
                   {photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={photo} alt={like.from_user.full_name}
+                    <img src={photo} alt={firstName}
                       className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl"
-                      style={{ background: "rgba(255,60,172,0.1)" }}>👤</div>
+                    <div className="w-full h-full flex items-center justify-center"
+                      style={{ background: "rgba(255,45,120,0.05)" }}>
+                      <svg width={40} height={40} fill="none" viewBox="0 0 24 24" stroke="#44445A" strokeWidth={1}>
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
                   )}
-                  {/* Overlay */}
+
+                  {/* Gradient overlay */}
                   <div className="absolute inset-0"
-                    style={{ background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)" }} />
+                    style={{ background: "linear-gradient(to top, rgba(7,7,15,0.9) 0%, rgba(7,7,15,0.2) 50%, transparent 100%)" }} />
+
+                  {/* Super like badge */}
                   {isSuperLike && (
-                    <div className="absolute top-2 right-2 text-lg">⭐</div>
+                    <div className="absolute top-2 right-2">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center"
+                        style={{ background: "rgba(255,184,0,0.2)", border: "1px solid rgba(255,184,0,0.3)" }}>
+                        <svg width={14} height={14} fill="#FFB800" viewBox="0 0 24 24">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      </div>
+                    </div>
                   )}
-                  <div className="absolute bottom-0 left-0 right-0 p-2">
-                    <p className="font-bold text-sm leading-tight truncate">{like.from_user.full_name}</p>
+
+                  {/* Info */}
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="font-bold text-sm truncate" style={{ color: "#F0F0FF" }}>{firstName}</p>
                     {reg?.relation_type && (
-                      <p className="text-xs truncate" style={{ color: "#A0A0B0" }}>
+                      <p className="text-[10px] truncate font-medium" style={{ color: "#8585A8" }}>
                         {RELATION_LABELS[reg.relation_type] ?? "Invitado/a"}
                       </p>
                     )}
                   </div>
                 </div>
 
-                {/* Botón match */}
+                {/* Match button */}
                 <button
                   onClick={() => handleMatch(like.from_user_id)}
                   disabled={matching === like.from_user_id}
-                  className="w-full py-2.5 text-sm font-bold transition-all disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #FF3CAC, #784BA0)", color: "#fff" }}>
-                  {matching === like.from_user_id ? "..." : "💑 Hacer match"}
+                  className="w-full py-3 text-xs font-bold transition-all active:scale-[0.97] disabled:opacity-60 flex items-center justify-center gap-1.5"
+                  style={{
+                    background: isSuperLike
+                      ? "linear-gradient(135deg, #FFB800, #FF8C00)"
+                      : "linear-gradient(135deg, #FF2D78, #7B2FBE)",
+                    color: "#fff",
+                  }}
+                >
+                  {matching === like.from_user_id ? (
+                    <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
+                  ) : (
+                    <>
+                      <svg width={14} height={14} fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                      </svg>
+                      Match
+                    </>
+                  )}
                 </button>
-              </div>
+              </motion.div>
             );
           })}
         </div>
