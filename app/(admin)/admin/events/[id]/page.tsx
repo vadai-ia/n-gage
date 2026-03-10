@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import QRCode from "qrcode";
 
 /* ─── Types ─── */
 
@@ -170,6 +171,10 @@ export default function AdminEventDetailPage() {
   const [newCodeEmail, setNewCodeEmail] = useState("");
   const [creatingCode, setCreatingCode] = useState(false);
 
+  // QR codes per access code
+  const [qrUrls, setQrUrls] = useState<Record<string, string>>({});
+  const [expandedQr, setExpandedQr] = useState<string | null>(null);
+
   const loadEvent = useCallback(async () => {
     setLoading(true);
     try {
@@ -257,6 +262,45 @@ export default function AdminEventDetailPage() {
         .catch(() => setTabLoading(false));
     }
   }, [tab, id]);
+
+  // Generate QR codes for each access code
+  useEffect(() => {
+    if (!event || accessCodes.length === 0) return;
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    async function generateQRs() {
+      const urls: Record<string, string> = {};
+      for (const ac of accessCodes) {
+        const eventUrl = `${baseUrl}/e/${event!.unique_slug}?code=${encodeURIComponent(ac.code)}`;
+        try {
+          urls[ac.id] = await QRCode.toDataURL(eventUrl, {
+            width: 400,
+            margin: 2,
+            color: { dark: "#FF3CAC", light: "#0A0A0F" },
+          });
+        } catch {
+          // skip
+        }
+      }
+      setQrUrls(urls);
+    }
+    generateQRs();
+  }, [accessCodes, event]);
+
+  function downloadCodeQR(ac: AccessCode) {
+    const dataUrl = qrUrls[ac.id];
+    if (!dataUrl || !event) return;
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `qr-${event.unique_slug}-${ac.code}.png`;
+    a.click();
+  }
+
+  function copyCodeLink(ac: AccessCode) {
+    if (!event) return;
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${baseUrl}/e/${event.unique_slug}?code=${encodeURIComponent(ac.code)}`;
+    navigator.clipboard.writeText(url);
+  }
 
   async function saveChanges() {
     setSaving(true);
@@ -1056,54 +1100,126 @@ export default function AdminEventDetailPage() {
             ) : accessCodes.length === 0 ? (
               <EmptyTab message="No hay codigos de acceso" />
             ) : (
-              <div className="flex flex-col gap-2">
-                {accessCodes.map((ac) => (
-                  <div
-                    key={ac.id}
-                    className="flex items-center justify-between p-3 rounded-xl"
-                    style={{ background: "rgba(255,255,255,0.03)" }}
-                  >
-                    <div>
-                      <p className="text-sm font-mono font-bold" style={{ color: "#F0F0FF" }}>
-                        {ac.code}
-                      </p>
-                      <div className="flex gap-2 mt-0.5">
-                        <span className="text-xs capitalize" style={{ color: "#8585A8" }}>
-                          {ac.type}
-                        </span>
-                        {ac.assigned_to_email && (
-                          <span className="text-xs" style={{ color: "#44445A" }}>
-                            Para: {ac.assigned_to_email}
+              <div className="flex flex-col gap-3">
+                {accessCodes.map((ac) => {
+                  const isExpanded = expandedQr === ac.id;
+                  const eventUrl = event
+                    ? `${typeof window !== "undefined" ? window.location.origin : ""}/e/${event.unique_slug}?code=${encodeURIComponent(ac.code)}`
+                    : "";
+                  return (
+                    <div
+                      key={ac.id}
+                      className="rounded-xl overflow-hidden"
+                      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                    >
+                      {/* Header row */}
+                      <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Mini QR thumbnail */}
+                          {qrUrls[ac.id] && (
+                            <button
+                              onClick={() => setExpandedQr(isExpanded ? null : ac.id)}
+                              className="shrink-0 rounded-lg overflow-hidden transition-all hover:scale-105"
+                              style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+                              title="Ver QR"
+                            >
+                              <img src={qrUrls[ac.id]} alt="QR" width={48} height={48} />
+                            </button>
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-mono font-bold" style={{ color: "#F0F0FF" }}>
+                              {ac.code}
+                            </p>
+                            <div className="flex gap-2 mt-0.5">
+                              <span className="text-xs capitalize" style={{ color: "#8585A8" }}>
+                                {ac.type}
+                              </span>
+                              {ac.assigned_to_email && (
+                                <span className="text-xs truncate" style={{ color: "#44445A" }}>
+                                  Para: {ac.assigned_to_email}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                            style={{
+                              background: ac.is_active
+                                ? ac.used_by
+                                  ? "rgba(133,133,168,0.15)"
+                                  : "rgba(16,185,129,0.15)"
+                                : "rgba(239,68,68,0.15)",
+                              color: ac.is_active
+                                ? ac.used_by
+                                  ? "#8585A8"
+                                  : "#10B981"
+                                : "#EF4444",
+                            }}
+                          >
+                            {ac.used_by ? "Usado" : ac.is_active ? "Activo" : "Inactivo"}
                           </span>
-                        )}
+                          {ac.used_at && (
+                            <p className="text-xs mt-0.5" style={{ color: "#44445A" }}>
+                              {new Date(ac.used_at).toLocaleDateString("es-MX")}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                        style={{
-                          background: ac.is_active
-                            ? ac.used_by
-                              ? "rgba(133,133,168,0.15)"
-                              : "rgba(16,185,129,0.15)"
-                            : "rgba(239,68,68,0.15)",
-                          color: ac.is_active
-                            ? ac.used_by
-                              ? "#8585A8"
-                              : "#10B981"
-                            : "#EF4444",
-                        }}
-                      >
-                        {ac.used_by ? "Usado" : ac.is_active ? "Activo" : "Inactivo"}
-                      </span>
-                      {ac.used_at && (
-                        <p className="text-xs mt-0.5" style={{ color: "#44445A" }}>
-                          {new Date(ac.used_at).toLocaleDateString("es-MX")}
-                        </p>
+
+                      {/* Expanded QR section */}
+                      {isExpanded && qrUrls[ac.id] && (
+                        <div
+                          className="px-4 pb-4 pt-0 flex flex-col items-center gap-3"
+                          style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}
+                        >
+                          <div className="rounded-xl overflow-hidden mt-3" style={{ border: "2px solid rgba(255,45,120,0.2)" }}>
+                            <img src={qrUrls[ac.id]} alt={`QR para código ${ac.code}`} width={200} height={200} />
+                          </div>
+                          <p className="text-xs font-mono text-center break-all max-w-xs" style={{ color: "#44445A" }}>
+                            {eventUrl}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => downloadCodeQR(ac)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all hover:scale-105"
+                              style={{ background: "rgba(255,45,120,0.12)", color: "#FF2D78" }}
+                            >
+                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                              </svg>
+                              Descargar QR
+                            </button>
+                            <button
+                              onClick={() => copyCodeLink(ac)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all hover:scale-105"
+                              style={{ background: "rgba(133,133,168,0.12)", color: "#8585A8" }}
+                            >
+                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-2M16 3h5v5M10 14L20.2 3.8" />
+                              </svg>
+                              Copiar link
+                            </button>
+                            <a
+                              href={eventUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all hover:scale-105"
+                              style={{ background: "rgba(16,185,129,0.12)", color: "#10B981" }}
+                            >
+                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              Probar flujo
+                            </a>
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
