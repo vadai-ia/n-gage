@@ -98,7 +98,7 @@ export default function AdminEventsPage() {
           Todos los Eventos
         </h1>
         <Link
-          href="/dashboard/events/new"
+          href="/events/new"
           className="px-4 py-2 rounded-xl text-sm font-semibold hidden lg:flex items-center gap-2"
           style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}
         >

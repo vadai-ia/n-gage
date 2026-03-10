@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { syncUserToDB } from "@/lib/auth/sync-user";
 
 export async function POST(
   req: Request,
@@ -12,6 +13,13 @@ export async function POST(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
+
+  // Ensure user exists in our DB
+  try {
+    await syncUserToDB(user);
+  } catch (e) {
+    console.error("Error syncing user during registration:", e);
   }
 
   const body = await req.json();

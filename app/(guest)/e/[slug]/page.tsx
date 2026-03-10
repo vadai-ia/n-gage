@@ -157,15 +157,27 @@ export default function EventLandingPage() {
     setAuthError("");
 
     if (authMode === "register") {
-      const { error: err } = await supabase.auth.signUp({
+      const { data, error: err } = await supabase.auth.signUp({
         email: authEmail, password: authPassword,
         options: { data: { full_name: authName } },
       });
       if (err) { setAuthError("Error al crear cuenta. Intenta con otro correo."); setAuthLoading(false); return; }
+
+      // If email confirmation is required and no session, show message
+      if (!data.session) {
+        setAuthError("Te enviamos un correo de confirmación. Revísalo para continuar.");
+        setAuthLoading(false);
+        return;
+      }
     } else {
       const { error: err } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
       if (err) { setAuthError("Correo o contrasena incorrectos."); setAuthLoading(false); return; }
     }
+
+    // Sync user to DB
+    try {
+      await fetch("/api/v1/auth/sync", { method: "POST" });
+    } catch { /* non-blocking */ }
 
     const { data: { user: u } } = await supabase.auth.getUser();
     setUser(u);
@@ -183,9 +195,13 @@ export default function EventLandingPage() {
   }
 
   async function handleGoogle() {
+    // Build the return URL for after OAuth — go through /auth/callback which syncs the user
+    const eventUrl = `/e/${slug}${searchParams.get("code") ? `?code=${searchParams.get("code")}` : ""}`;
+    const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(eventUrl)}`;
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/e/${slug}${searchParams.get("code") ? `?code=${searchParams.get("code")}` : ""}` },
+      options: { redirectTo: callbackUrl },
     });
   }
 

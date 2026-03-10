@@ -1,16 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
+  const errorParam = searchParams.get("error");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(errorParam === "auth" ? "Error de autenticación. Intenta de nuevo." : "");
+
+  async function syncProfile(userId: string, userEmail: string, fullName: string, avatarUrl?: string) {
+    try {
+      await fetch("/api/v1/auth/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId, email: userEmail, full_name: fullName, avatar_url: avatarUrl }),
+      });
+    } catch {
+      // Non-blocking — user can still proceed
+    }
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -18,34 +34,40 @@ export default function LoginPage() {
     setError("");
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
+    if (loginError) {
       setError("Correo o contraseña incorrectos.");
       setLoading(false);
       return;
     }
 
-    router.push("/");
+    // Sync user profile to DB
+    if (data.user) {
+      const meta = data.user.user_metadata;
+      await syncProfile(
+        data.user.id,
+        data.user.email ?? email,
+        meta?.full_name || meta?.name || email.split("@")[0],
+        meta?.avatar_url || meta?.picture
+      );
+    }
+
+    router.push(redirectTo);
     router.refresh();
   }
 
   async function handleGoogle() {
-    setError("Conectando con Google...");
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (error) {
-        setError("Error Google: " + error.message);
-      } else {
-        setError("Redirigiendo a: " + (data?.url ?? "sin URL"));
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError("Catch error: " + msg);
+    const supabase = createClient();
+    const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: callbackUrl },
+    });
+
+    if (oauthError) {
+      setError("Error al conectar con Google: " + oauthError.message);
     }
   }
 
@@ -60,7 +82,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-1 gradient-text" style={{ fontFamily: "var(--font-playfair)" }}>
+          <h1 className="text-4xl font-bold mb-1 gradient-text">
             N&apos;GAGE
           </h1>
           <p style={{ color: "#A0A0B0", fontSize: "14px" }}>Conecta en el momento</p>

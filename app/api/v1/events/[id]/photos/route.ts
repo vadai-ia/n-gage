@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/is-admin";
+import { getUserEventRole } from "@/lib/auth/event-access";
 import { v2 as cloudinary } from "cloudinary";
 
 cloudinary.config({
@@ -73,20 +73,15 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const all = searchParams.get("all") === "true";
 
-  if (all) {
-    // Solo hosts, organizers y admins pueden ver todas las fotos
-    const admin = await isAdmin(user.id);
-    if (!admin) {
-      const event = await prisma.event.findFirst({
-        where: {
-          id: eventId,
-          OR: [
-            { organizer_id: user.id },
-            { hosts: { some: { user_id: user.id } } },
-          ],
-        },
-      });
-      if (!event) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
+  // Determine user's role for this event
+  const role = await getUserEventRole(user.id, eventId);
+  const isPrivileged = role !== "guest";
+
+  if (all || isPrivileged) {
+    // Privileged users (host, organizer, admin) ALWAYS see ALL photos
+    // regardless of is_visible or event expiry — photos never expire
+    if (!isPrivileged) {
+      return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
     }
 
     const photos = await prisma.eventPhoto.findMany({
@@ -94,19 +89,44 @@ export async function GET(
       include: { user: { select: { full_name: true } } },
       orderBy: { taken_at: "desc" },
     });
-    return NextResponse.json({ photos });
+
+    return NextResponse.json({ photos, role });
   }
 
-  // Mis fotos
-  const photos = await prisma.eventPhoto.findMany({
+  // Guest: show their own photos (always) + album photos based on album_release_at
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { album_release_at: true },
+  });
+
+  const albumReleased = event?.album_release_at && new Date() >= new Date(event.album_release_at);
+
+  // User's own photos (always visible to them)
+  const myPhotos = await prisma.eventPhoto.findMany({
     where: { event_id: eventId, user_id: user.id },
     orderBy: { taken_at: "desc" },
   });
+
+  // If album released, also show all visible photos
+  let albumPhotos: typeof myPhotos = [];
+  if (albumReleased) {
+    albumPhotos = await prisma.eventPhoto.findMany({
+      where: { event_id: eventId, is_visible: true, user_id: { not: user.id } },
+      include: { user: { select: { full_name: true } } },
+      orderBy: { taken_at: "desc" },
+    });
+  }
 
   const reg = await prisma.eventRegistration.findUnique({
     where: { event_id_user_id: { event_id: eventId, user_id: user.id } },
     select: { photos_taken: true },
   });
 
-  return NextResponse.json({ photos, photos_taken: reg?.photos_taken ?? 0 });
+  return NextResponse.json({
+    photos: myPhotos,
+    album_photos: albumPhotos,
+    album_released: !!albumReleased,
+    photos_taken: reg?.photos_taken ?? 0,
+    role,
+  });
 }

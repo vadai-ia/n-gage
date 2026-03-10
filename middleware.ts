@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Rutas públicas — no requieren autenticación
-const PUBLIC_ROUTES = ["/", "/login", "/register"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/welcome"];
 const EVENT_LANDING_PATTERN = /^\/e\/[^/]+/; // /e/[slug]
 
 export async function middleware(request: NextRequest) {
@@ -31,11 +31,12 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Permitir rutas públicas y landing de eventos
+  // Permitir rutas públicas, callbacks, APIs, y landing de eventos
   if (
     PUBLIC_ROUTES.includes(pathname) ||
     EVENT_LANDING_PATTERN.test(pathname) ||
-    pathname.startsWith("/api/v1/auth") ||
+    pathname.startsWith("/auth/callback") ||
+    pathname.startsWith("/api/") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon")
   ) {

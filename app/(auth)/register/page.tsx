@@ -1,17 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -19,51 +23,46 @@ export default function RegisterPage() {
     setError("");
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: fullName, phone },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
       },
     });
 
-    if (error) {
-      setError(error.message === "User already registered"
+    if (signUpError) {
+      setError(signUpError.message === "User already registered"
         ? "Ya existe una cuenta con ese correo."
         : "Ocurrió un error. Intenta de nuevo.");
       setLoading(false);
       return;
     }
 
-    setSuccess(true);
+    // If user is auto-confirmed (no email verification required), sync and redirect
+    if (data.user && data.session) {
+      try {
+        await fetch("/api/v1/auth/sync", { method: "POST" });
+      } catch { /* non-blocking */ }
+      router.push(redirectTo);
+      router.refresh();
+      return;
+    }
+
+    // If email confirmation is required, show message
     setLoading(false);
+    setError("Te enviamos un correo de confirmación. Revisa tu bandeja de entrada.");
   }
 
   async function handleGoogle() {
     const supabase = createClient();
+    const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl },
     });
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "#0A0A0F" }}>
-        <div className="text-center max-w-sm">
-          <div className="text-5xl mb-4">📬</div>
-          <h2 className="text-2xl font-bold mb-2">Revisa tu correo</h2>
-          <p style={{ color: "#A0A0B0", lineHeight: 1.6 }}>
-            Te enviamos un enlace de confirmación a <strong style={{ color: "#fff" }}>{email}</strong>.
-            Ábrelo para activar tu cuenta.
-          </p>
-          <Link href="/login" className="inline-block mt-6 text-sm font-semibold" style={{ color: "#FF3CAC" }}>
-            Volver al inicio de sesión
-          </Link>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -75,7 +74,7 @@ export default function RegisterPage() {
 
       <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-1 gradient-text" style={{ fontFamily: "var(--font-playfair)" }}>
+          <h1 className="text-4xl font-bold mb-1 gradient-text">
             N&apos;GAGE
           </h1>
           <p style={{ color: "#A0A0B0", fontSize: "14px" }}>Conecta en el momento</p>

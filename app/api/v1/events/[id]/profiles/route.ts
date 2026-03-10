@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { isContentExpiredForUser } from "@/lib/auth/event-access";
 
 export async function GET(
   _req: Request,
@@ -10,6 +11,16 @@ export async function GET(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
+  // Check if content has expired for this user
+  const expired = await isContentExpiredForUser(user.id, eventId);
+  if (expired) {
+    return NextResponse.json({
+      profiles: [],
+      expired: true,
+      message: "El contenido de este evento ha expirado.",
+    });
+  }
 
   // Obtener mi registro en el evento
   const me = await prisma.eventRegistration.findUnique({

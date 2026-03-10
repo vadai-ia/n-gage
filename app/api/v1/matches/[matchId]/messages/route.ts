@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { isContentExpiredForUser } from "@/lib/auth/event-access";
 
 export async function GET(
   _req: Request,
@@ -16,6 +17,16 @@ export async function GET(
     where: { id: matchId, OR: [{ user_a_id: user.id }, { user_b_id: user.id }] },
   });
   if (!match) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+
+  // Check expiry for guests
+  const expired = await isContentExpiredForUser(user.id, match.event_id);
+  if (expired) {
+    return NextResponse.json({
+      messages: [],
+      expired: true,
+      message: "El contenido de este evento ha expirado.",
+    });
+  }
 
   const messages = await prisma.matchMessage.findMany({
     where: { match_id: matchId },
@@ -43,11 +54,13 @@ export async function POST(
 
   const match = await prisma.eventMatch.findFirst({
     where: { id: matchId, OR: [{ user_a_id: user.id }, { user_b_id: user.id }] },
-    include: { event: { select: { expiry_at: true, status: true } } },
   });
   if (!match) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-  if (match.event.status === "expired") {
-    return NextResponse.json({ error: "El evento ha expirado" }, { status: 410 });
+
+  // Check expiry — guests can't send messages after event expires
+  const expired = await isContentExpiredForUser(user.id, match.event_id);
+  if (expired) {
+    return NextResponse.json({ error: "El contenido de este evento ha expirado" }, { status: 410 });
   }
 
   const { content } = await req.json();

@@ -175,7 +175,7 @@ export default function AdminHomePage() {
       {/* Quick Actions */}
       <div className="flex gap-2 mb-6 flex-wrap">
         <Link
-          href="/dashboard/events/new"
+          href="/events/new"
           className="px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-opacity hover:opacity-80"
           style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}
         >

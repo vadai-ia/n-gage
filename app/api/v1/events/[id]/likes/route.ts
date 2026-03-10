@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { isContentExpiredForUser } from "@/lib/auth/event-access";
 
 export async function POST(
   req: Request,
@@ -10,6 +11,12 @@ export async function POST(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
+  // Don't allow likes on expired events
+  const expired = await isContentExpiredForUser(user.id, eventId);
+  if (expired) {
+    return NextResponse.json({ error: "El contenido de este evento ha expirado" }, { status: 410 });
+  }
 
   const { to_user_id, type } = await req.json();
   if (!to_user_id || !["like", "dislike", "super_like"].includes(type)) {
@@ -50,7 +57,6 @@ export async function POST(
     });
 
     if (mutualLike) {
-      // Crear match (evitar duplicados)
       const [userA, userB] = [user.id, to_user_id].sort();
       match = await prisma.eventMatch.upsert({
         where: { event_id_user_a_id_user_b_id: { event_id: eventId, user_a_id: userA, user_b_id: userB } },
@@ -63,7 +69,6 @@ export async function POST(
         },
       });
 
-      // Mensaje de bienvenida automático
       const welcome = await prisma.matchMessage.findFirst({ where: { match_id: match.id } });
       if (!welcome) {
         await prisma.matchMessage.create({
@@ -88,6 +93,16 @@ export async function GET(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
+  // Check expiry for guests
+  const expired = await isContentExpiredForUser(user.id, eventId);
+  if (expired) {
+    return NextResponse.json({
+      likes: [],
+      expired: true,
+      message: "El contenido de este evento ha expirado.",
+    });
+  }
 
   const { searchParams } = new URL(req.url);
   const direction = searchParams.get("direction") ?? "received";
