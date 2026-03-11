@@ -95,15 +95,14 @@ export default function SelfieCapture({ onCapture, onRetake, captured }: SelfieC
       {/* Visor de cámara */}
       <div className="relative w-64 h-64 rounded-2xl overflow-hidden"
         style={{ background: "#0A0A0F", border: "2px solid rgba(255,255,255,0.1)" }}>
-        {streaming ? (
-          <video
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            style={{ transform: "scaleX(-1)" }}
-            playsInline
-            muted
-          />
-        ) : (
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          style={{ transform: "scaleX(-1)", display: streaming ? "block" : "none" }}
+          playsInline
+          muted
+        />
+        {!streaming && (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2">
             <span className="text-4xl">🤳</span>
             <p className="text-sm" style={{ color: "#A0A0B0" }}>Cámara frontal</p>

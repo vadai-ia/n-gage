@@ -161,9 +161,14 @@ export default function CameraPage() {
 
       {/* Visor */}
       <div className="relative flex-1 overflow-hidden">
-        {streaming ? (
-          <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
-        ) : (
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          style={{ display: streaming ? "block" : "none" }}
+          playsInline
+          muted
+        />
+        {!streaming && (
           <div
             className="w-full h-full flex flex-col items-center justify-center gap-5"
             style={{ background: "#07070F" }}
