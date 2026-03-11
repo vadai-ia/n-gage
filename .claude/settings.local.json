@@ -5,7 +5,19 @@
       "Bash(powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Path ''.next'' -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -Path ''node_modules/.cache'' -Recurse -Force -ErrorAction SilentlyContinue; npm run build 2>&1\")",
       "Bash(powershell -ExecutionPolicy Bypass -Command \"Remove-Item -Path ''.next'' -Recurse -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; npm run build 2>&1\")",
       "Bash(node -e \"try { require\\(''./.next/server/chunks/6543.js''\\); console.log\\(''OK''\\) } catch\\(e\\) { console.log\\(e.message\\) }\")",
-      "Bash(rsync -a --exclude='node_modules' --exclude='.next' \"/c/Users/Alejandro Martinez/OneDrive/Desktop/ngage/\" \"/c/Users/Alejandro Martinez/Desktop/ngage/\")"
+      "Bash(rsync -a --exclude='node_modules' --exclude='.next' \"/c/Users/Alejandro Martinez/OneDrive/Desktop/ngage/\" \"/c/Users/Alejandro Martinez/Desktop/ngage/\")",
+      "Bash(npx prisma:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(lsof -ti:3000)",
+      "Bash(xargs kill:*)",
+      "Bash(netstat -ano)",
+      "Read(//c/Users/Alejandro Martinez/Desktop/ngage/**)",
+      "Bash(xargs -I{} taskkill //PID {} //F)",
+      "Bash(npx vercel:*)",
+      "Bash(cat '/c/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/event/[id]/likes/page.tsx')",
+      "Bash(cat '/c/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/event/[id]/matches/[matchId]/page.tsx')",
+      "Bash(cat '/c/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/event/[id]/album/page.tsx')",
+      "Bash(cat '/c/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/welcome/page.tsx')"
     ]
   }
 }
