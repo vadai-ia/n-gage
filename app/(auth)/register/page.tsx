@@ -43,9 +43,21 @@ function RegisterForm() {
     // If user is auto-confirmed (no email verification required), sync and redirect
     if (data.user && data.session) {
       try {
-        await fetch("/api/v1/auth/sync", { method: "POST" });
-      } catch { /* non-blocking */ }
-      router.push(redirectTo);
+        const res = await fetch("/api/v1/auth/sync", { method: "POST" });
+        const syncData = await res.json();
+        const role: string = syncData.user?.role ?? "GUEST";
+        if (redirectTo !== "/") {
+          router.push(redirectTo);
+        } else if (role === "SUPER_ADMIN") {
+          router.push("/admin");
+        } else if (role === "EVENT_ORGANIZER") {
+          router.push("/dashboard");
+        } else {
+          router.push("/welcome");
+        }
+      } catch {
+        router.push(redirectTo);
+      }
       router.refresh();
       return;
     }

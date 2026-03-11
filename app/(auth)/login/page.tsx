@@ -16,8 +16,10 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(errorParam === "auth" ? "Error de autenticación. Intenta de nuevo." : "");
 
-  async function syncProfile() {
-    try { await fetch("/api/v1/auth/sync", { method: "POST" }); } catch {}
+  function roleToPath(role: string): string {
+    if (role === "SUPER_ADMIN")     return "/admin";
+    if (role === "EVENT_ORGANIZER") return "/dashboard";
+    return "/welcome";
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -34,8 +36,16 @@ function LoginForm() {
       return;
     }
 
-    await syncProfile();
-    router.push(redirectTo);
+    // Sync user to DB and use the returned role to redirect directly
+    try {
+      const res = await fetch("/api/v1/auth/sync", { method: "POST" });
+      const data = await res.json();
+      const role: string = data.user?.role ?? "GUEST";
+      const destination = redirectTo !== "/" ? redirectTo : roleToPath(role);
+      router.push(destination);
+    } catch {
+      router.push(redirectTo);
+    }
     router.refresh();
   }
 
