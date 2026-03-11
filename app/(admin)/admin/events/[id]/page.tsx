@@ -250,13 +250,10 @@ export default function AdminEventDetailPage() {
         })
         .catch(() => setTabLoading(false));
     } else if (tab === "codigos") {
-      fetch(`/api/v1/events/${id}`)
+      fetch(`/api/v1/events/${id}/codes`)
         .then((r) => r.json())
-        .then(async () => {
-          // Fetch access codes separately
-          const res = await fetch(`/api/v1/events/${id}`);
-          const data = await res.json();
-          setAccessCodes(data.event?.access_codes ?? []);
+        .then((d) => {
+          setAccessCodes(d.codes ?? []);
           setTabLoading(false);
         })
         .catch(() => setTabLoading(false));
@@ -352,28 +349,19 @@ export default function AdminEventDetailPage() {
   async function createAccessCode() {
     setCreatingCode(true);
     try {
-      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-      // Use a direct prisma-backed API if available, or create via event patch
-      const res = await fetch(`/api/v1/events/${id}`, {
-        method: "PATCH",
+      const res = await fetch(`/api/v1/events/${id}/codes`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          access_codes: {
-            create: {
-              code,
-              type: newCodeType,
-              assigned_to_email: newCodeEmail || null,
-            },
-          },
+          type: newCodeType,
+          assigned_to_email: newCodeEmail || null,
         }),
       });
       if (res.ok) {
         setNewCodeEmail("");
-        // Reload codes
-        setTab("codigos");
-        const evRes = await fetch(`/api/v1/events/${id}`);
-        const evData = await evRes.json();
-        setAccessCodes(evData.event?.access_codes ?? []);
+        const codesRes = await fetch(`/api/v1/events/${id}/codes`);
+        const codesData = await codesRes.json();
+        setAccessCodes(codesData.codes ?? []);
       }
     } catch {
       // error

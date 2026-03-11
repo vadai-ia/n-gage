@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import QRCode from "qrcode";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -152,6 +153,7 @@ export default function EventDetailPage() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [copied, setCopied] = useState(false);
+  const [generatedQrUrl, setGeneratedQrUrl] = useState<string | null>(null);
 
   // Tabs
   const [activeTab, setActiveTab] = useState<"config" | "registrations" | "matches">("config");
@@ -219,6 +221,20 @@ export default function EventDetailPage() {
   }, [loadData]);
 
   useEffect(() => {
+    if (!event) return;
+    const code = event.access_codes?.[0]?.code ?? "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${origin}/e/${event.unique_slug}${code ? `?code=${encodeURIComponent(code)}` : ""}`;
+    QRCode.toDataURL(url, {
+      width: 400,
+      margin: 2,
+      color: { dark: "#FF3CAC", light: "#0A0A0F" },
+    })
+      .then(setGeneratedQrUrl)
+      .catch(() => setGeneratedQrUrl(event.qr_code_url));
+  }, [event]);
+
+  useEffect(() => {
     if (activeTab === "matches") loadMatches();
   }, [activeTab, loadMatches]);
 
@@ -276,9 +292,10 @@ export default function EventDetailPage() {
   }
 
   function downloadQR() {
-    if (!event?.qr_code_url) return;
+    const dataUrl = generatedQrUrl ?? event?.qr_code_url;
+    if (!dataUrl || !event) return;
     const a = document.createElement("a");
-    a.href = event.qr_code_url;
+    a.href = dataUrl;
     a.download = `qr-${event.unique_slug}.png`;
     a.click();
   }
@@ -428,43 +445,47 @@ export default function EventDetailPage() {
       </div>
 
       {/* ─── QR Code Section ────────────────────────────── */}
-      {event.qr_code_url && (
-        <div className="rounded-2xl p-4 mb-4 text-center" style={cardStyle}>
-          <p className="text-sm font-black tracking-tight mb-3" style={{ color: "#F0F0FF" }}>Codigo QR del evento</p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={event.qr_code_url}
-            alt="QR del evento"
-            className="w-40 h-40 mx-auto rounded-xl mb-3"
-            style={{ imageRendering: "pixelated" }}
-          />
-          <p className="text-xs mb-3 break-all font-mono" style={{ color: "#8585A8" }}>{eventUrl}</p>
-          <div className="flex gap-2">
-            <button
-              onClick={copyLink}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={{
-                background: copied ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${copied ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.04)"}`,
-                color: copied ? "#10B981" : "#8585A8",
-              }}
-            >
-              {copied ? "Copiado!" : "Copiar link"}
-            </button>
-            <button
-              onClick={downloadQR}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
-              style={{
-                background: "rgba(255,45,120,0.08)",
-                border: "1px solid rgba(255,45,120,0.25)",
-                color: "#FF2D78",
-              }}
-            >
-              Descargar QR
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="rounded-2xl p-4 mb-4 text-center" style={cardStyle}>
+        <p className="text-sm font-black tracking-tight mb-3" style={{ color: "#F0F0FF" }}>Codigo QR del evento</p>
+        {generatedQrUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={generatedQrUrl}
+              alt="QR del evento"
+              className="w-40 h-40 mx-auto rounded-xl mb-3"
+              style={{ imageRendering: "pixelated" }}
+            />
+            <p className="text-xs mb-3 break-all font-mono" style={{ color: "#8585A8" }}>{eventUrl}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={copyLink}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                style={{
+                  background: copied ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${copied ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.04)"}`,
+                  color: copied ? "#10B981" : "#8585A8",
+                }}
+              >
+                {copied ? "Copiado!" : "Copiar link"}
+              </button>
+              <button
+                onClick={downloadQR}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                style={{
+                  background: "rgba(255,45,120,0.08)",
+                  border: "1px solid rgba(255,45,120,0.25)",
+                  color: "#FF2D78",
+                }}
+              >
+                Descargar QR
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="w-40 h-40 mx-auto rounded-xl mb-3 animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
+        )}
+      </div>
 
       {/* Access code */}
       {code && (
