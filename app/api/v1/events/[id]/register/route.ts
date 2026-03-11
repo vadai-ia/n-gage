@@ -23,7 +23,7 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { selfie_url, table_number, relation_type, interests, gender, looking_for } = body;
+  const { selfie_url, display_name, table_number, relation_type, interests, gender, looking_for } = body;
 
   if (!selfie_url || !gender || !looking_for) {
     return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
@@ -51,6 +51,14 @@ export async function POST(
   });
   if (existing) {
     return NextResponse.json({ registration: existing, alreadyRegistered: true });
+  }
+
+  // Si el usuario envía un nombre/apodo, actualizarlo en su perfil
+  if (display_name?.trim()) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { full_name: display_name.trim() },
+    });
   }
 
   // Crear registro

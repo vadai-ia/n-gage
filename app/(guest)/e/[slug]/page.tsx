@@ -29,6 +29,7 @@ export default function EventLandingPage() {
 
   // Form state
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const [tableNumber, setTableNumber] = useState("");
   const [relationType, setRelationType] = useState("");
   const [gender, setGender] = useState("");
@@ -96,6 +97,7 @@ export default function EventLandingPage() {
       const { data: { user: u } } = await supabase.auth.getUser();
       if (u) {
         setUser(u);
+        setDisplayName(u.user_metadata?.full_name || u.user_metadata?.name || "");
         // Check if already registered
         const regRes = await fetch(`/api/v1/events/${evt.id}/my-registration`);
         if (regRes.ok) {
@@ -184,6 +186,7 @@ export default function EventLandingPage() {
     setAuthLoading(false);
 
     if (u) {
+      setDisplayName(u.user_metadata?.full_name || u.user_metadata?.name || authName || "");
       // Check if already registered
       const regRes = await fetch(`/api/v1/events/${event?.id}/my-registration`);
       if (regRes.ok) {
@@ -239,6 +242,7 @@ export default function EventLandingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           selfie_url,
+          display_name: displayName.trim() || null,
           table_number: tableNumber || null,
           relation_type: relationType || null,
           interests: [...selectedInterests, drink].filter(Boolean),
@@ -248,7 +252,7 @@ export default function EventLandingPage() {
       });
 
       if (res.ok) {
-        setStep("done");
+        router.push(`/event/${event.id}/search`);
       } else {
         const d = await res.json();
         setAuthError(d.error || "Error al registrarte. Intenta de nuevo.");
@@ -668,6 +672,27 @@ export default function EventLandingPage() {
 
         {selfieDataUrl && (
           <div className="flex flex-col gap-5">
+            {/* Nombre / Apodo */}
+            <div>
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
+                ¿Cómo te llamamos? <span style={{ color: pink }}>*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Tu nombre o apodo"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                autoComplete="given-name"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
+                style={{ background: inputBg, border: `1px solid ${displayName.trim() ? pink : inputBorder}`, color: textPrimary }}
+              />
+              {displayName.trim() && (
+                <p className="text-xs mt-1.5" style={{ color: textMuted }}>
+                  Así te verán los demás en el evento
+                </p>
+              )}
+            </div>
+
             {/* Mesa */}
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
