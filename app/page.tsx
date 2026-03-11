@@ -9,21 +9,26 @@ export default async function RootPage() {
 
   if (!user) redirect("/login");
 
-  // Try to find user in DB, create if not exists
-  let dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { role: true },
-  });
+  try {
+    let dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    });
 
-  if (!dbUser) {
-    dbUser = await syncUserToDB(user);
+    if (!dbUser) {
+      dbUser = await syncUserToDB(user);
+    }
+
+    const role = dbUser.role ?? "GUEST";
+
+    if (role === "SUPER_ADMIN")     redirect("/admin");
+    if (role === "EVENT_ORGANIZER") redirect("/dashboard");
+    redirect("/welcome");
+  } catch {
+    // DB no disponible — fallback usando Supabase user_metadata
+    const metaRole = user.user_metadata?.role as string | undefined;
+    if (metaRole === "SUPER_ADMIN")     redirect("/admin");
+    if (metaRole === "EVENT_ORGANIZER") redirect("/dashboard");
+    redirect("/welcome");
   }
-
-  const role = dbUser.role ?? "GUEST";
-
-  if (role === "SUPER_ADMIN")     redirect("/admin");
-  if (role === "EVENT_ORGANIZER") redirect("/dashboard");
-
-  // HOST o GUEST → pantalla de bienvenida
-  redirect("/welcome");
 }
