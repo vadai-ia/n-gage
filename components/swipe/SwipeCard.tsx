@@ -13,6 +13,8 @@ export type Profile = {
   interests: string[] | null;
   gender: string;
   super_like_used: boolean;
+  compatibility_score?: number;
+  shared_interests?: string[];
   user: { full_name: string; avatar_url: string | null };
 };
 
@@ -69,7 +71,9 @@ export default function SwipeCard({
   };
 
   const interests = Array.isArray(profile.interests) ? profile.interests.slice(0, 3) : [];
+  const sharedInterests = profile.shared_interests ?? [];
   const firstName = profile.user.full_name.split(" ")[0];
+  const isSoul = (profile.compatibility_score ?? 0) >= 40;
 
   // Visual cues based on swipe direction direction
   const isLiking = swipingDirection === "right";
@@ -157,7 +161,7 @@ export default function SwipeCard({
                 <h1 className="font-display font-medium text-4xl tracking-tight text-[#FAFAFA] mb-1 drop-shadow-md">
                   {firstName}
                 </h1>
-                
+
                 {/* Minimalist Relation/Table */}
                 <div className="flex items-center gap-2 text-[#FAFAFA]/70 text-sm font-body tracking-wide uppercase">
                   {profile.relation_type && (
@@ -169,26 +173,45 @@ export default function SwipeCard({
                   )}
                 </div>
               </div>
+
+              {/* Posible Soul badge */}
+              {isSoul && (
+                <div
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255,45,120,0.25), rgba(123,47,190,0.25))",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    border: "1px solid rgba(255,45,120,0.4)",
+                    color: "#FF7DB8",
+                  }}
+                >
+                  ✦ Posible Soul
+                </div>
+              )}
             </div>
 
             {/* Frost Glass Icebreaker Chips */}
             {interests.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
-                 {interests.map((interest) => (
-                  <div
-                    key={interest}
-                    className="px-3 py-1.5 rounded-full text-xs font-medium tracking-wide"
-                    style={{
-                      background: "rgba(255,255,255,0.06)",
-                      backdropFilter: "blur(12px)",
-                      WebkitBackdropFilter: "blur(12px)",
-                      border: "1px solid rgba(255,255,255,0.04)",
-                      color: "#E0E0E0",
-                    }}
-                  >
-                    {interest}
-                  </div>
-                ))}
+                 {interests.map((interest) => {
+                  const isShared = sharedInterests.includes(interest);
+                  return (
+                    <div
+                      key={interest}
+                      className="px-3 py-1.5 rounded-full text-xs font-medium tracking-wide"
+                      style={{
+                        background: isShared ? "rgba(255,45,120,0.18)" : "rgba(255,255,255,0.06)",
+                        backdropFilter: "blur(12px)",
+                        WebkitBackdropFilter: "blur(12px)",
+                        border: isShared ? "1px solid rgba(255,45,120,0.35)" : "1px solid rgba(255,255,255,0.04)",
+                        color: isShared ? "#FF7DB8" : "#E0E0E0",
+                      }}
+                    >
+                      {interest}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

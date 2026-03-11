@@ -63,5 +63,19 @@ export async function GET(
     return false;
   });
 
-  return NextResponse.json({ profiles: filtered, my_registration: me });
+  // Compatibility scoring — "Posible Soul"
+  const myInterests = Array.isArray(me.interests) ? (me.interests as string[]) : [];
+  const scored = filtered.map((p) => {
+    const theirInterests = Array.isArray(p.interests) ? (p.interests as string[]) : [];
+    const shared = myInterests.filter((i) => theirInterests.includes(i));
+    const score = myInterests.length > 0 && theirInterests.length > 0
+      ? Math.round((shared.length / Math.max(myInterests.length, theirInterests.length)) * 100)
+      : 0;
+    return { ...p, compatibility_score: score, shared_interests: shared };
+  });
+
+  // Count of singles matching my looking_for (for waiting room UI)
+  const singles_count = filtered.length;
+
+  return NextResponse.json({ profiles: scored, my_registration: me, singles_count });
 }

@@ -13,6 +13,8 @@ type MyReg = {
   super_like_used: boolean;
   selfie_url: string;
   user_id: string;
+  interests: string[] | null;
+  looking_for: string;
 };
 
 type MatchData = {
@@ -33,6 +35,7 @@ export default function SearchPage() {
   const [starting, setStarting] = useState(false);
   const [match, setMatch] = useState<{ data: MatchData; profile: Profile } | null>(null);
   const [eventDuration, setEventDuration] = useState<number | undefined>();
+  const [singlesCount, setSinglesCount] = useState<number>(0);
 
   useEffect(() => {
     fetch(`/api/v1/events/${eventId}/profiles`)
@@ -40,11 +43,11 @@ export default function SearchPage() {
       .then((d) => {
         setProfiles(d.profiles ?? []);
         setMyReg(d.my_registration ?? null);
+        setSinglesCount(d.singles_count ?? (d.profiles?.length ?? 0));
         if (d.my_registration?.search_started_at) setStarted(true);
         if (d.my_registration?.search_expires_at) {
           const exp = new Date(d.my_registration.search_expires_at) < new Date();
           setExpired(exp);
-          // Calculate total duration
           if (d.my_registration.search_started_at) {
             const total = new Date(d.my_registration.search_expires_at).getTime()
               - new Date(d.my_registration.search_started_at).getTime();
@@ -125,9 +128,13 @@ export default function SearchPage() {
 
   // ── START SCREEN ──
   if (!started) {
+    const myInterests = Array.isArray(myReg?.interests) ? myReg!.interests! : [];
+    const lookingForLabel = myReg
+      ? ({ men: "hombres", women: "mujeres", everyone: "todos", non_binary: "no binarios" } as Record<string, string>)[myReg.looking_for] ?? "personas"
+      : "personas";
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: "#07070F" }}>
-        {/* Subtle glow behind */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full pointer-events-none"
           style={{ background: "radial-gradient(circle, rgba(255,45,120,0.08) 0%, transparent 70%)" }} />
 
@@ -135,7 +142,7 @@ export default function SearchPage() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="relative z-10"
+          className="relative z-10 w-full max-w-xs"
         >
           <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
             style={{ background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.15)" }}>
@@ -145,28 +152,56 @@ export default function SearchPage() {
             </svg>
           </div>
 
-          <h1 className="text-3xl font-black mb-3" style={{ color: "#F0F0FF" }}>
+          <h1 className="text-3xl font-black mb-2" style={{ color: "#F0F0FF" }}>
             ¿Listo para conectar?
           </h1>
-          <p className="mb-1" style={{ color: "#8585A8" }}>
-            Hay <strong style={{ color: "#FF2D78" }}>{profiles.length}</strong> personas esperando
-          </p>
-          <p className="text-xs mb-10" style={{ color: "#44445A" }}>
+
+          {/* Singles count */}
+          <div className="rounded-2xl p-4 mb-4"
+            style={{ background: "rgba(255,45,120,0.06)", border: "1px solid rgba(255,45,120,0.12)" }}>
+            <p className="text-4xl font-black mb-1" style={{ color: "#FF2D78" }}>{singlesCount}</p>
+            <p className="text-sm" style={{ color: "#8585A8" }}>
+              {lookingForLabel} buscando conexión esta noche
+            </p>
+          </div>
+
+          {/* Interest recap */}
+          {myInterests.length > 0 && (
+            <div className="mb-6">
+              <p className="text-xs mb-2" style={{ color: "#44445A" }}>Tu perfil incluye</p>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {myInterests.slice(0, 5).map((i) => (
+                  <span key={i} className="px-2.5 py-1 rounded-full text-xs"
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#8585A8" }}>
+                    {i}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p className="text-xs mb-8" style={{ color: "#44445A" }}>
             El timer empieza en cuanto presiones el botón
           </p>
 
           <button
             onClick={handleStartSearch}
-            disabled={starting}
-            className="px-10 py-5 rounded-2xl font-black text-xl disabled:opacity-60 transition-transform active:scale-95"
+            disabled={starting || singlesCount === 0}
+            className="w-full px-10 py-5 rounded-2xl font-black text-xl disabled:opacity-60 transition-transform active:scale-95"
             style={{
               background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
               boxShadow: "0 12px 40px rgba(255,45,120,0.4)",
               color: "#fff",
             }}
           >
-            {starting ? "Iniciando..." : "INICIAR BÚSQUEDA"}
+            {starting ? "Iniciando..." : singlesCount === 0 ? "Sin perfiles aún" : "INICIAR BÚSQUEDA"}
           </button>
+
+          {singlesCount === 0 && (
+            <p className="text-xs mt-3" style={{ color: "#44445A" }}>
+              Aún no hay {lookingForLabel} registrados. Regresa pronto.
+            </p>
+          )}
         </motion.div>
       </div>
     );

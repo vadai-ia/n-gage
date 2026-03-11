@@ -219,7 +219,9 @@ export default function EventLandingPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dataUrl }),
     });
+    if (!res.ok) throw new Error("Error al subir la foto. Intenta de nuevo.");
     const data = await res.json();
+    if (!data.url) throw new Error("Error al subir la foto. Intenta de nuevo.");
     return data.url;
   }
 
@@ -227,29 +229,35 @@ export default function EventLandingPage() {
   async function handleSubmit() {
     if (!selfieDataUrl || !gender || !lookingFor || !event) return;
     setSubmitting(true);
+    setAuthError("");
 
-    const selfie_url = await uploadSelfie(selfieDataUrl);
+    try {
+      const selfie_url = await uploadSelfie(selfieDataUrl);
 
-    const res = await fetch(`/api/v1/events/${event.id}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        selfie_url,
-        table_number: tableNumber || null,
-        relation_type: relationType || null,
-        interests: [...selectedInterests, drink].filter(Boolean),
-        gender,
-        looking_for: lookingFor,
-      }),
-    });
+      const res = await fetch(`/api/v1/events/${event.id}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selfie_url,
+          table_number: tableNumber || null,
+          relation_type: relationType || null,
+          interests: [...selectedInterests, drink].filter(Boolean),
+          gender,
+          looking_for: lookingFor,
+        }),
+      });
 
-    if (res.ok) {
-      setStep("done");
-    } else {
-      const d = await res.json();
-      setAuthError(d.error || "Error al registrarte. Intenta de nuevo.");
+      if (res.ok) {
+        setStep("done");
+      } else {
+        const d = await res.json();
+        setAuthError(d.error || "Error al registrarte. Intenta de nuevo.");
+      }
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : "Error inesperado. Intenta de nuevo.");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   const genderOptions = event?.gender_extended_mode
