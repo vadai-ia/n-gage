@@ -12,6 +12,7 @@ async function requireAdmin() {
 }
 
 export async function GET() {
+  try {
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
 
@@ -57,4 +58,9 @@ export async function GET() {
     recentEvents,
     topOrganizers,
   });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Admin stats error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
