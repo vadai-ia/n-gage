@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SelfieCapture from "@/components/camera/SelfieCapture";
 import {
@@ -14,7 +14,6 @@ type Step = "loading" | "access_code" | "landing" | "auth" | "selfie" | "interes
 export default function EventLandingPage() {
   const { slug } = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const supabase = createClient();
 
   const [event, setEvent] = useState<EventPublic | null>(null);
@@ -101,7 +100,7 @@ export default function EventLandingPage() {
         // Check if already registered
         const regRes = await fetch(`/api/v1/events/${evt.id}/my-registration`);
         if (regRes.ok) {
-          router.push(`/event/${evt.id}/search`);
+          window.location.href = `/event/${evt.id}/search`;
           return;
         }
         setStep("selfie");
@@ -138,7 +137,7 @@ export default function EventLandingPage() {
         setUser(u);
         const regRes = await fetch(`/api/v1/events/${data.event.id}/my-registration`);
         if (regRes.ok) {
-          router.push(`/event/${data.event.id}/search`);
+          window.location.href = `/event/${data.event.id}/search`;
           setCodeValidating(false);
           return;
         }
@@ -190,7 +189,7 @@ export default function EventLandingPage() {
       // Check if already registered
       const regRes = await fetch(`/api/v1/events/${event?.id}/my-registration`);
       if (regRes.ok) {
-        router.push(`/event/${event?.id}/search`);
+        window.location.href = `/event/${event?.id}/search`;
         return;
       }
     }
@@ -252,7 +251,7 @@ export default function EventLandingPage() {
       });
 
       if (res.ok) {
-        router.push(`/event/${event.id}/search`);
+        window.location.href = `/event/${event.id}/search`;
       } else {
         const d = await res.json();
         setAuthError(d.error || "Error al registrarte. Intenta de nuevo.");
@@ -923,7 +922,7 @@ export default function EventLandingPage() {
         </p>
 
         <button
-          onClick={() => router.push(`/event/${event.id}/search`)}
+          onClick={() => { window.location.href = `/event/${event.id}/search`; }}
           className="px-8 py-4 rounded-2xl font-bold text-lg active:scale-[0.98] transition-transform"
           style={{
             background: gradientTriple,

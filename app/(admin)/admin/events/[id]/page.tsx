@@ -47,9 +47,10 @@ type Registration = {
   relation_type: string | null;
   gender: string;
   looking_for: string;
+  interests: string[];
   search_started_at: string | null;
   created_at: string;
-  user: { id: string; full_name: string; email: string };
+  user: { id: string; full_name: string; email: string; avatar_url: string | null };
 };
 
 type Match = {
@@ -218,7 +219,7 @@ export default function AdminEventDetailPage() {
     setTabLoading(true);
 
     if (tab === "registros") {
-      fetch(`/api/v1/events/${id}/register`)
+      fetch(`/api/v1/events/${id}/registrations`)
         .then((r) => r.json())
         .then((d) => {
           setRegistrations(d.registrations ?? []);
@@ -258,6 +259,18 @@ export default function AdminEventDetailPage() {
         })
         .catch(() => setTabLoading(false));
     }
+  }, [tab, id]);
+
+  // Real-time polling for registrations tab
+  useEffect(() => {
+    if (tab !== "registros" || !id) return;
+    const interval = setInterval(() => {
+      fetch(`/api/v1/events/${id}/registrations`)
+        .then((r) => r.json())
+        .then((d) => { if (d.registrations) setRegistrations(d.registrations); })
+        .catch(() => {});
+    }, 10000);
+    return () => clearInterval(interval);
   }, [tab, id]);
 
   // Generate QR codes for each access code
@@ -784,68 +797,72 @@ export default function AdminEventDetailPage() {
             ) : registrations.length === 0 ? (
               <EmptyTab message="No hay registros en este evento" />
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 {registrations.map((reg) => (
                   <div
                     key={reg.id}
-                    className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ background: "rgba(255,255,255,0.03)" }}
+                    className="rounded-2xl p-4"
+                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
                   >
-                    {/* Selfie */}
-                    <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={reg.selfie_url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate" style={{ color: "#F0F0FF" }}>
-                        {reg.user.full_name}
-                      </p>
-                      <p className="text-xs truncate" style={{ color: "#8585A8" }}>
-                        {reg.user.email}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        <span className="text-xs" style={{ color: "#44445A" }}>
-                          {GENDER_LABEL[reg.gender] ?? reg.gender}
-                        </span>
-                        <span className="text-xs" style={{ color: "#44445A" }}>
-                          Busca: {LOOKING_LABEL[reg.looking_for] ?? reg.looking_for}
-                        </span>
-                        {reg.table_number && (
-                          <span className="text-xs" style={{ color: "#44445A" }}>
-                            Mesa: {reg.table_number}
+                    <div className="flex items-start gap-4">
+                      {/* Selfie */}
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0" style={{ border: "2px solid rgba(255,45,120,0.3)" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={reg.selfie_url} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <p className="text-sm font-bold" style={{ color: "#F0F0FF" }}>
+                            {reg.user.full_name || "Sin nombre"}
+                          </p>
+                          {reg.search_started_at ? (
+                            <span className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>
+                              ● Buscando
+                            </span>
+                          ) : (
+                            <span className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0" style={{ background: "rgba(133,133,168,0.12)", color: "#8585A8" }}>
+                              Pendiente
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs mt-0.5" style={{ color: "#8585A8" }}>{reg.user.email}</p>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(123,47,190,0.15)", color: "#A855F7" }}>
+                            {GENDER_LABEL[reg.gender] ?? reg.gender}
                           </span>
-                        )}
-                        {reg.relation_type && (
-                          <span className="text-xs" style={{ color: "#44445A" }}>
-                            {reg.relation_type}
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(255,45,120,0.12)", color: "#FF6BA8" }}>
+                            Busca: {LOOKING_LABEL[reg.looking_for] ?? reg.looking_for}
                           </span>
+                          {reg.table_number && (
+                            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(26,110,255,0.12)", color: "#60A5FA" }}>
+                              Mesa {reg.table_number}
+                            </span>
+                          )}
+                          {reg.relation_type && (
+                            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(255,255,255,0.06)", color: "#8585A8" }}>
+                              {reg.relation_type}
+                            </span>
+                          )}
+                        </div>
+                        {reg.interests && reg.interests.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {reg.interests.slice(0, 5).map((interest) => (
+                              <span key={interest} className="text-xs px-1.5 py-0.5 rounded-lg" style={{ background: "rgba(255,255,255,0.04)", color: "#44445A", border: "1px solid rgba(255,255,255,0.06)" }}>
+                                {interest}
+                              </span>
+                            ))}
+                            {reg.interests.length > 5 && (
+                              <span className="text-xs px-1.5 py-0.5 rounded-lg" style={{ color: "#44445A" }}>
+                                +{reg.interests.length - 5}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      {reg.search_started_at ? (
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                          style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}
-                        >
-                          Buscando
-                        </span>
-                      ) : (
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                          style={{ background: "rgba(133,133,168,0.15)", color: "#8585A8" }}
-                        >
-                          Pendiente
-                        </span>
-                      )}
-                      <p className="text-xs mt-1" style={{ color: "#44445A" }}>
-                        {new Date(reg.created_at).toLocaleDateString("es-MX")}
-                      </p>
-                    </div>
+                    <p className="text-xs mt-2" style={{ color: "#44445A" }}>
+                      {new Date(reg.created_at).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" })}
+                    </p>
                   </div>
                 ))}
               </div>

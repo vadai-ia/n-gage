@@ -13,6 +13,8 @@ type Registration = {
   relation_type: string | null;
   gender: string;
   looking_for: string;
+  interests: string[];
+  search_started_at: string | null;
   created_at: string;
   user: { full_name: string; email: string; avatar_url: string | null };
 };
@@ -148,6 +150,7 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [matches, setMatches] = useState<MatchEntry[]>([]);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -237,6 +240,30 @@ export default function EventDetailPage() {
   useEffect(() => {
     if (activeTab === "matches") loadMatches();
   }, [activeTab, loadMatches]);
+
+  // Load registrations when tab opens
+  const loadRegistrations = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/v1/events/${id}/registrations`);
+      if (res.ok) {
+        const data = await res.json();
+        setRegistrations(data.registrations ?? []);
+      }
+    } catch {
+      // silently fail
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (activeTab === "registrations") loadRegistrations();
+  }, [activeTab, loadRegistrations]);
+
+  // Real-time polling for registrations tab
+  useEffect(() => {
+    if (activeTab !== "registrations") return;
+    const interval = setInterval(loadRegistrations, 10000);
+    return () => clearInterval(interval);
+  }, [activeTab, loadRegistrations]);
 
   // ─── Actions ─────────────────────────────────────────
 
@@ -534,7 +561,7 @@ export default function EventDetailPage() {
       <div className="flex gap-1 mb-4 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.03)" }}>
         {([
           { key: "config", label: "Configuracion" },
-          { key: "registrations", label: `Registros (${event._count.registrations})` },
+          { key: "registrations", label: `Registros (${registrations.length || event._count.registrations})` },
           { key: "matches", label: `Matches (${event._count.matches})` },
         ] as const).map((tab) => (
           <button
@@ -788,69 +815,95 @@ export default function EventDetailPage() {
       {/* ─── Registrations Tab ──────────────────────────── */}
       {activeTab === "registrations" && (
         <div className="rounded-2xl p-4" style={cardStyle}>
-          <h3 className="text-sm font-black tracking-tight mb-4" style={{ color: "#F0F0FF" }}>
-            Invitados registrados ({event.registrations?.length ?? 0})
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-black tracking-tight" style={{ color: "#F0F0FF" }}>
+              Invitados registrados ({registrations.length})
+            </h3>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(16,185,129,0.12)", color: "#10B981" }}>
+              ● En vivo
+            </span>
+          </div>
 
-          {(!event.registrations || event.registrations.length === 0) ? (
+          {registrations.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-sm" style={{ color: "#44445A" }}>
                 Aun no hay invitados registrados
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
-              {event.registrations.map((reg) => (
+            <div className="flex flex-col gap-3">
+              {registrations.map((reg) => (
                 <div
                   key={reg.id}
-                  className="flex items-center gap-3 p-3 rounded-xl"
-                  style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}
+                  className="rounded-2xl p-4"
+                  style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}
                 >
-                  {/* Selfie */}
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0" style={{ background: "rgba(255,255,255,0.04)" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={reg.selfie_url}
-                      alt={reg.user.full_name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  </div>
+                  <div className="flex items-start gap-4">
+                    {/* Selfie */}
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0" style={{ border: "2px solid rgba(255,45,120,0.25)" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={reg.selfie_url}
+                        alt={reg.user.full_name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: "#F0F0FF" }}>
-                      {reg.user.full_name}
-                    </p>
-                    <p className="text-xs truncate" style={{ color: "#44445A" }}>
-                      {reg.user.email}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(26,110,255,0.1)", color: "#1A6EFF" }}>
-                        {GENDER_LABELS[reg.gender] ?? reg.gender}
-                      </span>
-                      <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(255,45,120,0.1)", color: "#FF2D78" }}>
-                        Busca: {LOOKING_LABELS[reg.looking_for] ?? reg.looking_for}
-                      </span>
-                      {reg.table_number && (
-                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(255,184,0,0.1)", color: "#FFB800" }}>
-                          Mesa {reg.table_number}
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <p className="text-sm font-bold" style={{ color: "#F0F0FF" }}>
+                          {reg.user.full_name || "Sin nombre"}
+                        </p>
+                        {reg.search_started_at ? (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0" style={{ background: "rgba(16,185,129,0.15)", color: "#10B981" }}>
+                            ● Buscando
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0" style={{ background: "rgba(133,133,168,0.12)", color: "#8585A8" }}>
+                            Pendiente
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs mt-0.5" style={{ color: "#8585A8" }}>{reg.user.email}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(26,110,255,0.12)", color: "#60A5FA" }}>
+                          {GENDER_LABELS[reg.gender] ?? reg.gender}
                         </span>
-                      )}
-                      {reg.relation_type && (
-                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: "rgba(123,47,190,0.1)", color: "#7B2FBE" }}>
-                          {RELATION_LABELS[reg.relation_type] ?? reg.relation_type}
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(255,45,120,0.12)", color: "#FF6BA8" }}>
+                          Busca: {LOOKING_LABELS[reg.looking_for] ?? reg.looking_for}
                         </span>
+                        {reg.table_number && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(255,184,0,0.12)", color: "#FFB800" }}>
+                            Mesa {reg.table_number}
+                          </span>
+                        )}
+                        {reg.relation_type && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(123,47,190,0.12)", color: "#A855F7" }}>
+                            {RELATION_LABELS[reg.relation_type] ?? reg.relation_type}
+                          </span>
+                        )}
+                      </div>
+                      {reg.interests && reg.interests.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {reg.interests.slice(0, 5).map((interest) => (
+                            <span key={interest} className="text-xs px-1.5 py-0.5 rounded-lg" style={{ background: "rgba(255,255,255,0.04)", color: "#44445A", border: "1px solid rgba(255,255,255,0.06)" }}>
+                              {interest}
+                            </span>
+                          ))}
+                          {reg.interests.length > 5 && (
+                            <span className="text-xs px-1.5 py-0.5" style={{ color: "#44445A" }}>
+                              +{reg.interests.length - 5}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
-
-                  {/* Date */}
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xs" style={{ color: "#44445A" }}>
-                      {new Date(reg.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}
-                    </p>
-                  </div>
+                  <p className="text-xs mt-2" style={{ color: "#44445A" }}>
+                    {new Date(reg.created_at).toLocaleString("es-MX", { dateStyle: "short", timeStyle: "short" })}
+                  </p>
                 </div>
               ))}
             </div>
