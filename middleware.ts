@@ -29,7 +29,14 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // Si llega un ?code= a la raíz, redirigir a /auth/callback
+  if (pathname === "/" && searchParams.get("code")) {
+    const callbackUrl = request.nextUrl.clone();
+    callbackUrl.pathname = "/auth/callback";
+    return NextResponse.redirect(callbackUrl);
+  }
 
   // Permitir rutas públicas, callbacks, APIs, y landing de eventos
   if (
