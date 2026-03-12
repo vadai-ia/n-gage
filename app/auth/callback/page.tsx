@@ -17,44 +17,69 @@ function CallbackHandler() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const code = searchParams.get("code");
     const next = searchParams.get("next") ?? "/";
-
-    if (!code) {
-      router.replace("/login?error=auth");
-      return;
-    }
-
     const supabase = createClient();
+    let handled = false;
 
-    // Exchange the code CLIENT-SIDE — same client that stored the PKCE verifier
-    supabase.auth.exchangeCodeForSession(code).then(async ({ error: exchangeError }) => {
-      if (exchangeError) {
-        console.error("[callback] exchangeCodeForSession failed:", exchangeError.message);
-        setError(exchangeError.message);
-        setTimeout(() => router.replace(`/login?error=auth&reason=${encodeURIComponent(exchangeError.message)}`), 1500);
-        return;
-      }
+    async function onSession() {
+      if (handled) return;
+      handled = true;
 
-      // Sync user to DB and get real role
       try {
         const res = await fetch("/api/v1/auth/sync", { method: "POST" });
         const data = await res.json();
         const dbRole: string = data.user?.role ?? "GUEST";
 
-        // Write role back to Supabase metadata so middleware can read it
         if (data.user?.role) {
           await supabase.auth.updateUser({ data: { role: dbRole } });
         }
 
-        // Redirect: specific path takes priority, otherwise use role
         const destination = next === "/" ? roleToPath(dbRole) : next;
         window.location.href = destination;
       } catch {
-        // Fallback: use next or welcome
         window.location.href = next === "/" ? "/welcome" : next;
       }
+    }
+
+    // createBrowserClient has detectSessionInUrl=true — it auto-processes ?code=
+    // on initialization. We must NOT call exchangeCodeForSession manually (it would
+    // fail because the client already consumed the code + removed the verifier).
+    // Instead, subscribe to auth state changes and wait for SIGNED_IN / INITIAL_SESSION.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
+          await onSession();
+        }
+      }
+    );
+
+    // Also check immediately in case _initialize() already completed before subscribe
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) onSession();
     });
+
+    // Timeout: if no session after 10 s, something went wrong
+    const timeout = setTimeout(() => {
+      if (!handled) {
+        const code = searchParams.get("code");
+        const reason = code
+          ? "OAuth code could not be exchanged. Try again."
+          : "No OAuth code received.";
+        setError(reason);
+        setTimeout(
+          () =>
+            router.replace(
+              `/login?error=auth&reason=${encodeURIComponent(reason)}`
+            ),
+          1500
+        );
+      }
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
