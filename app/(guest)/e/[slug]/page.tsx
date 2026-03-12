@@ -854,6 +854,12 @@ export default function EventLandingPage() {
           </div>
         )}
 
+        {authError && (
+          <div className="mb-3 px-4 py-3 rounded-xl text-sm text-center" style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.2)", color: pink }}>
+            {authError}
+          </div>
+        )}
+
         <div className="flex gap-3 mt-auto">
           {interestStep > 0 && (
             <button
