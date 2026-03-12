@@ -14,7 +14,8 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(errorParam === "auth" ? "Error de autenticación. Intenta de nuevo." : "");
+  const reasonParam = searchParams.get("reason");
+  const [error, setError] = useState(errorParam === "auth" ? (reasonParam ? `Error OAuth: ${reasonParam}` : "Error de autenticación. Intenta de nuevo.") : "");
 
   function roleToPath(role: string): string {
     if (role === "SUPER_ADMIN")     return "/admin";
