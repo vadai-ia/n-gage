@@ -22,6 +22,23 @@ export async function GET(
     });
   }
 
+  // Check search time window
+  const eventWindow = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { search_start_time: true, search_end_time: true },
+  });
+  const now = new Date();
+  if (eventWindow?.search_start_time && now < eventWindow.search_start_time) {
+    return NextResponse.json({
+      profiles: [],
+      window_status: "before_start",
+      search_start_time: eventWindow.search_start_time.toISOString(),
+    });
+  }
+  if (eventWindow?.search_end_time && now > eventWindow.search_end_time) {
+    return NextResponse.json({ profiles: [], window_status: "ended" });
+  }
+
   // Obtener mi registro en el evento
   const me = await prisma.eventRegistration.findUnique({
     where: { event_id_user_id: { event_id: eventId, user_id: user.id } },
@@ -77,5 +94,5 @@ export async function GET(
   // Count of singles matching my looking_for (for waiting room UI)
   const singles_count = filtered.length;
 
-  return NextResponse.json({ profiles: scored, my_registration: me, singles_count });
+  return NextResponse.json({ profiles: scored, my_registration: me, singles_count, window_status: "open" });
 }

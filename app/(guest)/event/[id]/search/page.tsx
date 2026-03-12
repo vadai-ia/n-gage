@@ -23,6 +23,8 @@ type MatchData = {
   user_b_id: string;
 };
 
+type WindowStatus = "open" | "before_start" | "ended" | null;
+
 export default function SearchPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const router = useRouter();
@@ -36,11 +38,26 @@ export default function SearchPage() {
   const [match, setMatch] = useState<{ data: MatchData; profile: Profile } | null>(null);
   const [eventDuration, setEventDuration] = useState<number | undefined>();
   const [singlesCount, setSinglesCount] = useState<number>(0);
+  const [windowStatus, setWindowStatus] = useState<WindowStatus>(null);
+  const [searchStartTime, setSearchStartTime] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState("");
 
-  useEffect(() => {
+  const loadProfiles = useCallback(() => {
     fetch(`/api/v1/events/${eventId}/profiles`)
       .then((r) => r.json())
       .then((d) => {
+        if (d.window_status === "before_start") {
+          setWindowStatus("before_start");
+          setSearchStartTime(d.search_start_time ?? null);
+          setLoading(false);
+          return;
+        }
+        if (d.window_status === "ended") {
+          setWindowStatus("ended");
+          setLoading(false);
+          return;
+        }
+        setWindowStatus("open");
         setProfiles(d.profiles ?? []);
         setMyReg(d.my_registration ?? null);
         setSinglesCount(d.singles_count ?? (d.profiles?.length ?? 0));
@@ -57,6 +74,30 @@ export default function SearchPage() {
         setLoading(false);
       });
   }, [eventId]);
+
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
+
+  // Countdown ticker + auto-refresh when window opens
+  useEffect(() => {
+    if (windowStatus !== "before_start" || !searchStartTime) return;
+    const interval = setInterval(() => {
+      const diff = new Date(searchStartTime).getTime() - Date.now();
+      if (diff <= 0) {
+        clearInterval(interval);
+        loadProfiles();
+        return;
+      }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setCountdown(
+        `${h > 0 ? h + "h " : ""}${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [windowStatus, searchStartTime, loadProfiles]);
 
   async function handleStartSearch() {
     setStarting(true);
@@ -105,6 +146,95 @@ export default function SearchPage() {
             style={{ borderColor: "#FF2D78", borderTopColor: "transparent" }} />
           <span className="text-xs font-medium" style={{ color: "#44445A" }}>Cargando perfiles...</span>
         </div>
+      </div>
+    );
+  }
+
+  // ── BEFORE WINDOW OPENS ──
+  if (windowStatus === "before_start") {
+    const formattedStart = searchStartTime
+      ? new Date(searchStartTime).toLocaleString("es-MX", {
+          weekday: "long", month: "short", day: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        })
+      : null;
+
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: "#07070F" }}>
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(123,47,190,0.08) 0%, transparent 70%)" }} />
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="relative z-10 w-full max-w-xs"
+        >
+          <div className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
+            style={{ background: "rgba(123,47,190,0.1)", border: "1px solid rgba(123,47,190,0.2)" }}>
+            <svg width={40} height={40} fill="none" viewBox="0 0 24 24" stroke="#7B2FBE" strokeWidth={1.5}>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 6v6l4 2" strokeLinecap="round" />
+            </svg>
+          </div>
+
+          <h1 className="text-2xl font-black mb-2" style={{ color: "#F0F0FF" }}>
+            La búsqueda abre en
+          </h1>
+
+          <div className="rounded-2xl p-5 mb-4"
+            style={{ background: "rgba(123,47,190,0.08)", border: "1px solid rgba(123,47,190,0.15)" }}>
+            <p className="text-4xl font-black font-mono tracking-wider" style={{ color: "#A855F7" }}>
+              {countdown || "..."}
+            </p>
+          </div>
+
+          {formattedStart && (
+            <p className="text-sm capitalize" style={{ color: "#8585A8" }}>
+              {formattedStart}
+            </p>
+          )}
+
+          <p className="text-xs mt-4" style={{ color: "#44445A" }}>
+            La página se actualizará automáticamente cuando abra.
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ── WINDOW ENDED ──
+  if (windowStatus === "ended") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: "#07070F" }}>
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+          <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center"
+            style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.15)" }}>
+            <svg width={32} height={32} fill="none" viewBox="0 0 24 24" stroke="#10B981" strokeWidth={1.5}>
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" strokeLinecap="round" />
+              <path d="M22 4L12 14.01l-3-3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+
+          <h2 className="text-2xl font-bold mb-2" style={{ color: "#F0F0FF" }}>
+            La búsqueda ha cerrado
+          </h2>
+          <p className="text-sm mb-8" style={{ color: "#8585A8" }}>
+            La ventana de conexiones terminó. Revisa tus likes y matches.
+          </p>
+
+          <div className="flex gap-3">
+            <button onClick={() => router.push(`/event/${eventId}/likes`)}
+              className="flex-1 py-3 rounded-xl font-bold text-sm transition-transform active:scale-95"
+              style={{ background: "rgba(255,45,120,0.12)", border: "1px solid rgba(255,45,120,0.2)", color: "#FF2D78" }}>
+              Ver likes
+            </button>
+            <button onClick={() => router.push(`/event/${eventId}/matches`)}
+              className="flex-1 py-3 rounded-xl font-bold text-sm transition-transform active:scale-95"
+              style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}>
+              Ver matches
+            </button>
+          </div>
+        </motion.div>
       </div>
     );
   }
