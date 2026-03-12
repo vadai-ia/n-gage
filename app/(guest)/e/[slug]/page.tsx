@@ -229,12 +229,20 @@ export default function EventLandingPage() {
 
   // Submit final registration
   async function handleSubmit() {
-    if (!selfieDataUrl || !gender || !lookingFor || !event) return;
+    if (!gender || !lookingFor || !event) return;
     setSubmitting(true);
     setAuthError("");
 
     try {
-      const selfie_url = await uploadSelfie(selfieDataUrl);
+      // Try to upload selfie — if it fails, proceed anyway without blocking the user
+      let selfie_url: string | null = null;
+      if (selfieDataUrl) {
+        try {
+          selfie_url = await uploadSelfie(selfieDataUrl);
+        } catch {
+          selfie_url = null;
+        }
+      }
 
       const res = await fetch(`/api/v1/events/${event.id}/register`, {
         method: "POST",

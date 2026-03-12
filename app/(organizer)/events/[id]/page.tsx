@@ -840,14 +840,20 @@ export default function EventDetailPage() {
                 >
                   <div className="flex items-start gap-4">
                     {/* Selfie */}
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0" style={{ border: "2px solid rgba(255,45,120,0.25)" }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={reg.selfie_url}
-                        alt={reg.user.full_name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                      />
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ border: "2px solid rgba(255,45,120,0.25)", background: "rgba(255,45,120,0.08)" }}>
+                      {reg.selfie_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={reg.selfie_url}
+                          alt={reg.user.full_name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        <span className="text-xl font-black" style={{ color: "#FF2D78" }}>
+                          {(reg.user.full_name || "?")[0].toUpperCase()}
+                        </span>
+                      )}
                     </div>
 
                     {/* Info */}
