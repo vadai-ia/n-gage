@@ -38,28 +38,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(callbackUrl);
   }
 
-  // Auth callback: intercambiar el code por sesión en el servidor (PKCE)
-  if (pathname.startsWith("/auth/callback") && searchParams.get("code")) {
-    const code = searchParams.get("code")!;
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/login";
-      loginUrl.searchParams.set("error", "auth");
-      loginUrl.searchParams.set("reason", "OAuth code could not be exchanged.");
-      return NextResponse.redirect(loginUrl);
-    }
-    // Redirect sin el ?code= para que el client no intente consumirlo de nuevo
-    const cleanUrl = request.nextUrl.clone();
-    cleanUrl.searchParams.delete("code");
-    const redirectResponse = NextResponse.redirect(cleanUrl);
-    // Copiar las cookies de sesión con todas sus opciones (httpOnly, secure, path, etc.)
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie);
-    });
-    return redirectResponse;
-  }
-
   // Permitir rutas públicas, callbacks, APIs, y landing de eventos
   if (
     PUBLIC_ROUTES.includes(pathname) ||
