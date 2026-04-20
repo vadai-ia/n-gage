@@ -44,13 +44,33 @@ export async function GET(req: Request) {
       take: limit,
       orderBy: { created_at: "desc" },
       include: {
-        _count: { select: { organized_events: true, registrations: true } },
+        _count: {
+          select: {
+            organized_events: true,
+            registrations: true,
+            likes_sent: true,
+            likes_received: true,
+            matches_a: true,
+            matches_b: true,
+            photos: true,
+          },
+        },
       },
     }),
     prisma.user.count({ where }),
   ]);
 
-  return NextResponse.json({ users, total, page, pages: Math.ceil(total / limit) });
+  // Enrich with computed match count (a+b) and total likes
+  const enriched = users.map((u) => ({
+    ...u,
+    _count: {
+      ...u._count,
+      matches: (u._count.matches_a ?? 0) + (u._count.matches_b ?? 0),
+      events_attended: u._count.registrations,
+    },
+  }));
+
+  return NextResponse.json({ users: enriched, total, page, pages: Math.ceil(total / limit) });
 }
 
 // PATCH /api/v1/admin/users — suspend/activate/change_role/delete

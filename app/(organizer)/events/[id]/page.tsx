@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { getRelationLabel } from "@/lib/utils/relationLabels";
+import { createClient } from "@/lib/supabase/client";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -150,6 +151,7 @@ export default function EventDetailPage() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [copied, setCopied] = useState(false);
@@ -183,6 +185,14 @@ export default function EventDetailPage() {
   const [editGenderExtended, setEditGenderExtended] = useState(false);
   const [editAccessCode, setEditAccessCode] = useState("");
   const [editWhatsappGroupUrl, setEditWhatsappGroupUrl] = useState("");
+
+  // Check admin role once on mount
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.user_metadata?.role === "SUPER_ADMIN") setIsAdmin(true);
+    });
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
@@ -458,24 +468,27 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {/* Toggle status */}
-      <button
-        onClick={toggleStatus}
-        disabled={activating}
-        className="w-full py-3 rounded-xl font-bold text-sm mb-6 disabled:opacity-60 transition-all"
-        style={{
-          background: event.status === "active"
-            ? "rgba(239,68,68,0.1)" : "linear-gradient(135deg, #FF2D78, #7B2FBE)",
-          border: event.status === "active" ? "1px solid rgba(239,68,68,0.3)" : "none",
-          color: event.status === "active" ? "#EF4444" : "#fff",
-        }}
-      >
-        {activating
-          ? "Actualizando..."
-          : event.status === "active"
-            ? "Cerrar evento"
-            : "Activar evento"}
-      </button>
+      {/* Toggle status — admin only */}
+      {isAdmin ? (
+        <button
+          onClick={toggleStatus}
+          disabled={activating}
+          className="w-full py-3 rounded-xl font-bold text-sm mb-6 disabled:opacity-60 transition-all"
+          style={{
+            background: event.status === "active"
+              ? "rgba(239,68,68,0.1)" : "linear-gradient(135deg, #FF2D78, #7B2FBE)",
+            border: event.status === "active" ? "1px solid rgba(239,68,68,0.3)" : "none",
+            color: event.status === "active" ? "#EF4444" : "#fff",
+          }}
+        >
+          {activating ? "Actualizando..." : event.status === "active" ? "Cerrar evento" : "Activar evento"}
+        </button>
+      ) : (
+        <div className="w-full py-3 rounded-xl text-center text-xs mb-6"
+          style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.15)", color: "#FFB800" }}>
+          Tu evento sera activado por el admin de N&apos;GAGE
+        </div>
+      )}
 
       {/* ─── Stats Cards ────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-2 mb-3">

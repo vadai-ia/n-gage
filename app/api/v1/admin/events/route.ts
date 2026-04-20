@@ -18,6 +18,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
   const plan   = searchParams.get("plan");
+  const type   = searchParams.get("type");
+  const city   = searchParams.get("city");
   const search = searchParams.get("q");
   const page   = parseInt(searchParams.get("page") ?? "1");
   const limit  = 20;
@@ -25,7 +27,15 @@ export async function GET(req: Request) {
   const where: Record<string, unknown> = {};
   if (status) where.status = status;
   if (plan)   where.plan   = plan;
-  if (search) where.name   = { contains: search, mode: "insensitive" };
+  if (type)   where.type   = type;
+  if (city)   where.venue_city = { contains: city, mode: "insensitive" };
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { venue_city: { contains: search, mode: "insensitive" } },
+      { venue_name: { contains: search, mode: "insensitive" } },
+    ];
+  }
 
   const [events, total] = await Promise.all([
     prisma.event.findMany({

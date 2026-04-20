@@ -13,7 +13,7 @@ type User = {
   is_active: boolean;
   avatar_url: string | null;
   created_at: string;
-  _count: { organized_events: number; registrations: number };
+  _count: { organized_events: number; registrations: number; likes_received?: number; likes_sent?: number; matches?: number; matches_a?: number; matches_b?: number; photos?: number };
 };
 
 const ROLE_COLOR: Record<string, string> = {
@@ -308,10 +308,18 @@ export default function AdminUsersPage() {
                       >
                         {u.email}
                       </p>
-                      <p className="text-[11px]" style={{ color: "#44445A" }}>
-                        {u._count.organized_events > 0 &&
-                          `${u._count.organized_events} eventos organizados  ·  `}
-                        {u._count.registrations} registros  ·  {new Date(u.created_at).toLocaleDateString("es-MX")}
+                      <p className="text-[11px] flex items-center gap-2 flex-wrap" style={{ color: "#44445A" }}>
+                        {u._count.organized_events > 0 && (
+                          <span style={{ color: "#7B2FBE" }}>{u._count.organized_events} org</span>
+                        )}
+                        <span style={{ color: "#1A6EFF" }}>{u._count.registrations} eventos</span>
+                        {(u._count.likes_received ?? 0) > 0 && (
+                          <span style={{ color: "#FF2D78" }}>{u._count.likes_received} likes</span>
+                        )}
+                        {((u._count.matches ?? 0) > 0) && (
+                          <span style={{ color: "#10B981" }}>{u._count.matches} matches</span>
+                        )}
+                        <span>&middot; {new Date(u.created_at).toLocaleDateString("es-MX")}</span>
                       </p>
                     </div>
                   </div>
@@ -349,6 +357,16 @@ export default function AdminUsersPage() {
                     borderTop: "1px solid rgba(255,255,255,0.04)",
                   }}
                 >
+                  {/* View detail link */}
+                  <a href={`/admin/users/${u.id}`}
+                    className="w-full mb-3 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all hover:brightness-125"
+                    style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}>
+                    Ver perfil completo
+                    <svg width={12} height={12} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path d="M9 18l6-6-6-6" strokeLinecap="round" />
+                    </svg>
+                  </a>
+
                   <p
                     className="text-[10px] font-bold uppercase tracking-wider mb-2.5"
                     style={{ color: "#44445A" }}

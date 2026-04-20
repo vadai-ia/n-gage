@@ -182,7 +182,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -191,10 +191,38 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const admin = await isAdmin(user.id);
+
+  // Only admin can hard-delete; organizers can only close
+  const { searchParams } = new URL(req.url);
+  const hard = searchParams.get("hard") === "true";
+
+  if (hard && !admin) {
+    return NextResponse.json({ error: "Solo admin puede eliminar eventos" }, { status: 403 });
+  }
+
+  if (hard) {
+    // Cascade delete related records (preserving referential integrity)
+    await prisma.$transaction([
+      prisma.matchMessage.deleteMany({ where: { match: { event_id: id } } }),
+      prisma.eventMatch.deleteMany({ where: { event_id: id } }),
+      prisma.eventLike.deleteMany({ where: { event_id: id } }),
+      prisma.photoReport.deleteMany({ where: { photo: { event_id: id } } }),
+      prisma.eventPhoto.deleteMany({ where: { event_id: id } }),
+      prisma.eventRegistration.deleteMany({ where: { event_id: id } }),
+      prisma.eventHost.deleteMany({ where: { event_id: id } }),
+      prisma.eventAccessCode.deleteMany({ where: { event_id: id } }),
+      prisma.appReview.deleteMany({ where: { event_id: id } }),
+      prisma.webhook.deleteMany({ where: { event_id: id } }),
+      prisma.event.delete({ where: { id } }),
+    ]);
+    return NextResponse.json({ success: true, deleted: true });
+  }
+
+  // Default: soft-close
   await prisma.event.updateMany({
     where: admin ? { id } : { id, organizer_id: user.id },
     data: { status: "closed" },
   });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, closed: true });
 }

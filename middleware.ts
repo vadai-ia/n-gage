@@ -60,12 +60,27 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  const role = user.user_metadata?.role;
+
   // Protección de rutas de admin
   if (pathname.startsWith("/admin")) {
-    const role = user.user_metadata?.role;
     if (role !== "SUPER_ADMIN") {
       return NextResponse.redirect(new URL("/", request.url));
     }
+  }
+
+  // SUPER_ADMIN siempre va a /admin (no a /dashboard o /events)
+  if (role === "SUPER_ADMIN" && (pathname === "/dashboard" || pathname.startsWith("/events"))) {
+    // Allow /events/[id] redirect to /admin/events/[id] for consistent routing
+    if (pathname.match(/^\/events\/[^/]+$/)) {
+      const id = pathname.split("/")[2];
+      return NextResponse.redirect(new URL(`/admin/events/${id}`, request.url));
+    }
+    if (pathname === "/events/new") {
+      // Allow admin to create events via the same route
+      return supabaseResponse;
+    }
+    return NextResponse.redirect(new URL("/admin", request.url));
   }
 
   return supabaseResponse;
