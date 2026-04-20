@@ -17,7 +17,16 @@
       "Bash(cat '/c/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/event/[id]/likes/page.tsx')",
       "Bash(cat '/c/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/event/[id]/matches/[matchId]/page.tsx')",
       "Bash(cat '/c/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/event/[id]/album/page.tsx')",
-      "Bash(cat '/c/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/welcome/page.tsx')"
+      "Bash(cat '/c/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/welcome/page.tsx')",
+      "Bash(grep -B 5 -A 30 \"const body = await req.json\" app/api/v1/events/[id]/route.ts)",
+      "Bash(grep -n \"access_codes\" app/api/v1/events/[id]/route.ts)",
+      "Bash(grep -B 5 -A 20 \"export async function GET\" app/api/v1/events/[id]/route.ts)",
+      "Bash(grep -B 5 -A 15 \"tab === \"\"codigos\"\"\" app/\\\\\\(admin\\\\\\)/admin/events/[id]/page.tsx)",
+      "Bash(grep -n \"access_codes:\" app/api/v1/events/[id]/route.ts)",
+      "Bash(sed -n '59,180p' app/api/v1/events/[id]/route.ts)",
+      "Bash(ls -la \"c:/Users/Alejandro Martinez/Desktop/ngage/app/\\(guest\\)/event/[id]/\")",
+      "Bash(find \"c:/Users/Alejandro Martinez/Desktop/ngage/app/\\(admin\\)\" -name \"page.tsx\" -type f)",
+      "Bash(find \"c:/Users/Alejandro Martinez/Desktop/ngage/app/\\(organizer\\)\" -name \"page.tsx\" -type f)"
     ]
   }
 }
