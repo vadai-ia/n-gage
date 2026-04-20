@@ -16,8 +16,8 @@ const TABS = [
     ),
   },
   {
-    key: "likes",
-    label: "Likes",
+    key: "connections",
+    label: "Matches",
     icon: (active: boolean) => (
       <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
@@ -37,21 +37,21 @@ const TABS = [
     ),
   },
   {
-    key: "matches",
-    label: "Matches",
-    icon: (active: boolean) => (
-      <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-      </svg>
-    ),
-  },
-  {
     key: "search",
     label: "Swipe",
     icon: (active: boolean) => (
       <svg width={22} height={22} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2 : 1.5}>
         <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    key: "promo",
+    label: "Promo",
+    icon: (active: boolean) => (
+      <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+        <line x1="7" y1="7" x2="7.01" y2="7" />
       </svg>
     ),
   },
@@ -78,12 +78,10 @@ export default function GuestNav() {
           const active = pathname === href || pathname?.startsWith(href + "/");
 
           let badgeCount = 0;
-          if (tab.key === "likes") badgeCount = counts.likes;
-          if (tab.key === "matches") badgeCount = counts.matches + counts.messages;
+          if (tab.key === "connections") badgeCount = counts.likes + counts.matches + counts.messages;
 
           const handleClick = () => {
-            if (tab.key === "likes") resetLikes();
-            if (tab.key === "matches") { resetMatches(); resetMessages(); }
+            if (tab.key === "connections") { resetLikes(); resetMatches(); resetMessages(); }
           };
 
           if (tab.isCamera) {

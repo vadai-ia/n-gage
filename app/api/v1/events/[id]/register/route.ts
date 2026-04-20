@@ -23,9 +23,10 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { selfie_url, display_name, bio, table_number, relation_type, interests, gender, looking_for } = body;
+  const { selfie_url, display_name, bio, table_number, relation_type, interests, gender, looking_for, skip_profile } = body;
 
-  if (!gender || !looking_for) {
+  // Allow minimal registration if skip_profile=true; otherwise require gender + looking_for
+  if (!skip_profile && (!gender || !looking_for)) {
     return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
   }
 
@@ -86,8 +87,8 @@ export async function POST(
       table_number: table_number || null,
       relation_type: relation_type || null,
       interests: interests || [],
-      gender,
-      looking_for,
+      gender: gender || "prefer_not_say",
+      looking_for: looking_for || "everyone",
     },
   });
 

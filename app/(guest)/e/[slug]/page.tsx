@@ -258,6 +258,30 @@ export default function EventLandingPage() {
   }
 
   // Submit final registration
+  async function handleSkipProfile() {
+    if (!event) return;
+    setSubmitting(true);
+    setAuthError("");
+    try {
+      // Register with minimal data — user can fill in later from profile
+      const res = await fetch(`/api/v1/events/${event.id}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skip_profile: true }),
+      });
+      if (res.ok) {
+        window.location.href = `/event/${event.id}/search`;
+      } else {
+        const d = await res.json();
+        setAuthError(d.error || "Error al registrarte.");
+      }
+    } catch {
+      setAuthError("Error inesperado.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function handleSubmit() {
     if (!gender || !lookingFor || !event) return;
     setSubmitting(true);
@@ -851,9 +875,20 @@ export default function EventLandingPage() {
         <p className="text-sm mb-1" style={{ color: textSecondary }}>
           No solo importa el look, tambien el feel.
         </p>
-        <p className="text-xs mb-6" style={{ color: textMuted }}>
+        <p className="text-xs mb-4" style={{ color: textMuted }}>
           Tu selfie y tu bio son lo que los demas veran al hacer swipe.
         </p>
+
+        {/* Skip option */}
+        <button
+          type="button"
+          onClick={handleSkipProfile}
+          disabled={submitting}
+          className="text-xs font-semibold underline mb-4 self-start disabled:opacity-50"
+          style={{ color: textSecondary }}
+        >
+          Lo hago en un rato
+        </button>
 
         <div className="flex justify-center mb-6">
           <SelfieCapture

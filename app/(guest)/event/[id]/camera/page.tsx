@@ -73,6 +73,7 @@ export default function CameraPage() {
   const [cameraError, setCameraError]   = useState("");
   const [flashActive, setFlashActive]   = useState(false);
   const [loadingCount, setLoadingCount] = useState(true);
+  const [facingMode, setFacingMode]     = useState<"user" | "environment">("environment");
 
   // Cargar contador de fotos
   useEffect(() => {
@@ -81,11 +82,15 @@ export default function CameraPage() {
       .then((d) => { setPhotosTaken(d.photos_taken ?? 0); setLoadingCount(false); });
   }, [eventId]);
 
-  const startCamera = useCallback(async () => {
+  const startCamera = useCallback(async (mode: "user" | "environment" = facingMode) => {
     setCameraError("");
+    // Stop previous stream
+    if (videoRef.current?.srcObject) {
+      (videoRef.current.srcObject as MediaStream).getTracks().forEach((t) => t.stop());
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 1280 } },
+        video: { facingMode: { ideal: mode }, width: { ideal: 1280 }, height: { ideal: 1280 } },
         audio: false,
       });
       if (videoRef.current) {
@@ -94,9 +99,15 @@ export default function CameraPage() {
         setStreaming(true);
       }
     } catch {
-      setCameraError("No se pudo acceder a la cámara. Verifica los permisos.");
+      setCameraError("No se pudo acceder a la camara. Verifica los permisos.");
     }
-  }, []);
+  }, [facingMode]);
+
+  const flipCamera = useCallback(() => {
+    const next = facingMode === "user" ? "environment" : "user";
+    setFacingMode(next);
+    startCamera(next);
+  }, [facingMode, startCamera]);
 
   const stopCamera = useCallback(() => {
     if (videoRef.current?.srcObject) {
@@ -201,7 +212,7 @@ export default function CameraPage() {
 
             {!atLimit && (
               <button
-                onClick={startCamera}
+                onClick={() => startCamera()}
                 className="px-7 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all active:scale-95"
                 style={{
                   background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
@@ -307,7 +318,7 @@ export default function CameraPage() {
 
             {/* Shutter button */}
             <button
-              onClick={streaming ? takePhoto : startCamera}
+              onClick={streaming ? takePhoto : () => startCamera()}
               disabled={uploading}
               aria-label="Tomar foto"
               className="relative w-20 h-20 rounded-full flex items-center justify-center transition-transform active:scale-95 disabled:opacity-50"
@@ -331,8 +342,25 @@ export default function CameraPage() {
               )}
             </button>
 
-            {/* Spacer to center shutter when streaming */}
-            {streaming && <div className="w-12 h-12" />}
+            {/* Flip camera button */}
+            {streaming && (
+              <button
+                onClick={flipCamera}
+                className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                }}
+                aria-label="Cambiar camara"
+              >
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#F0F0FF" strokeWidth="1.5">
+                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                  <path d="M9 13a3 3 0 106 0 3 3 0 00-6 0" />
+                  <path d="M17 8l-1.5-1M7 8l1.5-1" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+            {!streaming && <div className="w-12 h-12" />}
           </>
         )}
       </div>
