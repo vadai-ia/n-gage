@@ -14,7 +14,7 @@ export default async function GuestEventLayout({
 
   return (
     <NotificationProvider>
-      <div className="min-h-screen" style={{ background: "#07070F", paddingBottom: "calc(70px + env(safe-area-inset-bottom, 0px))" }}>
+      <div style={{ background: "#07070F", minHeight: "100dvh", paddingBottom: "calc(70px + env(safe-area-inset-bottom, 0px))" }}>
         <ViewSwitcher />
         <RealtimeNotifications eventId={id} />
         {children}

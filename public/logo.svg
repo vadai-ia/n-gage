@@ -1,13 +1,10 @@
-<?xml version="1.0" standalone="no"?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
- "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
-<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
- width="2048.000000pt" height="2048.000000pt" viewBox="0 0 2048.000000 2048.000000"
- preserveAspectRatio="xMidYMid meet">
-
-<g transform="translate(0.000000,2048.000000) scale(0.100000,-0.100000)"
-fill="#000000" stroke="none">
-<path d="M0 10240 l0 -10240 10240 0 10240 0 0 10240 0 10240 -10240 0 -10240
-0 0 -10240z"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="none" role="img" aria-label="N'GAGE">
+  <defs>
+    <linearGradient id="ngageFlame" x1="96" y1="48" x2="440" y2="496" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF2D78"/>
+      <stop offset="50%" stop-color="#7B2FBE"/>
+      <stop offset="100%" stop-color="#1A6EFF"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#ngageFlame)" fill-rule="evenodd" d="M220 64C218 104 212 142 196 176C172 152 138 158 116 196C86 244 80 312 106 372C138 440 204 478 256 506C318 476 382 430 410 366C434 306 426 240 396 194C372 160 338 154 316 176C302 142 300 102 306 52C290 96 272 138 260 158C244 132 230 98 220 64ZM252 184C240 220 236 262 246 302C260 280 274 250 278 214C280 198 270 184 260 182C256 181 253 182 252 184Z"/>
 </svg>

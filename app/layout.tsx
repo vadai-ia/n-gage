@@ -22,6 +22,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
   themeColor: "#07070F",
 };
 
@@ -38,8 +39,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans antialiased min-h-dvh">
-        {children}
+      <body className="font-sans antialiased">
+        <div className="app-root">
+          {children}
+        </div>
       </body>
     </html>
   );
