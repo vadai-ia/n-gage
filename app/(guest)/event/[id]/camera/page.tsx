@@ -74,6 +74,7 @@ export default function CameraPage() {
   const [flashActive, setFlashActive]   = useState(false);
   const [loadingCount, setLoadingCount] = useState(true);
   const [facingMode, setFacingMode]     = useState<"user" | "environment">("environment");
+  const [previewUrl, setPreviewUrl]     = useState<string | null>(null);
 
   // Cargar contador de fotos
   useEffect(() => {
@@ -119,7 +120,7 @@ export default function CameraPage() {
 
   useEffect(() => { return () => stopCamera(); }, [stopCamera]);
 
-  const takePhoto = useCallback(async () => {
+  const takePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || uploading || photosTaken >= MAX_PHOTOS) return;
 
     const video  = videoRef.current;
@@ -139,14 +140,21 @@ export default function CameraPage() {
     setFlashActive(true);
     setTimeout(() => setFlashActive(false), 150);
 
-    setUploading(true);
-    setLastPhoto(dataUrl);
+    // Stop camera stream and show preview — user will confirm or retake
+    stopCamera();
+    setPreviewUrl(dataUrl);
+  }, [uploading, photosTaken, stopCamera]);
 
+  const confirmPhoto = useCallback(async () => {
+    if (!previewUrl || uploading) return;
+    if (photosTaken >= MAX_PHOTOS) { setPreviewUrl(null); return; }
+
+    setUploading(true);
     const res = await fetch(`/api/v1/events/${eventId}/photos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        dataUrl,
+        dataUrl: previewUrl,
         device_info: navigator.userAgent.slice(0, 100),
       }),
     });
@@ -154,9 +162,24 @@ export default function CameraPage() {
     const data = await res.json();
     if (res.ok) {
       setPhotosTaken(data.photos_taken);
+      setLastPhoto(previewUrl);
+      setPreviewUrl(null);
+      // Re-open camera if not at limit
+      if (data.photos_taken < MAX_PHOTOS) {
+        await startCamera(facingMode);
+      }
+    } else {
+      // Upload error — keep preview, allow retry
+      alert(data.error || "Error al subir la foto. Intenta de nuevo.");
     }
     setUploading(false);
-  }, [eventId, uploading, photosTaken]);
+  }, [previewUrl, uploading, photosTaken, eventId, startCamera, facingMode]);
+
+  const discardPhoto = useCallback(async () => {
+    setPreviewUrl(null);
+    // Reopen camera to take another
+    await startCamera(facingMode);
+  }, [startCamera, facingMode]);
 
   const atLimit = photosTaken >= MAX_PHOTOS;
 
@@ -172,14 +195,26 @@ export default function CameraPage() {
 
       {/* Visor */}
       <div className="relative flex-1 overflow-hidden">
+        {/* Preview (after capture, before upload) */}
+        {previewUrl && (
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: "#000" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={previewUrl} alt="Vista previa" className="w-full h-full object-contain" />
+            <div className="absolute top-4 left-4 right-4 px-3 py-2 rounded-xl text-xs font-bold text-center"
+              style={{ background: "rgba(0,0,0,0.7)", color: "#F0F0FF", backdropFilter: "blur(8px)" }}>
+              Te gusta esta foto?
+            </div>
+          </div>
+        )}
+
         <video
           ref={videoRef}
           className="w-full h-full object-cover"
-          style={{ display: streaming ? "block" : "none" }}
+          style={{ display: streaming && !previewUrl ? "block" : "none" }}
           playsInline
           muted
         />
-        {!streaming && (
+        {!streaming && !previewUrl && (
           <div
             className="w-full h-full flex flex-col items-center justify-center gap-5"
             style={{ background: "#07070F" }}
@@ -297,9 +332,49 @@ export default function CameraPage() {
               Usaste todas tus fotos
             </p>
             <p className="text-xs mt-1.5" style={{ color: "#44445A" }}>
-              El &aacute;lbum estar&aacute; disponible ma&ntilde;ana
+              El album estara disponible manana
             </p>
           </div>
+        ) : previewUrl ? (
+          <>
+            {/* Discard / retake */}
+            <button
+              onClick={discardPhoto}
+              disabled={uploading}
+              className="w-16 h-16 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-50"
+              style={{
+                background: "rgba(239,68,68,0.1)",
+                border: "1px solid rgba(239,68,68,0.3)",
+              }}
+              aria-label="Descartar foto"
+            >
+              <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#EF4444" strokeWidth={2.5}>
+                <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              </svg>
+            </button>
+
+            {/* Confirm upload */}
+            <button
+              onClick={confirmPhoto}
+              disabled={uploading}
+              className="w-20 h-20 rounded-full flex items-center justify-center transition-transform active:scale-95 disabled:opacity-50"
+              style={{
+                background: uploading ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg, #10B981, #059669)",
+                boxShadow: uploading ? "none" : "0 0 0 4px rgba(16,185,129,0.2), 0 0 30px rgba(16,185,129,0.25)",
+              }}
+              aria-label="Confirmar foto"
+            >
+              {uploading ? (
+                <SpinnerIcon />
+              ) : (
+                <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={3}>
+                  <polyline points="20 6 9 17 4 12" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
+
+            <div className="w-16 h-16" />
+          </>
         ) : (
           <>
             {/* Close / stop camera button */}

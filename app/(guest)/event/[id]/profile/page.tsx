@@ -56,6 +56,9 @@ export default function ProfilePage() {
   // Photo state
   const [newSelfie, setNewSelfie] = useState<string | null>(null);
 
+  // Past events
+  const [pastEvents, setPastEvents] = useState<Array<{ id: string; event_id: string; event: { id: string; name: string; event_date: string; venue_name: string | null; status: string } }>>([]);
+
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -79,6 +82,14 @@ export default function ProfilePage() {
         }
         setLoading(false);
       });
+
+    // Past events
+    fetch(`/api/v1/me/events`)
+      .then((r) => r.json())
+      .then((d) => {
+        setPastEvents((d.registrations ?? []).filter((r: { event_id: string }) => r.event_id !== eventId));
+      })
+      .catch(() => { /* non-blocking */ });
   }, [eventId]);
 
   async function handleSave() {
@@ -514,6 +525,60 @@ export default function ProfilePage() {
             <div className="text-xl font-black" style={{ color: "#7B2FBE" }}>{reg.photos_taken}/10</div>
             <div className="text-xs mt-1" style={{ color: "#8585A8" }}>Fotos</div>
           </div>
+        </div>
+      )}
+
+      {/* Past events */}
+      {pastEvents.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+            <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#44445A" }}>
+              Mis eventos anteriores
+            </span>
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+          </div>
+          <div className="flex flex-col gap-2">
+            {pastEvents.map((r) => {
+              const isOpen = r.event.status === "active";
+              return (
+                <button key={r.id}
+                  onClick={() => { if (isOpen) window.location.href = `/event/${r.event.id}/search`; }}
+                  disabled={!isOpen}
+                  className="w-full text-left p-3 rounded-xl flex items-center gap-3 transition-transform active:scale-[0.98] disabled:cursor-not-allowed"
+                  style={{
+                    background: "#0F0F1A",
+                    border: `1px solid ${isOpen ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.04)"}`,
+                    opacity: isOpen ? 1 : 0.6,
+                  }}>
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(255,45,120,0.08)", color: "#FF2D78" }}>
+                    <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate" style={{ color: "#F0F0FF" }}>{r.event.name}</p>
+                    <p className="text-[10px]" style={{ color: "#8585A8" }}>
+                      {new Date(r.event.event_date).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+                      {r.event.venue_name && ` · ${r.event.venue_name}`}
+                    </p>
+                  </div>
+                  <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase shrink-0"
+                    style={{
+                      background: isOpen ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.04)",
+                      color: isOpen ? "#10B981" : "#44445A",
+                    }}>
+                    {isOpen ? "Abierto" : r.event.status === "closed" ? "Cerrado" : r.event.status === "expired" ? "Expirado" : r.event.status}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[10px] mt-2 text-center" style={{ color: "#44445A" }}>
+            Solo puedes ver la info de eventos que siguen abiertos
+          </p>
         </div>
       )}
 
