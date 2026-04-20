@@ -177,17 +177,26 @@ export default function CameraPage() {
 
             {cameraError ? (
               <div className="text-center px-8">
-                <p className="text-sm font-medium mb-2" style={{ color: "#FF2D78" }}>
-                  {cameraError}
-                </p>
+                <p className="text-sm font-medium mb-2" style={{ color: "#FF2D78" }}>{cameraError}</p>
                 <p className="text-xs leading-relaxed" style={{ color: "#44445A" }}>
-                  Ve a Configuraci&oacute;n &rsaquo; Privacidad &rsaquo; C&aacute;mara y activa el permiso
+                  Ve a Configuracion &gt; Privacidad &gt; Camara y activa el permiso
                 </p>
               </div>
             ) : (
-              <p className="text-sm" style={{ color: "#8585A8" }}>
-                Toca para activar la c&aacute;mara
-              </p>
+              <div className="text-center px-6 max-w-sm">
+                <h2 className="text-lg font-black mb-2" style={{ color: "#F0F0FF" }}>
+                  Album para los novios
+                </h2>
+                <p className="text-xs leading-relaxed mb-1" style={{ color: "#8585A8" }}>
+                  Tienes <strong style={{ color: "#FFB800" }}>solo 10 fotos</strong> para que los novios te recuerden esta noche.
+                </p>
+                <p className="text-xs leading-relaxed mb-1" style={{ color: "#8585A8" }}>
+                  Estas fotos son un regalo especial: <strong style={{ color: "#F0F0FF" }}>unicamente los novios las veran</strong> en su album privado.
+                </p>
+                <p className="text-xs leading-relaxed" style={{ color: "#44445A" }}>
+                  Aprovechalas bien y disfruta la noche.
+                </p>
+              </div>
             )}
 
             {!atLimit && (
@@ -200,7 +209,7 @@ export default function CameraPage() {
                   boxShadow: "0 4px 24px rgba(255, 45, 120, 0.3)",
                 }}
               >
-                Activar c&aacute;mara
+                Activar camara
               </button>
             )}
           </div>

@@ -7,21 +7,20 @@ import { useNotifications } from "@/lib/contexts/NotificationContext";
 
 const TABS = [
   {
-    key: "search",
-    label: "Descubrir",
+    key: "profile",
+    label: "Perfil",
     icon: (active: boolean) => (
-      <svg width={22} height={22} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2 : 1.5}>
-        <circle cx="11" cy="11" r="7" />
-        <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+      <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
       </svg>
     ),
   },
   {
-    key: "likes",
-    label: "Likes",
+    key: "search",
+    label: "Descubrir",
     icon: (active: boolean) => (
-      <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+      <svg width={22} height={22} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2 : 1.5}>
+        <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -38,11 +37,11 @@ const TABS = [
     ),
   },
   {
-    key: "matches",
-    label: "Chat",
+    key: "likes",
+    label: "Likes",
     icon: (active: boolean) => (
       <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
       </svg>
     ),
   },
@@ -60,7 +59,7 @@ const TABS = [
 export default function GuestNav() {
   const { id } = useParams<{ id: string }>();
   const pathname = usePathname();
-  const { counts, resetLikes, resetMatches, resetMessages } = useNotifications();
+  const { counts, resetLikes } = useNotifications();
 
   return (
     <nav
@@ -79,29 +78,22 @@ export default function GuestNav() {
 
           let badgeCount = 0;
           if (tab.key === "likes") badgeCount = counts.likes;
-          if (tab.key === "matches") badgeCount = counts.matches + counts.messages;
 
           const handleClick = () => {
             if (tab.key === "likes") resetLikes();
-            if (tab.key === "matches") { resetMatches(); resetMessages(); }
           };
 
           if (tab.isCamera) {
             return (
-              <Link
-                key={tab.key}
-                href={href}
-                className="flex items-center justify-center -mt-6 relative z-50 transition-transform active:scale-95"
-              >
-                <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center"
+              <Link key={tab.key} href={href}
+                className="flex items-center justify-center -mt-6 relative z-50 transition-transform active:scale-95">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center"
                   style={{
                     background: "linear-gradient(135deg, #1A1A1A, #0A0A0A)",
                     border: "1px solid rgba(255,45,120,0.4)",
                     boxShadow: "0 8px 30px rgba(0,0,0,0.6), 0 0 20px rgba(255,45,120,0.2)",
                     color: "#F0F0FF",
-                  }}
-                >
+                  }}>
                   {tab.icon(active)}
                 </div>
               </Link>
@@ -109,12 +101,8 @@ export default function GuestNav() {
           }
 
           return (
-            <Link
-              key={tab.key}
-              href={href}
-              onClick={handleClick}
-              className="flex flex-col items-center gap-1 py-2 px-1 relative w-14"
-            >
+            <Link key={tab.key} href={href} onClick={handleClick}
+              className="flex flex-col items-center gap-1 py-2 px-1 relative w-14">
               <span style={{ color: active ? "#F0F0FF" : "#44445A", transition: "color 0.3s ease" }}>
                 {tab.icon(active)}
               </span>
@@ -129,13 +117,10 @@ export default function GuestNav() {
                 {tab.label}
               </span>
               {active && (
-                <motion.div
-                  layoutId="activeTabIndicator"
+                <motion.div layoutId="activeTabIndicator"
                   className="absolute -bottom-2 left-1/2 w-1 h-1 rounded-full bg-[#FF2D78]"
-                  initial={false}
-                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  style={{ x: "-50%", boxShadow: "0 0 10px rgba(255,45,120,0.8)" }}
-                />
+                  initial={false} transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  style={{ x: "-50%", boxShadow: "0 0 10px rgba(255,45,120,0.8)" }} />
               )}
             </Link>
           );

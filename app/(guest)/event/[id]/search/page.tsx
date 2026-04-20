@@ -204,8 +204,31 @@ export default function SearchPage() {
             </p>
           )}
 
-          <p className="text-xs mt-4" style={{ color: "#44445A" }}>
-            La página se actualizará automáticamente cuando abra.
+          {/* Instructions while waiting */}
+          <div className="mt-6 flex flex-col gap-2 text-left">
+            {[
+              { n: "1", text: "Completa tu perfil para el evento" },
+              { n: "2", text: "Toma tu mejor selfie del dia" },
+              { n: "3", text: "Prepara tu swipe: like, no-like o super like" },
+            ].map((s) => (
+              <div key={s.n} className="flex items-center gap-3 p-3 rounded-xl"
+                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0"
+                  style={{ background: "rgba(255,45,120,0.1)", color: "#FF2D78" }}>{s.n}</div>
+                <p className="text-xs font-medium" style={{ color: "#8585A8" }}>{s.text}</p>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => router.push(`/event/${eventId}/profile`)}
+            className="mt-4 w-full py-3 rounded-xl text-sm font-bold transition-transform active:scale-[0.98]"
+            style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}>
+            Completar mi perfil
+          </button>
+
+          <p className="text-xs mt-3" style={{ color: "#44445A" }}>
+            La pagina se actualizara automaticamente cuando abra.
           </p>
         </motion.div>
       </div>

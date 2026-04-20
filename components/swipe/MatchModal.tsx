@@ -131,7 +131,7 @@ export default function MatchModal({ myPhoto, theirPhoto, theirName, onClose, on
               color: "#000000",
             }}
           >
-            Iniciar conversación
+            Ver mis matches
           </button>
 
           <button
