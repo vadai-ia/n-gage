@@ -18,6 +18,8 @@ export async function GET(
       display_name: true,
       bio: true,
       table_number: true,
+      table_visible: true,
+      gallery_photos: true,
       relation_type: true,
       interests: true,
       gender: true,
@@ -41,7 +43,7 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const body = await req.json();
-  const { selfie_url, display_name, bio, table_number, relation_type, interests, gender, looking_for } = body;
+  const { selfie_url, display_name, bio, table_number, table_visible, gallery_photos, relation_type, interests, gender, looking_for } = body;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateData: Record<string, any> = {};
@@ -49,6 +51,8 @@ export async function PATCH(
   if (display_name !== undefined) updateData.display_name = display_name?.trim() || null;
   if (bio !== undefined) updateData.bio = bio?.trim()?.slice(0, 160) || null;
   if (table_number !== undefined) updateData.table_number = table_number || null;
+  if (table_visible !== undefined) updateData.table_visible = table_visible;
+  if (gallery_photos !== undefined) updateData.gallery_photos = Array.isArray(gallery_photos) ? gallery_photos.slice(0, 5) : [];
   if (relation_type !== undefined) updateData.relation_type = relation_type || null;
   if (interests !== undefined) updateData.interests = interests;
   if (gender !== undefined) updateData.gender = gender;

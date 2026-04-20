@@ -227,6 +227,8 @@ model EventRegistration {
   display_name      String?
   bio               String?       @db.VarChar(160)
   table_number      String?
+  table_visible     Boolean       @default(true)
+  gallery_photos    Json?         // Array of up to 5 additional photo URLs (selfie_url is the main one)
   relation_type     RelationType?
   interests         Json?
   gender            Gender

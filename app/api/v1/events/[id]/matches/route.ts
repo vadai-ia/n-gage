@@ -47,10 +47,12 @@ export async function GET(
       const otherUser = m.user_a_id === user.id ? m.user_b : m.user_a;
       const reg = await prisma.eventRegistration.findUnique({
         where: { event_id_user_id: { event_id: eventId, user_id: otherId } },
-        select: { selfie_url: true, table_number: true, display_name: true, relation_type: true },
+        select: { selfie_url: true, table_number: true, table_visible: true, display_name: true, relation_type: true },
       });
       return { ...m, other_user: otherUser, other_selfie: reg?.selfie_url ?? null,
-        other_table: reg?.table_number ?? null, other_display_name: reg?.display_name ?? null,
+        other_table: reg?.table_number ?? null,
+        other_table_visible: reg?.table_visible ?? true,
+        other_display_name: reg?.display_name ?? null,
         other_relation_type: reg?.relation_type ?? null };
     })
   );

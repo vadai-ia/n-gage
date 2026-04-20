@@ -12,6 +12,8 @@ export type Profile = {
   display_name?: string | null;
   bio?: string | null;
   table_number: string | null;
+  table_visible?: boolean;
+  gallery_photos?: string[] | null;
   relation_type: string | null;
   interests: string[] | null;
   gender: string;
@@ -72,6 +74,23 @@ export default function SwipeCard({
   const firstName = displayedName.split(" ")[0];
   const isSoul = (profile.compatibility_score ?? 0) >= 40;
 
+  // Photo gallery
+  const allPhotos = [
+    profile.selfie_url,
+    ...(Array.isArray(profile.gallery_photos) ? profile.gallery_photos : []),
+  ].filter(Boolean) as string[];
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const currentPhoto = allPhotos[photoIndex] ?? profile.selfie_url ?? profile.user.avatar_url ?? "/placeholder.jpg";
+
+  const handlePhotoTap = (e: React.MouseEvent) => {
+    if (allPhotos.length <= 1) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const isRight = x > rect.width / 2;
+    if (isRight) setPhotoIndex((i) => (i + 1) % allPhotos.length);
+    else setPhotoIndex((i) => (i - 1 + allPhotos.length) % allPhotos.length);
+  };
+
   // Visual cues based on swipe direction direction
   const isLiking = swipingDirection === "right";
   const isNoping = swipingDirection === "left";
@@ -101,10 +120,28 @@ export default function SwipeCard({
             background: "#0A0A0A"
           }}
         >
+          {/* Tap zones for photo navigation */}
+          {allPhotos.length > 1 && (
+            <div className="absolute inset-0 z-[5] cursor-pointer" onClick={handlePhotoTap} />
+          )}
+
+          {/* Photo indicators */}
+          {allPhotos.length > 1 && (
+            <div className="absolute top-3 left-3 right-3 flex gap-1 z-10">
+              {allPhotos.map((_, i) => (
+                <div key={i} className="flex-1 h-1 rounded-full transition-all"
+                  style={{
+                    background: i === photoIndex ? "#fff" : "rgba(255,255,255,0.3)",
+                    boxShadow: i === photoIndex ? "0 0 6px rgba(255,255,255,0.8)" : "none",
+                  }} />
+              ))}
+            </div>
+          )}
+
           {/* Main Photo (Full Bleed Editorial) */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={profile.selfie_url || profile.user.avatar_url || "/placeholder.jpg"}
+            src={currentPhoto}
             alt={profile.user.full_name}
             className="absolute inset-0 w-full h-full object-cover pointer-events-none"
             draggable={false}
@@ -164,8 +201,8 @@ export default function SwipeCard({
                   {getRelationLabel(profile.relation_type) && (
                     <span>{getRelationLabel(profile.relation_type)}</span>
                   )}
-                  {profile.relation_type && profile.table_number && <span className="opacity-40">•</span>}
-                  {profile.table_number && (
+                  {profile.relation_type && profile.table_number && profile.table_visible !== false && <span className="opacity-40">•</span>}
+                  {profile.table_number && profile.table_visible !== false && (
                     <span>Mesa {profile.table_number}</span>
                   )}
                 </div>

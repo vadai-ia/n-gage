@@ -10,7 +10,16 @@ import {
   GENDER_OPTIONS, LOOKING_FOR_OPTIONS, INTERESTS_CATALOG, DRINK_OPTIONS,
 } from "@/types/event";
 
-type Step = "loading" | "access_code" | "intro" | "landing" | "auth" | "selfie" | "interests" | "done";
+type Step =
+  | "loading" | "access_code" | "intro" | "landing" | "auth"
+  | "wizard_team"      // 1. Team (bride/groom) — wedding only
+  | "wizard_mesa"      // 2. Table + visibility
+  | "wizard_selfie"    // 3. Selfie (MANDATORY)
+  | "wizard_gallery"   // 4. Gallery (up to 5 extras)
+  | "wizard_interests" // 5. Interests (3-step sub-wizard)
+  | "wizard_bio"       // 6. Bio (optional)
+  | "wizard_gender"    // 7. Gender + looking_for (MANDATORY)
+  | "done";
 
 export default function EventLandingPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -31,6 +40,9 @@ export default function EventLandingPage() {
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [tableNumber, setTableNumber] = useState("");
+  const [tableVisible, setTableVisible] = useState(true);
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([]); // up to 5
+  const [galleryPhotoCapture, setGalleryPhotoCapture] = useState<string | null>(null); // temp for next photo
   const [relationType, setRelationType] = useState("");
   const [gender, setGender] = useState("");
   const [lookingFor, setLookingFor] = useState("");
@@ -52,11 +64,11 @@ export default function EventLandingPage() {
   // Helper: decide si mostrar intro o ir directo al flujo
   const getNextStepAfterAccessGate = useCallback((isLoggedIn: boolean): Step => {
     if (typeof window === "undefined") {
-      return isLoggedIn ? "selfie" : "landing";
+      return isLoggedIn ? "wizard_team" : "landing";
     }
     const introSeen = window.localStorage.getItem(`ngage-intro-seen-${slug}`);
     if (!introSeen) return "intro";
-    return isLoggedIn ? "selfie" : "landing";
+    return isLoggedIn ? "wizard_team" : "landing";
   }, [slug]);
 
   // 1. Load event and validate access code
@@ -219,7 +231,7 @@ export default function EventLandingPage() {
         return;
       }
     }
-    setStep("selfie");
+    setStep("wizard_team");
   }
 
   async function handleGoogle() {
@@ -257,31 +269,6 @@ export default function EventLandingPage() {
     return data.url;
   }
 
-  // Submit final registration
-  async function handleSkipProfile() {
-    if (!event) return;
-    setSubmitting(true);
-    setAuthError("");
-    try {
-      // Register with minimal data — user can fill in later from profile
-      const res = await fetch(`/api/v1/events/${event.id}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ skip_profile: true }),
-      });
-      if (res.ok) {
-        window.location.href = `/event/${event.id}/search`;
-      } else {
-        const d = await res.json();
-        setAuthError(d.error || "Error al registrarte.");
-      }
-    } catch {
-      setAuthError("Error inesperado.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   async function handleSubmit() {
     if (!gender || !lookingFor || !event) return;
     setSubmitting(true);
@@ -307,6 +294,17 @@ export default function EventLandingPage() {
         return;
       }
 
+      // Upload extra gallery photos (if any) — best-effort
+      const uploadedGallery: string[] = [];
+      for (const g of galleryPhotos) {
+        try {
+          const url = await uploadSelfie(g);
+          uploadedGallery.push(url);
+        } catch {
+          // ignore individual upload failures
+        }
+      }
+
       const res = await fetch(`/api/v1/events/${event.id}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -315,6 +313,8 @@ export default function EventLandingPage() {
           display_name: displayName.trim() || null,
           bio: bio.trim() || null,
           table_number: tableNumber || null,
+          table_visible: tableVisible,
+          gallery_photos: uploadedGallery,
           relation_type: relationType || null,
           interests: [...selectedInterests, drink].filter(Boolean),
           gender,
@@ -362,7 +362,7 @@ export default function EventLandingPage() {
 
   const backButton = (
     <button
-      onClick={() => setStep(step === "auth" ? "landing" : step === "interests" ? "selfie" : "landing")}
+      onClick={() => setStep("landing")}
       className="flex items-center gap-1.5 text-sm mb-6 transition-colors"
       style={{ color: textSecondary }}
     >
@@ -510,7 +510,7 @@ export default function EventLandingPage() {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(`ngage-intro-seen-${slug}`, "1");
       }
-      setStep(user ? "selfie" : "landing");
+      setStep(user ? "wizard_team" : "landing");
     };
 
     return (
@@ -841,238 +841,246 @@ export default function EventLandingPage() {
     );
   }
 
-  // ── Progress bar component for selfie/interests ──
-  const ProgressBar = ({ activeIndex }: { activeIndex: number }) => (
-    <div className="flex gap-2 mb-8">
-      {["Selfie", "Intereses", "Listo"].map((label, i) => (
-        <div key={label} className="flex-1">
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: i <= activeIndex ? "100%" : "0%",
-                background: `linear-gradient(90deg, ${pink}, ${purple})`,
-              }}
-            />
-          </div>
-          <p className="text-xs font-medium mt-1.5 text-center" style={{ color: i <= activeIndex ? pink : textMuted }}>
-            {label}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
+  // ── Wizard step helpers ──
+  const TOTAL_WIZARD_STEPS = event?.type === "wedding" ? 7 : 6;
+  const stepNumber: Record<string, number> = event?.type === "wedding"
+    ? { wizard_team: 1, wizard_mesa: 2, wizard_selfie: 3, wizard_gallery: 4, wizard_interests: 5, wizard_bio: 6, wizard_gender: 7 }
+    : { wizard_mesa: 1, wizard_selfie: 2, wizard_gallery: 3, wizard_interests: 4, wizard_bio: 5, wizard_gender: 6 };
 
-  // ── STEP: Selfie + basic data ──
-  if (step === "selfie") {
+  function WizardHeader({ currentStep, title, subtitle }: { currentStep: string; title: string; subtitle?: string }) {
+    const n = stepNumber[currentStep] ?? 1;
+    const progress = (n / TOTAL_WIZARD_STEPS) * 100;
+    return (
+      <>
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold" style={{ color: pink }}>Paso {n} de {TOTAL_WIZARD_STEPS}</span>
+            <span className="text-[10px] font-medium" style={{ color: textMuted }}>{Math.round(progress)}%</span>
+          </div>
+          <div className="h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${progress}%`, background: "linear-gradient(90deg, #FF2D78, #7B2FBE)" }} />
+          </div>
+        </div>
+        <h2 className="text-2xl font-black tracking-tight mb-1" style={{ color: textPrimary }}>{title}</h2>
+        {subtitle && <p className="text-sm mb-5" style={{ color: textSecondary }}>{subtitle}</p>}
+      </>
+    );
+  }
+
+  // ── STEP 1: Team (only for weddings) ──
+  if (step === "wizard_team") {
+    // Auto-skip if not a wedding
+    if (event && event.type !== "wedding") {
+      setStep("wizard_mesa");
+      return null;
+    }
     return (
       <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
-        <ProgressBar activeIndex={0} />
-
-        <h2 className="text-2xl font-black tracking-tight mb-1" style={{ color: textPrimary }}>
-          Tu perfil del evento
-        </h2>
-        <p className="text-sm mb-1" style={{ color: textSecondary }}>
-          No solo importa el look, tambien el feel.
-        </p>
-        <p className="text-xs mb-4" style={{ color: textMuted }}>
-          Tu selfie y tu bio son lo que los demas veran al hacer swipe.
-        </p>
-
-        {/* Skip option */}
-        <button
-          type="button"
-          onClick={handleSkipProfile}
-          disabled={submitting}
-          className="text-xs font-semibold underline mb-4 self-start disabled:opacity-50"
-          style={{ color: textSecondary }}
-        >
-          Lo hago en un rato
-        </button>
-
-        <div className="flex justify-center mb-6">
-          <SelfieCapture
-            onCapture={(url) => setSelfieDataUrl(url)}
-            onRetake={() => setSelfieDataUrl(null)}
-            captured={selfieDataUrl}
-          />
-        </div>
-
-        {selfieDataUrl && (
-          <div className="flex flex-col gap-5">
-            {/* Nombre / Apodo */}
-            <div>
-              <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
-                ¿Cómo te llamamos? <span style={{ color: pink }}>*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Tu nombre o apodo"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                autoComplete="given-name"
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
-                style={{ background: inputBg, border: `1px solid ${displayName.trim() ? pink : inputBorder}`, color: textPrimary }}
-              />
-              {displayName.trim() && (
-                <p className="text-xs mt-1.5" style={{ color: textMuted }}>
-                  Así te verán los demás en el evento
-                </p>
-              )}
-            </div>
-
-            {/* Bio */}
-            <div>
-              <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
-                Describete en pocas palabras <span style={{ color: textMuted }}>(opcional)</span>
-              </label>
-              <textarea
-                placeholder="Ej. Amante del cafe, los perros y las buenas platicas..."
-                value={bio}
-                onChange={(e) => setBio(e.target.value.slice(0, 160))}
-                rows={2}
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all resize-none"
-                style={{ background: inputBg, border: `1px solid ${bio.trim() ? purple : inputBorder}`, color: textPrimary }}
-              />
-              <p className="text-xs mt-1 text-right" style={{ color: textMuted }}>
-                {bio.length}/160
-              </p>
-              <p className="text-xs" style={{ color: textMuted }}>
-                Esto aparecera en tu tarjeta para que te conozcan mas alla del look
-              </p>
-            </div>
-
-            {/* Mesa */}
-            <div>
-              <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
-                Numero de mesa <span style={{ color: textMuted }}>(opcional)</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Ej. Mesa 5"
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
-                style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }}
-              />
-            </div>
-
-            {/* Relation type */}
-            <div>
-              <label className="text-xs font-medium mb-2 block" style={{ color: textSecondary }}>
-                Como conoces a los anfitriones?
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {RELATION_TYPE_OPTIONS.map((r) => (
-                  <button
-                    key={r.value}
-                    onClick={() => setRelationType(r.value)}
-                    className="py-2.5 px-3 rounded-xl text-sm font-medium text-left transition-all active:scale-[0.98]"
-                    style={{
-                      background: relationType === r.value ? selectionBg : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${relationType === r.value ? pink : borderSubtle}`,
-                      color: relationType === r.value ? pink : textSecondary,
-                    }}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Gender */}
-            <div>
-              <label className="text-xs font-medium mb-2 block" style={{ color: textSecondary }}>Soy</label>
-              <div className="grid grid-cols-2 gap-2">
-                {genderOptions.map((g) => (
-                  <button
-                    key={g.value}
-                    onClick={() => setGender(g.value)}
-                    className="py-2.5 px-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98]"
-                    style={{
-                      background: gender === g.value ? selectionBg : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${gender === g.value ? pink : borderSubtle}`,
-                      color: gender === g.value ? pink : textSecondary,
-                    }}
-                  >
-                    {g.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Looking for */}
-            <div>
-              <label className="text-xs font-medium mb-2 block" style={{ color: textSecondary }}>Me interesan</label>
-              <div className="grid grid-cols-2 gap-2">
-                {LOOKING_FOR_OPTIONS.map((l) => (
-                  <button
-                    key={l.value}
-                    onClick={() => setLookingFor(l.value)}
-                    className="py-2.5 px-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98]"
-                    style={{
-                      background: lookingFor === l.value ? selectionBgBlue : "rgba(255,255,255,0.03)",
-                      border: `1px solid ${lookingFor === l.value ? blue : borderSubtle}`,
-                      color: lookingFor === l.value ? blue : textSecondary,
-                    }}
-                  >
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={() => setStep("interests")}
-              disabled={!gender || !lookingFor}
-              className="w-full py-3.5 rounded-xl font-bold text-sm mt-1 disabled:opacity-40 active:scale-[0.98] transition-transform"
-              style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}
-            >
-              Continuar
+        <WizardHeader currentStep="wizard_team" title="Vienes de parte de la novia o del novio?" subtitle="Ayudanos a identificar con que equipo estas" />
+        <div className="flex flex-col gap-2.5 mb-6">
+          {RELATION_TYPE_OPTIONS.map((r) => (
+            <button key={r.value} onClick={() => setRelationType(r.value)}
+              className="py-4 px-4 rounded-2xl text-sm font-bold text-left transition-all active:scale-[0.98]"
+              style={{
+                background: relationType === r.value ? selectionBg : "rgba(255,255,255,0.03)",
+                border: `1px solid ${relationType === r.value ? pink : borderSubtle}`,
+                color: relationType === r.value ? pink : textPrimary,
+              }}>
+              {r.label}
             </button>
-          </div>
-        )}
+          ))}
+        </div>
+        <button onClick={() => setStep("wizard_mesa")} disabled={!relationType}
+          className="w-full py-3.5 rounded-xl font-bold text-sm mt-auto disabled:opacity-40 transition-transform active:scale-[0.98]"
+          style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}>
+          Continuar
+        </button>
       </div>
     );
   }
 
-  // ── STEP: Interests (3 steps) ──
-  if (step === "interests") {
-    const currentCatalog = INTERESTS_CATALOG[interestStep];
-    const isLastStep = interestStep === INTERESTS_CATALOG.length - 1;
-
+  // ── STEP 2: Mesa + visibility ──
+  if (step === "wizard_mesa") {
     return (
       <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
-        <ProgressBar activeIndex={1} />
+        <WizardHeader currentStep="wizard_mesa" title="Tu mesa en el evento" subtitle="Compartela o manten el misterio" />
+        <div className="flex flex-col gap-5 mb-6">
+          <div>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
+              Numero de mesa <span style={{ color: textMuted }}>(opcional)</span>
+            </label>
+            <input type="text" placeholder="Ej. Mesa 5" value={tableNumber}
+              onChange={(e) => setTableNumber(e.target.value)}
+              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+              style={{ background: inputBg, border: `1px solid ${inputBorder}`, color: textPrimary }} />
+          </div>
 
-        <div className="flex items-center gap-2 mb-1">
-          <span
-            className="text-xs font-bold px-2.5 py-1 rounded-full"
-            style={{ background: "rgba(255,45,120,0.08)", color: pink }}
-          >
-            Paso {interestStep + 1} de {INTERESTS_CATALOG.length}
-          </span>
+          {tableNumber.trim() && (
+            <div className="flex items-center justify-between p-4 rounded-xl"
+              style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderSubtle}` }}>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: textPrimary }}>Mesa visible?</p>
+                <p className="text-xs mt-0.5" style={{ color: textMuted }}>
+                  {tableVisible ? "Otros veran tu mesa en tu tarjeta" : "Tu mesa solo se ve tras hacer match"}
+                </p>
+              </div>
+              <button type="button" onClick={() => setTableVisible((v) => !v)}
+                className="w-12 h-6 rounded-full relative shrink-0"
+                style={{ background: tableVisible ? "#FF2D78" : "rgba(255,255,255,0.08)" }}>
+                <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all"
+                  style={{ left: tableVisible ? "calc(100% - 22px)" : "2px" }} />
+              </button>
+            </div>
+          )}
+
+          <div>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
+              Como te llamamos? <span style={{ color: pink }}>*</span>
+            </label>
+            <input type="text" placeholder="Tu nombre o apodo" value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+              style={{ background: inputBg, border: `1px solid ${displayName.trim() ? pink : inputBorder}`, color: textPrimary }} />
+          </div>
         </div>
-        <h2 className="text-2xl font-black tracking-tight mb-1" style={{ color: textPrimary }}>
-          {currentCatalog.title}
-        </h2>
-        <p className="text-sm mb-1" style={{ color: textSecondary }}>Elige todos los que quieras</p>
-        <p className="text-xs mb-6" style={{ color: textMuted }}>Los intereses en comun se resaltan en las tarjetas</p>
+        <div className="flex gap-3 mt-auto">
+          {event?.type === "wedding" && (
+            <button onClick={() => setStep("wizard_team")}
+              className="flex-1 py-3.5 rounded-xl font-semibold text-sm"
+              style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}>
+              Atras
+            </button>
+          )}
+          <button onClick={() => setStep("wizard_selfie")} disabled={!displayName.trim()}
+            className="flex-1 py-3.5 rounded-xl font-bold text-sm disabled:opacity-40"
+            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}>
+            Continuar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-        <div className="grid grid-cols-3 gap-2.5 mb-6">
+  // ── STEP 3: Selfie (MANDATORY) ──
+  if (step === "wizard_selfie") {
+    return (
+      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
+        <WizardHeader currentStep="wizard_selfie" title="Tu selfie del evento" subtitle="Es obligatoria — asi te reconoceran los demas" />
+
+        <div className="flex justify-center mb-6">
+          <SelfieCapture onCapture={(url) => setSelfieDataUrl(url)}
+            onRetake={() => setSelfieDataUrl(null)} captured={selfieDataUrl} />
+        </div>
+
+        <div className="flex gap-3 mt-auto">
+          <button onClick={() => setStep("wizard_mesa")}
+            className="flex-1 py-3.5 rounded-xl font-semibold text-sm"
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}>
+            Atras
+          </button>
+          <button onClick={() => setStep("wizard_gallery")} disabled={!selfieDataUrl}
+            className="flex-1 py-3.5 rounded-xl font-bold text-sm disabled:opacity-40"
+            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}>
+            Continuar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── STEP 4: Gallery (up to 5 extras) ──
+  if (step === "wizard_gallery") {
+    return (
+      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
+        <WizardHeader currentStep="wizard_gallery" title="Tu galeria (opcional)" subtitle={`Agrega hasta 5 fotos mas. Al tocar tu tarjeta las veran todas.`} />
+
+        {/* Photos grid */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {/* Main selfie */}
+          <div className="aspect-square rounded-xl overflow-hidden relative"
+            style={{ border: `1px solid ${pink}` }}>
+            {selfieDataUrl && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={selfieDataUrl} alt="selfie" className="w-full h-full object-cover" />
+            )}
+            <span className="absolute bottom-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded"
+              style={{ background: pink, color: "#fff" }}>PRINCIPAL</span>
+          </div>
+          {/* Gallery photos */}
+          {galleryPhotos.map((g, i) => (
+            <div key={i} className="aspect-square rounded-xl overflow-hidden relative"
+              style={{ border: `1px solid ${borderSubtle}` }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={g} alt={`foto ${i + 2}`} className="w-full h-full object-cover" />
+              <button onClick={() => setGalleryPhotos((p) => p.filter((_, idx) => idx !== i))}
+                className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black"
+                style={{ background: "rgba(0,0,0,0.7)", color: "#fff" }}>x</button>
+            </div>
+          ))}
+          {/* Empty slots */}
+          {galleryPhotos.length < 5 && Array.from({ length: 5 - galleryPhotos.length }).map((_, i) => (
+            <div key={`empty-${i}`} className="aspect-square rounded-xl flex items-center justify-center"
+              style={{ background: "rgba(255,255,255,0.02)", border: `1px dashed ${borderSubtle}` }}>
+              <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke={textMuted} strokeWidth={1.5}>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </div>
+          ))}
+        </div>
+
+        {/* Camera for adding */}
+        {galleryPhotos.length < 5 && (
+          <div className="mb-4">
+            <SelfieCapture
+              captured={galleryPhotoCapture}
+              onCapture={(url) => {
+                setGalleryPhotos((p) => [...p, url]);
+                setGalleryPhotoCapture(null);
+              }}
+              onRetake={() => setGalleryPhotoCapture(null)}
+            />
+          </div>
+        )}
+
+        <p className="text-xs text-center mb-4" style={{ color: textMuted }}>
+          {galleryPhotos.length}/5 fotos agregadas
+        </p>
+
+        <div className="flex gap-3 mt-auto">
+          <button onClick={() => setStep("wizard_selfie")}
+            className="flex-1 py-3.5 rounded-xl font-semibold text-sm"
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}>
+            Atras
+          </button>
+          <button onClick={() => setStep("wizard_interests")}
+            className="flex-1 py-3.5 rounded-xl font-bold text-sm"
+            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}>
+            {galleryPhotos.length === 0 ? "Saltar" : "Continuar"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── STEP 5: Interests (3 sub-steps) ──
+  if (step === "wizard_interests") {
+    const currentCatalog = INTERESTS_CATALOG[interestStep];
+    const isLastSubStep = interestStep === INTERESTS_CATALOG.length - 1;
+    return (
+      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
+        <WizardHeader currentStep="wizard_interests" title={currentCatalog.title} subtitle={`${interestStep + 1} de ${INTERESTS_CATALOG.length} categorias`} />
+        <p className="text-xs mb-4" style={{ color: textMuted }}>Los intereses en comun se resaltan en las tarjetas</p>
+
+        <div className="grid grid-cols-3 gap-2.5 mb-5">
           {currentCatalog.options.map((opt) => {
             const selected = selectedInterests.includes(opt.value);
             return (
-              <button
-                key={opt.value}
-                onClick={() => toggleInterest(opt.value)}
-                className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all active:scale-[0.96]"
+              <button key={opt.value} onClick={() => toggleInterest(opt.value)}
+                className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl"
                 style={{
                   background: selected ? selectionBg : "rgba(255,255,255,0.03)",
                   border: `1px solid ${selected ? pink : borderSubtle}`,
-                  transform: selected ? "scale(1.02)" : "scale(1)",
-                }}
-              >
+                }}>
                 <span className="text-2xl">{opt.emoji}</span>
                 <span className="text-xs font-medium text-center" style={{ color: selected ? pink : textSecondary }}>
                   {opt.label}
@@ -1082,22 +1090,18 @@ export default function EventLandingPage() {
           })}
         </div>
 
-        {/* Drink on last step */}
-        {isLastStep && (
-          <div className="mb-6">
-            <p className="text-xs font-bold mb-3" style={{ color: textPrimary }}>Tu bebida favorita?</p>
+        {isLastSubStep && (
+          <div className="mb-5">
+            <p className="text-xs font-bold mb-2" style={{ color: textPrimary }}>Tu bebida favorita?</p>
             <div className="flex flex-wrap gap-2">
               {DRINK_OPTIONS.map((d) => (
-                <button
-                  key={d.value}
-                  onClick={() => setDrink(d.value)}
-                  className="py-2 px-4 rounded-xl text-sm font-medium transition-all active:scale-[0.98]"
+                <button key={d.value} onClick={() => setDrink(d.value === drink ? "" : d.value)}
+                  className="py-2 px-4 rounded-xl text-sm font-medium"
                   style={{
                     background: drink === d.value ? selectionBgPurple : "rgba(255,255,255,0.03)",
                     border: `1px solid ${drink === d.value ? purple : borderSubtle}`,
                     color: drink === d.value ? purple : textSecondary,
-                  }}
-                >
+                  }}>
                   {d.label}
                 </button>
               ))}
@@ -1105,37 +1109,129 @@ export default function EventLandingPage() {
           </div>
         )}
 
+        <div className="flex gap-3 mt-auto">
+          <button onClick={() => {
+              if (interestStep > 0) setInterestStep((s) => s - 1);
+              else setStep("wizard_gallery");
+            }}
+            className="flex-1 py-3.5 rounded-xl font-semibold text-sm"
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}>
+            Atras
+          </button>
+          <button onClick={() => {
+              if (isLastSubStep) setStep("wizard_bio");
+              else setInterestStep((s) => s + 1);
+            }}
+            className="flex-1 py-3.5 rounded-xl font-bold text-sm"
+            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}>
+            Continuar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── STEP 6: Bio (optional) ──
+  if (step === "wizard_bio") {
+    return (
+      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
+        <WizardHeader currentStep="wizard_bio" title="Una pequena bio" subtitle="No solo importa el look, tambien el feel" />
+
+        <textarea placeholder="Ej. Amante del cafe, los perros y las buenas platicas..."
+          value={bio} onChange={(e) => setBio(e.target.value.slice(0, 160))} rows={4}
+          className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none mb-2"
+          style={{ background: inputBg, border: `1px solid ${bio.trim() ? purple : inputBorder}`, color: textPrimary }} />
+        <p className="text-xs text-right mb-1" style={{ color: textMuted }}>{bio.length}/160</p>
+        <p className="text-xs mb-6" style={{ color: textMuted }}>
+          Esto aparecera en tu tarjeta para que te conozcan mas alla del look
+        </p>
+
+        <div className="flex gap-3 mt-auto">
+          <button onClick={() => setStep("wizard_interests")}
+            className="flex-1 py-3.5 rounded-xl font-semibold text-sm"
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}>
+            Atras
+          </button>
+          <button onClick={() => setStep("wizard_gender")}
+            className="flex-1 py-3.5 rounded-xl font-bold text-sm"
+            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}>
+            {bio.trim() ? "Continuar" : "Saltar"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── STEP 7: Gender + looking_for (MANDATORY) ──
+  if (step === "wizard_gender") {
+    return (
+      <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
+        <WizardHeader currentStep="wizard_gender" title="A quien quieres encontrar?" subtitle="Este es el filtro mas importante de tu experiencia" />
+
+        <div className="flex flex-col gap-5 mb-6">
+          <div>
+            <label className="text-xs font-medium mb-2 block" style={{ color: textSecondary }}>
+              Yo soy <span style={{ color: pink }}>*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {genderOptions.map((g) => (
+                <button key={g.value} onClick={() => setGender(g.value)}
+                  className="py-3 px-3 rounded-xl text-sm font-medium"
+                  style={{
+                    background: gender === g.value ? selectionBg : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${gender === g.value ? pink : borderSubtle}`,
+                    color: gender === g.value ? pink : textSecondary,
+                  }}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium mb-2 block" style={{ color: textSecondary }}>
+              Me interesan <span style={{ color: pink }}>*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {LOOKING_FOR_OPTIONS.map((l) => (
+                <button key={l.value} onClick={() => setLookingFor(l.value)}
+                  className="py-3 px-3 rounded-xl text-sm font-medium"
+                  style={{
+                    background: lookingFor === l.value ? selectionBgBlue : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${lookingFor === l.value ? blue : borderSubtle}`,
+                    color: lookingFor === l.value ? blue : textSecondary,
+                  }}>
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl p-3" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.15)" }}>
+            <p className="text-xs" style={{ color: "#FFB800" }}>
+              Solo te saldran personas de esa categoria. Si elegiste &ldquo;Mujeres&rdquo;, unicamente veras mujeres y ellas te veran a ti.
+            </p>
+          </div>
+        </div>
+
         {authError && (
-          <div className="mb-3 px-4 py-3 rounded-xl text-sm text-center" style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.2)", color: pink }}>
+          <div className="mb-3 px-4 py-3 rounded-xl text-sm text-center"
+            style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.2)", color: pink }}>
             {authError}
           </div>
         )}
 
         <div className="flex gap-3 mt-auto">
-          {interestStep > 0 && (
-            <button
-              onClick={() => setInterestStep((s) => s - 1)}
-              className="flex-1 py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
-              style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Atras
-            </button>
-          )}
-          <button
-            onClick={() => isLastStep ? handleSubmit() : setInterestStep((s) => s + 1)}
-            disabled={submitting || !selfieDataUrl || !gender || !lookingFor}
-            className="flex-1 py-3.5 rounded-xl font-bold text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
-            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}
-          >
-            {submitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
-                Registrando...
-              </span>
-            ) : isLastStep ? "Listo! Entrar al evento" : "Siguiente"}
+          <button onClick={() => setStep("wizard_bio")}
+            className="flex-1 py-3.5 rounded-xl font-semibold text-sm"
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}>
+            Atras
+          </button>
+          <button onClick={handleSubmit}
+            disabled={submitting || !gender || !lookingFor || !selfieDataUrl}
+            className="flex-1 py-3.5 rounded-xl font-bold text-sm disabled:opacity-40"
+            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}>
+            {submitting ? "Registrando..." : "Entrar al evento"}
           </button>
         </div>
       </div>

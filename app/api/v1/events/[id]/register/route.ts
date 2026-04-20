@@ -23,7 +23,7 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { selfie_url, display_name, bio, table_number, relation_type, interests, gender, looking_for, skip_profile } = body;
+  const { selfie_url, display_name, bio, table_number, table_visible, gallery_photos, relation_type, interests, gender, looking_for, skip_profile } = body;
 
   // Allow minimal registration if skip_profile=true; otherwise require gender + looking_for
   if (!skip_profile && (!gender || !looking_for)) {
@@ -85,6 +85,8 @@ export async function POST(
       display_name: cleanDisplay,
       bio: bio?.trim()?.slice(0, 160) || null,
       table_number: table_number || null,
+      table_visible: table_visible ?? true,
+      gallery_photos: Array.isArray(gallery_photos) ? gallery_photos.slice(0, 5) : [],
       relation_type: relation_type || null,
       interests: interests || [],
       gender: gender || "prefer_not_say",
