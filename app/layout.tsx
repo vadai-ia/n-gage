@@ -11,6 +11,10 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "N'GAGE — Conecta en el momento",
   description: "La app de conexiones para el evento que estás viviendo.",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export const viewport: Viewport = {

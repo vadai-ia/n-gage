@@ -18,7 +18,7 @@ const TABS = [
   },
   {
     key: "likes",
-    label: "Conexiones",
+    label: "Likes",
     icon: (active: boolean) => (
       <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
@@ -39,7 +39,7 @@ const TABS = [
   },
   {
     key: "matches",
-    label: "Mensajes",
+    label: "Chat",
     icon: (active: boolean) => (
       <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -47,23 +47,11 @@ const TABS = [
     ),
   },
   {
-    key: "album",
-    label: "Galeria",
+    key: "promo",
+    label: "Mas",
     icon: (active: boolean) => (
       <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <path d="M21 15l-5-5L5 21" />
-      </svg>
-    ),
-  },
-  {
-    key: "profile",
-    label: "Perfil",
-    icon: (active: boolean) => (
-      <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
+        <circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" />
       </svg>
     ),
   },
@@ -84,17 +72,15 @@ export default function GuestNav() {
         borderTop: "1px solid rgba(255,255,255,0.05)",
       }}
     >
-      <div className="flex items-end justify-between px-2 pt-2 pb-2 max-w-md mx-auto relative">
+      <div className="flex items-end justify-around px-2 pt-2 pb-2 max-w-md mx-auto relative">
         {TABS.map((tab) => {
           const href = `/event/${id}/${tab.key}`;
           const active = pathname === href || pathname?.startsWith(href + "/");
 
-          // Badge count by tab
           let badgeCount = 0;
           if (tab.key === "likes") badgeCount = counts.likes;
           if (tab.key === "matches") badgeCount = counts.matches + counts.messages;
 
-          // Reset count when entering the tab
           const handleClick = () => {
             if (tab.key === "likes") resetLikes();
             if (tab.key === "matches") { resetMatches(); resetMessages(); }
@@ -127,14 +113,9 @@ export default function GuestNav() {
               key={tab.key}
               href={href}
               onClick={handleClick}
-              className="flex flex-col items-center gap-1 py-2 px-0.5 relative w-14"
+              className="flex flex-col items-center gap-1 py-2 px-1 relative w-14"
             >
-              <span
-                style={{
-                  color: active ? "#F0F0FF" : "#44445A",
-                  transition: "color 0.3s ease",
-                }}
-              >
+              <span style={{ color: active ? "#F0F0FF" : "#44445A", transition: "color 0.3s ease" }}>
                 {tab.icon(active)}
               </span>
               {badgeCount > 0 && (
@@ -143,16 +124,10 @@ export default function GuestNav() {
                   {badgeCount > 9 ? "9+" : badgeCount}
                 </span>
               )}
-              <span
-                className="text-[8px] font-body tracking-wider uppercase"
-                style={{
-                  color: active ? "#F0F0FF" : "#44445A",
-                  transition: "color 0.3s ease",
-                }}
-              >
+              <span className="text-[8px] font-body tracking-wider uppercase"
+                style={{ color: active ? "#F0F0FF" : "#44445A", transition: "color 0.3s ease" }}>
                 {tab.label}
               </span>
-
               {active && (
                 <motion.div
                   layoutId="activeTabIndicator"

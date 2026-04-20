@@ -5,31 +5,24 @@ interface PoweredByProps {
 }
 
 export default function PoweredBy({ variant = "default" }: PoweredByProps) {
-  const baseColor = variant === "muted" ? "#44445A" : "#8585A8";
-  const linkColor = variant === "muted" ? "#8585A8" : "#F0F0FF";
+  const color = variant === "muted" ? "#44445A" : "#8585A8";
+  const brandColor = variant === "muted" ? "#8585A8" : "#F0F0FF";
 
   return (
     <div
-      className="w-full flex items-center justify-center py-4 mt-6 text-xs tracking-wide"
-      style={{ color: baseColor }}
+      className="w-full flex items-center justify-center py-3 mt-4 gap-1.5"
+      style={{ color }}
     >
-      <span>Powered by</span>
+      <span className="text-[10px] font-medium tracking-[0.2em] uppercase">Powered by</span>
       <a
-        href="https://kibah.com.mx"
+        href="https://vadai.com.mx"
         target="_blank"
         rel="noopener noreferrer"
-        className="mx-1.5 font-semibold hover:underline transition-opacity hover:opacity-80"
-        style={{ color: linkColor }}
+        className="text-[10px] font-black tracking-[0.2em] uppercase hover:underline transition-opacity hover:opacity-80"
+        style={{ color: brandColor }}
       >
-        Kibah.com.mx
+        VADAI
       </a>
-      <span>and</span>
-      <span
-        className="ml-1.5 font-semibold"
-        style={{ color: linkColor }}
-      >
-        Vadai
-      </span>
     </div>
   );
 }

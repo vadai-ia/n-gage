@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import PoweredBy from "@/components/event/PoweredBy";
 
 type EventItem = {
   id: string;
@@ -134,6 +135,7 @@ export default function WelcomePage() {
             </div>
           </div>
         )}
+        <PoweredBy variant="muted" />
       </div>
     </div>
   );
