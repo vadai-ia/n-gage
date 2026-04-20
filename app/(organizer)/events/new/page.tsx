@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 const EVENT_TYPES: { value: string; label: string; icon: JSX.Element }[] = [
@@ -22,14 +22,9 @@ const EVENT_TYPES: { value: string; label: string; icon: JSX.Element }[] = [
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8" />
-        <path d="M4 16h16" />
-        <path d="M2 21h20" />
-        <path d="M7 8v3" />
-        <path d="M12 8v3" />
-        <path d="M17 8v3" />
-        <path d="M7 4v2" />
-        <path d="M12 4v2" />
-        <path d="M17 4v2" />
+        <path d="M4 16h16" /><path d="M2 21h20" />
+        <path d="M7 8v3" /><path d="M12 8v3" /><path d="M17 8v3" />
+        <path d="M7 4v2" /><path d="M12 4v2" /><path d="M17 4v2" />
         <circle cx="7" cy="4" r="1" fill="currentColor" stroke="none" />
         <circle cx="12" cy="4" r="1" fill="currentColor" stroke="none" />
         <circle cx="17" cy="4" r="1" fill="currentColor" stroke="none" />
@@ -43,7 +38,6 @@ const EVENT_TYPES: { value: string; label: string; icon: JSX.Element }[] = [
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
         <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-        <line x1="12" y1="12" x2="12" y2="12.01" />
         <path d="M2 12h20" />
       </svg>
     ),
@@ -64,9 +58,7 @@ const EVENT_TYPES: { value: string; label: string; icon: JSX.Element }[] = [
     label: "Concierto",
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 18V5l12-2v13" />
-        <circle cx="6" cy="18" r="3" />
-        <circle cx="18" cy="16" r="3" />
+        <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
       </svg>
     ),
   },
@@ -76,8 +68,7 @@ const EVENT_TYPES: { value: string; label: string; icon: JSX.Element }[] = [
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M2 20l1.5-1.5C5 17 7 17 8.5 18.5 10 17 12 17 13.5 18.5 15 17 17 17 18.5 18.5 20 17 22 17 22 17l-1-1" />
-        <path d="M4 18l-1-5h18l-1 5" />
-        <path d="M12 13V4" />
+        <path d="M4 18l-1-5h18l-1 5" /><path d="M12 13V4" />
         <path d="M8 8h8l-4-4-4 4z" fill="currentColor" stroke="none" />
       </svg>
     ),
@@ -110,6 +101,9 @@ const TIMER_DEFAULTS: Record<string, number> = {
   spark: 60, connect: 120, vibe: 180, luxe: 240, elite: 360, exclusive: 480,
 };
 
+const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const DAY_NAMES = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
+
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
@@ -118,6 +112,170 @@ function formatDuration(minutes: number): string {
   return `${h}h ${m}m`;
 }
 
+function pad(n: number) { return n.toString().padStart(2, "0"); }
+
+// ── Custom Calendar Component ──
+function CalendarPicker({
+  selectedDate,
+  onSelect,
+}: {
+  selectedDate: Date | null;
+  onSelect: (d: Date) => void;
+}) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [viewMonth, setViewMonth] = useState(selectedDate ? selectedDate.getMonth() : today.getMonth());
+  const [viewYear, setViewYear] = useState(selectedDate ? selectedDate.getFullYear() : today.getFullYear());
+
+  const days = useMemo(() => {
+    const firstDay = new Date(viewYear, viewMonth, 1);
+    // Monday=0 adjustment (JS getDay: 0=Sun)
+    let startDay = firstDay.getDay() - 1;
+    if (startDay < 0) startDay = 6;
+
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const cells: (number | null)[] = [];
+    for (let i = 0; i < startDay; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    return cells;
+  }, [viewMonth, viewYear]);
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
+    else setViewMonth(viewMonth - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
+    else setViewMonth(viewMonth + 1);
+  };
+
+  const isSelected = (day: number) =>
+    selectedDate &&
+    selectedDate.getDate() === day &&
+    selectedDate.getMonth() === viewMonth &&
+    selectedDate.getFullYear() === viewYear;
+
+  const isToday = (day: number) =>
+    today.getDate() === day &&
+    today.getMonth() === viewMonth &&
+    today.getFullYear() === viewYear;
+
+  const isPast = (day: number) => {
+    const d = new Date(viewYear, viewMonth, day);
+    return d < today;
+  };
+
+  return (
+    <div className="rounded-2xl p-4" style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.06)" }}>
+      {/* Month navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <button type="button" onClick={prevMonth} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: "#8585A8" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+        </button>
+        <span className="text-sm font-bold" style={{ color: "#F0F0FF" }}>
+          {MONTH_NAMES[viewMonth]} {viewYear}
+        </span>
+        <button type="button" onClick={nextMonth} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: "#8585A8" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+        </button>
+      </div>
+
+      {/* Day names */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {DAY_NAMES.map((d) => (
+          <div key={d} className="text-center text-[10px] font-bold py-1" style={{ color: "#44445A" }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Days grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, i) => {
+          if (day === null) return <div key={`e-${i}`} />;
+          const past = isPast(day);
+          const sel = isSelected(day);
+          const tod = isToday(day);
+          return (
+            <button
+              key={day}
+              type="button"
+              disabled={past}
+              onClick={() => {
+                const d = new Date(viewYear, viewMonth, day);
+                if (selectedDate) { d.setHours(selectedDate.getHours(), selectedDate.getMinutes()); }
+                onSelect(d);
+              }}
+              className="aspect-square rounded-xl text-xs font-semibold flex items-center justify-center transition-all"
+              style={{
+                background: sel ? "#FF2D78" : tod ? "rgba(255,45,120,0.08)" : "transparent",
+                color: sel ? "#fff" : past ? "#2a2a3a" : tod ? "#FF2D78" : "#F0F0FF",
+                boxShadow: sel ? "0 4px 12px rgba(255,45,120,0.3)" : "none",
+              }}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Time Picker Component ──
+function TimePicker({
+  label,
+  hour,
+  minute,
+  onChangeHour,
+  onChangeMinute,
+}: {
+  label: string;
+  hour: number;
+  minute: number;
+  onChangeHour: (h: number) => void;
+  onChangeMinute: (m: number) => void;
+}) {
+  const scrollBtn = "w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90";
+
+  return (
+    <div>
+      <label className="text-xs font-medium mb-2 block" style={{ color: "#8585A8" }}>{label}</label>
+      <div className="flex items-center gap-2 justify-center">
+        {/* Hours */}
+        <div className="flex flex-col items-center gap-1">
+          <button type="button" onClick={() => onChangeHour((hour + 1) % 24)} className={scrollBtn} style={{ background: "rgba(255,255,255,0.04)", color: "#8585A8" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15" /></svg>
+          </button>
+          <div className="w-14 h-12 rounded-xl flex items-center justify-center text-xl font-black" style={{ background: "rgba(255,45,120,0.06)", border: "1px solid rgba(255,45,120,0.15)", color: "#F0F0FF" }}>
+            {pad(hour)}
+          </div>
+          <button type="button" onClick={() => onChangeHour((hour - 1 + 24) % 24)} className={scrollBtn} style={{ background: "rgba(255,255,255,0.04)", color: "#8585A8" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+          </button>
+        </div>
+
+        <span className="text-2xl font-black" style={{ color: "#44445A" }}>:</span>
+
+        {/* Minutes */}
+        <div className="flex flex-col items-center gap-1">
+          <button type="button" onClick={() => onChangeMinute((minute + 15) % 60)} className={scrollBtn} style={{ background: "rgba(255,255,255,0.04)", color: "#8585A8" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15" /></svg>
+          </button>
+          <div className="w-14 h-12 rounded-xl flex items-center justify-center text-xl font-black" style={{ background: "rgba(255,45,120,0.06)", border: "1px solid rgba(255,45,120,0.15)", color: "#F0F0FF" }}>
+            {pad(minute)}
+          </div>
+          <button type="button" onClick={() => onChangeMinute((minute - 15 + 60) % 60)} className={scrollBtn} style={{ background: "rgba(255,255,255,0.04)", color: "#8585A8" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// MAIN PAGE
+// ══════════════════════════════════════════
+
 export default function NewEventPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -125,7 +283,9 @@ export default function NewEventPage() {
 
   const [name, setName] = useState("");
   const [type, setType] = useState("wedding");
-  const [dateTime, setDateTime] = useState("");
+  const [eventDate, setEventDate] = useState<Date | null>(null);
+  const [eventHour, setEventHour] = useState(18);
+  const [eventMinute, setEventMinute] = useState(0);
   const [venueName, setVenueName] = useState("");
   const [venueCity, setVenueCity] = useState("");
   const [plan, setPlan] = useState("vibe");
@@ -133,10 +293,19 @@ export default function NewEventPage() {
   const [expiryDays, setExpiryDays] = useState(3);
   const [accessCode, setAccessCode] = useState("");
   const [genderExtended, setGenderExtended] = useState(false);
-  const [searchStartTime, setSearchStartTime] = useState("");
-  const [searchEndTime, setSearchEndTime] = useState("");
-  const [showSearchWindow, setShowSearchWindow] = useState(false);
   const [whatsappGroupUrl, setWhatsappGroupUrl] = useState("");
+
+  // Swipe window — solo hora de inicio, el fin se calcula
+  const [showSearchWindow, setShowSearchWindow] = useState(false);
+  const [swipeHour, setSwipeHour] = useState(21);
+  const [swipeMinute, setSwipeMinute] = useState(0);
+
+  // Computed: swipe end
+  const swipeEndDisplay = useMemo(() => {
+    const start = new Date(2020, 0, 1, swipeHour, swipeMinute);
+    start.setMinutes(start.getMinutes() + timerMinutes);
+    return `${pad(start.getHours())}:${pad(start.getMinutes())}`;
+  }, [swipeHour, swipeMinute, timerMinutes]);
 
   function handlePlanChange(p: string) {
     setPlan(p);
@@ -145,13 +314,18 @@ export default function NewEventPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!eventDate) { setError("Selecciona la fecha del evento"); return; }
     setLoading(true);
     setError("");
+
+    // Build event_date ISO
+    const fullDate = new Date(eventDate);
+    fullDate.setHours(eventHour, eventMinute, 0, 0);
 
     const payload: Record<string, unknown> = {
       name,
       type,
-      event_date: dateTime,
+      event_date: fullDate.toISOString(),
       venue_name: venueName || undefined,
       venue_city: venueCity || undefined,
       plan,
@@ -163,12 +337,18 @@ export default function NewEventPage() {
       language: "es-MX",
     };
 
-    if (showSearchWindow && searchStartTime) {
-      payload.search_start_time = searchStartTime;
+    if (showSearchWindow) {
+      // Build search_start_time using event date + swipe hour
+      const startTime = new Date(fullDate);
+      startTime.setHours(swipeHour, swipeMinute, 0, 0);
+      payload.search_start_time = startTime.toISOString();
+
+      // End = start + duration
+      const endTime = new Date(startTime);
+      endTime.setMinutes(endTime.getMinutes() + timerMinutes);
+      payload.search_end_time = endTime.toISOString();
     }
-    if (showSearchWindow && searchEndTime) {
-      payload.search_end_time = searchEndTime;
-    }
+
     if (whatsappGroupUrl.trim()) {
       payload.whatsapp_group_url = whatsappGroupUrl.trim();
     }
@@ -192,8 +372,12 @@ export default function NewEventPage() {
     background: "rgba(255,255,255,0.04)",
     border: "1px solid rgba(255,255,255,0.04)",
     color: "#F0F0FF",
-    colorScheme: "dark" as const,
   };
+
+  // Date display
+  const dateDisplay = eventDate
+    ? `${eventDate.getDate()} de ${MONTH_NAMES[eventDate.getMonth()]} ${eventDate.getFullYear()} a las ${pad(eventHour)}:${pad(eventMinute)}`
+    : null;
 
   return (
     <div className="p-4 pb-8">
@@ -212,38 +396,22 @@ export default function NewEventPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {/* Name */}
         <div>
-          <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>
-            Nombre del evento *
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. Boda Maria & Carlos"
-            required
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-            style={inputStyle}
-          />
+          <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>Nombre del evento *</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Boda Maria & Carlos" required className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} />
         </div>
 
         {/* Type */}
         <div>
-          <label className="text-sm mb-2 block font-semibold" style={{ color: "#8585A8" }}>
-            Tipo de evento *
-          </label>
+          <label className="text-sm mb-2 block font-semibold" style={{ color: "#8585A8" }}>Tipo de evento *</label>
           <div className="grid grid-cols-4 gap-2">
             {EVENT_TYPES.map((t) => (
-              <button
-                key={t.value}
-                type="button"
-                onClick={() => setType(t.value)}
+              <button key={t.value} type="button" onClick={() => setType(t.value)}
                 className="flex flex-col items-center gap-1 py-3 rounded-xl text-sm transition-all"
                 style={{
                   background: type === t.value ? "rgba(255,45,120,0.12)" : "rgba(255,255,255,0.03)",
                   border: `1px solid ${type === t.value ? "rgba(255,45,120,0.4)" : "rgba(255,255,255,0.04)"}`,
                   color: type === t.value ? "#FF2D78" : "#8585A8",
-                }}
-              >
+                }}>
                 <span className="flex items-center justify-center">{t.icon}</span>
                 <span className="text-xs">{t.label}</span>
               </button>
@@ -251,47 +419,29 @@ export default function NewEventPage() {
           </div>
         </div>
 
-        {/* Date & Time */}
+        {/* Date — Calendar */}
         <div>
-          <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>
-            Fecha y hora del evento *
-          </label>
-          <input
-            type="datetime-local"
-            value={dateTime}
-            onChange={(e) => setDateTime(e.target.value)}
-            required
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-            style={inputStyle}
-          />
-          <p className="text-xs mt-1" style={{ color: "#44445A" }}>
-            Fecha y hora de inicio del evento
-          </p>
+          <label className="text-sm mb-2 block font-semibold" style={{ color: "#8585A8" }}>Fecha del evento *</label>
+          <CalendarPicker selectedDate={eventDate} onSelect={(d) => setEventDate(d)} />
+          {eventDate && (
+            <div className="mt-3">
+              <TimePicker label="Hora del evento" hour={eventHour} minute={eventMinute} onChangeHour={setEventHour} onChangeMinute={setEventMinute} />
+            </div>
+          )}
+          {dateDisplay && (
+            <p className="text-xs mt-2 text-center font-semibold" style={{ color: "#FF2D78" }}>{dateDisplay}</p>
+          )}
         </div>
 
         {/* Venue */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>Venue</label>
-            <input
-              type="text"
-              value={venueName}
-              onChange={(e) => setVenueName(e.target.value)}
-              placeholder="Nombre del lugar"
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={inputStyle}
-            />
+            <input type="text" value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="Nombre del lugar" className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} />
           </div>
           <div>
             <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>Ciudad</label>
-            <input
-              type="text"
-              value={venueCity}
-              onChange={(e) => setVenueCity(e.target.value)}
-              placeholder="Ciudad"
-              className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-              style={inputStyle}
-            />
+            <input type="text" value={venueCity} onChange={(e) => setVenueCity(e.target.value)} placeholder="Ciudad" className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} />
           </div>
         </div>
 
@@ -300,14 +450,7 @@ export default function NewEventPage() {
           <label className="text-xs font-medium mb-1.5 block" style={{ color: "#8585A8" }}>
             URL del grupo de WhatsApp <span style={{ color: "#44445A" }}>(opcional)</span>
           </label>
-          <input
-            type="url"
-            placeholder="https://chat.whatsapp.com/..."
-            value={whatsappGroupUrl}
-            onChange={(e) => setWhatsappGroupUrl(e.target.value)}
-            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
-            style={inputStyle}
-          />
+          <input type="url" placeholder="https://chat.whatsapp.com/..." value={whatsappGroupUrl} onChange={(e) => setWhatsappGroupUrl(e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} />
           <p className="text-xs mt-1.5" style={{ color: "#44445A" }}>
             Si lo activas, los invitados veran un boton para unirse al grupo al escanear el QR.
           </p>
@@ -315,40 +458,27 @@ export default function NewEventPage() {
 
         {/* Plan */}
         <div>
-          <label className="text-sm mb-2 block font-semibold" style={{ color: "#8585A8" }}>
-            Plan contratado *
-          </label>
+          <label className="text-sm mb-2 block font-semibold" style={{ color: "#8585A8" }}>Plan contratado *</label>
           <div className="flex flex-col gap-2">
             {PLANS.map((p) => {
               const selected = plan === p.value;
               const planColor = PLAN_COLORS[p.value] ?? "#FF2D78";
               return (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => handlePlanChange(p.value)}
+                <button key={p.value} type="button" onClick={() => handlePlanChange(p.value)}
                   className="flex items-center justify-between px-4 py-3 rounded-xl text-sm transition-all"
                   style={{
                     background: selected ? `${planColor}12` : "rgba(255,255,255,0.02)",
                     border: `1px solid ${selected ? `${planColor}44` : "rgba(255,255,255,0.04)"}`,
-                  }}
-                >
+                  }}>
                   <div className="flex items-center gap-3">
-                    <div
-                      className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                      style={{ borderColor: selected ? planColor : "#44445A" }}
-                    >
+                    <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center" style={{ borderColor: selected ? planColor : "#44445A" }}>
                       {selected && <div className="w-2 h-2 rounded-full" style={{ background: planColor }} />}
                     </div>
-                    <span className="font-semibold" style={{ color: selected ? planColor : "#F0F0FF" }}>
-                      {p.label}
-                    </span>
+                    <span className="font-semibold" style={{ color: selected ? planColor : "#F0F0FF" }}>{p.label}</span>
                     <span className="text-xs" style={{ color: "#44445A" }}>{p.guests}</span>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-sm" style={{ color: selected ? planColor : "#8585A8" }}>
-                      {p.price}
-                    </div>
+                    <div className="font-bold text-sm" style={{ color: selected ? planColor : "#8585A8" }}>{p.price}</div>
                     <div className="text-xs" style={{ color: "#44445A" }}>{p.timer}</div>
                   </div>
                 </button>
@@ -360,80 +490,47 @@ export default function NewEventPage() {
         {/* Timer / Search duration */}
         <div>
           <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>
-            Duracion de busqueda:{" "}
+            Duracion del swipe:{" "}
             <strong style={{ color: "#FF2D78" }}>{formatDuration(timerMinutes)}</strong>
           </label>
-          <input
-            type="range"
-            min={15}
-            max={480}
-            step={15}
-            value={timerMinutes}
-            onChange={(e) => setTimerMinutes(Number(e.target.value))}
-            className="w-full"
-            style={{ accentColor: "#FF2D78" }}
-          />
+          <input type="range" min={15} max={480} step={15} value={timerMinutes} onChange={(e) => setTimerMinutes(Number(e.target.value))} className="w-full" style={{ accentColor: "#FF2D78" }} />
           <div className="flex justify-between text-xs mt-1" style={{ color: "#44445A" }}>
-            <span>15 min</span>
-            <span>8 hrs</span>
+            <span>15 min</span><span>8 hrs</span>
           </div>
         </div>
 
-        {/* Search Window (optional) */}
-        <div
-          className="rounded-xl p-4"
-          style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.04)" }}
-        >
+        {/* Swipe Window — simplified */}
+        <div className="rounded-xl p-4" style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.04)" }}>
           <div className="flex items-center justify-between mb-2">
             <div>
-              <p className="font-semibold text-sm" style={{ color: "#F0F0FF" }}>
-                Ventana de busqueda
-              </p>
+              <p className="font-semibold text-sm" style={{ color: "#F0F0FF" }}>Horario del swipe</p>
               <p className="text-xs mt-0.5" style={{ color: "#8585A8" }}>
-                Define cuando pueden los invitados hacer swipe (opcional)
+                Define a que hora inicia el swipe (opcional)
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowSearchWindow((v) => !v)}
+            <button type="button" onClick={() => setShowSearchWindow((v) => !v)}
               className="w-12 h-6 rounded-full transition-all relative flex-shrink-0"
-              style={{ background: showSearchWindow ? "#FF2D78" : "rgba(255,255,255,0.08)" }}
-            >
-              <span
-                className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all"
-                style={{ left: showSearchWindow ? "calc(100% - 22px)" : "2px" }}
-              />
+              style={{ background: showSearchWindow ? "#FF2D78" : "rgba(255,255,255,0.08)" }}>
+              <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all" style={{ left: showSearchWindow ? "calc(100% - 22px)" : "2px" }} />
             </button>
           </div>
 
           {showSearchWindow && (
-            <div className="flex flex-col gap-3 mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-              <div>
-                <label className="text-xs mb-1 block" style={{ color: "#8585A8" }}>
-                  Inicio de swipe
-                </label>
-                <input
-                  type="datetime-local"
-                  value={searchStartTime}
-                  onChange={(e) => setSearchStartTime(e.target.value)}
-                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                  style={inputStyle}
-                />
+            <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+              <TimePicker label="Hora de inicio del swipe" hour={swipeHour} minute={swipeMinute} onChangeHour={setSwipeHour} onChangeMinute={setSwipeMinute} />
+
+              <div className="mt-3 p-3 rounded-xl text-center" style={{ background: "rgba(255,45,120,0.04)", border: "1px solid rgba(255,45,120,0.1)" }}>
+                <p className="text-xs" style={{ color: "#8585A8" }}>El swipe estara activo de</p>
+                <p className="text-sm font-black mt-1" style={{ color: "#F0F0FF" }}>
+                  {pad(swipeHour)}:{pad(swipeMinute)} — {swipeEndDisplay}
+                </p>
+                <p className="text-xs mt-1" style={{ color: "#44445A" }}>
+                  ({formatDuration(timerMinutes)} de duracion)
+                </p>
               </div>
-              <div>
-                <label className="text-xs mb-1 block" style={{ color: "#8585A8" }}>
-                  Fin de swipe
-                </label>
-                <input
-                  type="datetime-local"
-                  value={searchEndTime}
-                  onChange={(e) => setSearchEndTime(e.target.value)}
-                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                  style={inputStyle}
-                />
-              </div>
-              <p className="text-xs" style={{ color: "#44445A" }}>
-                Si no se configuran, se usa el timer individual por invitado
+
+              <p className="text-xs mt-2" style={{ color: "#44445A" }}>
+                Si no lo activas, cada invitado inicia su timer al presionar &quot;Iniciar busqueda&quot;
               </p>
             </div>
           )}
@@ -445,15 +542,7 @@ export default function NewEventPage() {
             Caducidad del contenido:{" "}
             <strong style={{ color: "#FF2D78" }}>{expiryDays} dias</strong>
           </label>
-          <input
-            type="range"
-            min={1}
-            max={30}
-            value={expiryDays}
-            onChange={(e) => setExpiryDays(Number(e.target.value))}
-            className="w-full"
-            style={{ accentColor: "#FF2D78" }}
-          />
+          <input type="range" min={1} max={30} value={expiryDays} onChange={(e) => setExpiryDays(Number(e.target.value))} className="w-full" style={{ accentColor: "#FF2D78" }} />
           <p className="text-xs mt-1" style={{ color: "#44445A" }}>
             Las fotos y chats estaran disponibles {expiryDays} dias despues del evento
           </p>
@@ -461,69 +550,37 @@ export default function NewEventPage() {
 
         {/* Access code */}
         <div>
-          <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>
-            Codigo de acceso al evento *
-          </label>
-          <input
-            type="text"
-            value={accessCode}
-            onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
-            placeholder="Ej. BODA2025"
-            required
-            maxLength={20}
+          <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>Codigo de acceso al evento *</label>
+          <input type="text" value={accessCode} onChange={(e) => setAccessCode(e.target.value.toUpperCase())} placeholder="Ej. BODA2025" required maxLength={20}
             className="w-full rounded-xl px-4 py-3 text-sm outline-none font-mono tracking-widest"
-            style={{ ...inputStyle, color: "#FF2D78" }}
-          />
-          <p className="text-xs mt-1" style={{ color: "#44445A" }}>
-            Se embebe en el QR. Los invitados no necesitan escribirlo.
-          </p>
+            style={{ ...inputStyle, color: "#FF2D78" }} />
+          <p className="text-xs mt-1" style={{ color: "#44445A" }}>Se embebe en el QR. Los invitados no necesitan escribirlo.</p>
         </div>
 
         {/* Gender extended */}
-        <div
-          className="flex items-center justify-between p-4 rounded-xl"
-          style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.04)" }}
-        >
+        <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.04)" }}>
           <div>
             <p className="font-semibold text-sm" style={{ color: "#F0F0FF" }}>Opciones de genero extendidas</p>
-            <p className="text-xs mt-0.5" style={{ color: "#8585A8" }}>
-              Incluir &quot;No binario&quot; y &quot;Prefiero no decir&quot; en el registro
-            </p>
+            <p className="text-xs mt-0.5" style={{ color: "#8585A8" }}>Incluir &quot;No binario&quot; y &quot;Prefiero no decir&quot;</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setGenderExtended((v) => !v)}
+          <button type="button" onClick={() => setGenderExtended((v) => !v)}
             className="w-12 h-6 rounded-full transition-all relative flex-shrink-0"
-            style={{ background: genderExtended ? "#FF2D78" : "rgba(255,255,255,0.08)" }}
-          >
-            <span
-              className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all"
-              style={{ left: genderExtended ? "calc(100% - 22px)" : "2px" }}
-            />
+            style={{ background: genderExtended ? "#FF2D78" : "rgba(255,255,255,0.08)" }}>
+            <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all" style={{ left: genderExtended ? "calc(100% - 22px)" : "2px" }} />
           </button>
         </div>
 
         {/* Error */}
         {error && (
-          <p
-            className="text-sm text-center p-3 rounded-xl"
-            style={{ background: "rgba(239,68,68,0.1)", color: "#EF4444", border: "1px solid rgba(239,68,68,0.2)" }}
-          >
+          <p className="text-sm text-center p-3 rounded-xl" style={{ background: "rgba(239,68,68,0.1)", color: "#EF4444", border: "1px solid rgba(239,68,68,0.2)" }}>
             {error}
           </p>
         )}
 
         {/* Submit */}
-        <button
-          type="submit"
-          disabled={loading}
+        <button type="submit" disabled={loading}
           className="w-full py-4 rounded-2xl font-bold text-lg disabled:opacity-60 transition-all"
-          style={{
-            background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
-            color: "#fff",
-            boxShadow: "0 8px 30px rgba(255,45,120,0.25)",
-          }}
-        >
+          style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff", boxShadow: "0 8px 30px rgba(255,45,120,0.25)" }}>
           {loading ? "Creando evento..." : "Crear evento y generar QR"}
         </button>
       </form>
