@@ -47,14 +47,19 @@ export default function HostHomePage() {
   const [event, setEvent] = useState<EventData | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<{ user: { full_name: string; email: string }; rating: number; comment: string | null; would_use_again: boolean; created_at: string }[]>([]);
+  const [reviewStats, setReviewStats] = useState<{ total: number; average: number; wouldUseAgain: number } | null>(null);
 
   useEffect(() => {
     Promise.all([
       fetch(`/api/v1/events/${eventId}`).then((r) => r.json()),
       fetch(`/api/v1/events/${eventId}/stats`).then((r) => r.json()),
-    ]).then(([evData, statsData]) => {
+      fetch(`/api/v1/events/${eventId}/reviews?mode=all`).then((r) => r.json()).catch(() => ({ reviews: [], stats: null })),
+    ]).then(([evData, statsData, revData]) => {
       setEvent(evData.event);
       setStats(statsData.stats);
+      setReviews(revData.reviews ?? []);
+      setReviewStats(revData.stats ?? null);
       setLoading(false);
     });
   }, [eventId]);
@@ -269,6 +274,43 @@ export default function HostHomePage() {
             </div>
           </motion.div>
         </div>
+
+        {/* Reviews Section */}
+        {reviewStats && reviewStats.total > 0 && (
+          <motion.div
+            variants={itemVariants}
+            className="rounded-3xl p-6 lg:p-8 mt-4"
+            style={{ background: "rgba(15,15,26,0.5)", border: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "#44445A" }}>Resenas de invitados</p>
+              <div className="flex items-center gap-1">
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="#FFB800" stroke="none">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                <span className="text-sm font-black" style={{ color: "#FFB800" }}>{reviewStats.average}</span>
+                <span className="text-xs" style={{ color: "#44445A" }}>({reviewStats.total})</span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              {reviews.slice(0, 5).map((r, i) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.02)" }}>
+                  <div className="flex gap-0.5 shrink-0 mt-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <svg key={s} width={10} height={10} viewBox="0 0 24 24" fill={s <= r.rating ? "#FFB800" : "none"} stroke={s <= r.rating ? "#FFB800" : "#44445A"} strokeWidth={2}>
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold truncate" style={{ color: "#F0F0FF" }}>{r.user.full_name}</p>
+                    {r.comment && <p className="text-xs mt-0.5" style={{ color: "#8585A8" }}>{r.comment}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

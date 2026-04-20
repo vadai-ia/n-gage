@@ -162,7 +162,11 @@ export default function EventDetailPage() {
   const [hostError, setHostError] = useState("");
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<"config" | "registrations" | "matches">("config");
+  const [activeTab, setActiveTab] = useState<"config" | "registrations" | "matches" | "reviews">("config");
+
+  // Reviews
+  const [reviews, setReviews] = useState<{ user: { full_name: string; email: string }; rating: number; comment: string | null; would_use_again: boolean; created_at: string }[]>([]);
+  const [reviewStats, setReviewStats] = useState<{ total: number; average: number; wouldUseAgain: number; distribution: number[] } | null>(null);
 
   // Edit form state
   const [editName, setEditName] = useState("");
@@ -206,6 +210,13 @@ export default function EventDetailPage() {
         setEditWhatsappGroupUrl(ev.whatsapp_group_url ?? "");
       }
       setStats(statsRes);
+
+      // Load reviews
+      try {
+        const revRes = await fetch(`/api/v1/events/${id}/reviews?mode=all`).then((r) => r.json());
+        setReviews(revRes.reviews ?? []);
+        setReviewStats(revRes.stats ?? null);
+      } catch { /* non-blocking */ }
     } catch {
       // handle silently
     }
@@ -635,6 +646,7 @@ export default function EventDetailPage() {
           { key: "config", label: "Configuracion" },
           { key: "registrations", label: `Registros (${registrations.length || event._count.registrations})` },
           { key: "matches", label: `Matches (${event._count.matches})` },
+          { key: "reviews", label: `Resenas (${reviewStats?.total ?? 0})` },
         ] as const).map((tab) => (
           <button
             key={tab.key}
@@ -1070,6 +1082,72 @@ export default function EventDetailPage() {
                   <p className="text-xs flex-shrink-0" style={{ color: "#44445A" }}>
                     {new Date(m.matched_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}
                   </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Reviews Tab ───────────────────────── */}
+      {activeTab === "reviews" && (
+        <div className="rounded-2xl p-4" style={cardStyle}>
+          <h3 className="text-sm font-black tracking-tight mb-4" style={{ color: "#F0F0FF" }}>
+            Resenas ({reviewStats?.total ?? 0})
+          </h3>
+
+          {/* Stats summary */}
+          {reviewStats && reviewStats.total > 0 && (
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,184,0,0.06)", border: "1px solid rgba(255,184,0,0.1)" }}>
+                <p className="text-xl font-black" style={{ color: "#FFB800" }}>{reviewStats.average}</p>
+                <p className="text-[10px]" style={{ color: "#8585A8" }}>Promedio</p>
+              </div>
+              <div className="rounded-xl p-3 text-center" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.1)" }}>
+                <p className="text-xl font-black" style={{ color: "#10B981" }}>{reviewStats.wouldUseAgain}</p>
+                <p className="text-[10px]" style={{ color: "#8585A8" }}>La usarian de nuevo</p>
+              </div>
+              <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,45,120,0.06)", border: "1px solid rgba(255,45,120,0.1)" }}>
+                <p className="text-xl font-black" style={{ color: "#FF2D78" }}>{reviewStats.total}</p>
+                <p className="text-[10px]" style={{ color: "#8585A8" }}>Total</p>
+              </div>
+            </div>
+          )}
+
+          {reviews.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-sm" style={{ color: "#44445A" }}>Aun no hay resenas para este evento</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {reviews.map((r, i) => (
+                <div key={i} className="p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div className="flex items-center justify-between mb-1">
+                    <div>
+                      <p className="text-sm font-bold" style={{ color: "#F0F0FF" }}>{r.user.full_name}</p>
+                      <p className="text-[10px]" style={{ color: "#44445A" }}>{r.user.email}</p>
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <svg key={s} width={12} height={12} viewBox="0 0 24 24" fill={s <= r.rating ? "#FFB800" : "none"} stroke={s <= r.rating ? "#FFB800" : "#44445A"} strokeWidth={1.5}>
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                  {r.comment && <p className="text-xs my-1" style={{ color: "#8585A8" }}>{r.comment}</p>}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                      style={{
+                        background: r.would_use_again ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+                        color: r.would_use_again ? "#10B981" : "#EF4444",
+                      }}>
+                      {r.would_use_again ? "La usaria de nuevo" : "No la usaria"}
+                    </span>
+                    <span className="text-[10px]" style={{ color: "#44445A" }}>
+                      {new Date(r.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

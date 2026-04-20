@@ -124,6 +124,7 @@ model User {
   api_keys            ApiKey[]
   photo_reports       PhotoReport[]
   used_access_codes   EventAccessCode[]    @relation("UsedAccessCodes")
+  app_reviews         AppReview[]
 
   @@map("users")
 }
@@ -195,6 +196,7 @@ model Event {
   photos                EventPhoto[]
   webhooks              Webhook[]
   access_codes          EventAccessCode[]
+  app_reviews           AppReview[]
 
   @@map("events")
 }
@@ -331,6 +333,26 @@ model PhotoReport {
   reporter    User              @relation(fields: [reported_by], references: [id])
 
   @@map("photo_reports")
+}
+
+// ─────────────────────────────────────────────
+// APP REVIEWS
+// ─────────────────────────────────────────────
+
+model AppReview {
+  id           String   @id @default(uuid())
+  event_id     String
+  user_id      String
+  rating       Int      // 1-5 stars
+  comment      String?  @db.Text
+  would_use_again Boolean @default(true)
+  created_at   DateTime @default(now())
+
+  event        Event    @relation(fields: [event_id], references: [id])
+  user         User     @relation(fields: [user_id], references: [id])
+
+  @@unique([event_id, user_id])
+  @@map("app_reviews")
 }
 
 // ─────────────────────────────────────────────
