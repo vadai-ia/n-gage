@@ -43,15 +43,21 @@ export async function middleware(request: NextRequest) {
     const code = searchParams.get("code")!;
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
-      // Si falla, redirigir a login con el error
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/login";
       loginUrl.searchParams.set("error", "auth");
       loginUrl.searchParams.set("reason", "OAuth code could not be exchanged.");
       return NextResponse.redirect(loginUrl);
     }
-    // Continuar al callback page que hará el sync y redirect
-    return supabaseResponse;
+    // Redirect sin el ?code= para que el client no intente consumirlo de nuevo
+    const cleanUrl = request.nextUrl.clone();
+    cleanUrl.searchParams.delete("code");
+    const redirectResponse = NextResponse.redirect(cleanUrl);
+    // Copiar las cookies de sesión que setAll() guardó en supabaseResponse
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
   }
 
   // Permitir rutas públicas, callbacks, APIs, y landing de eventos
