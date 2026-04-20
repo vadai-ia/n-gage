@@ -4,12 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SelfieCapture from "@/components/camera/SelfieCapture";
+import PoweredBy from "@/components/event/PoweredBy";
 import {
   EventPublic, EVENT_TYPE_LABELS, RELATION_TYPE_OPTIONS,
   GENDER_OPTIONS, LOOKING_FOR_OPTIONS, INTERESTS_CATALOG, DRINK_OPTIONS,
 } from "@/types/event";
 
-type Step = "loading" | "access_code" | "landing" | "auth" | "selfie" | "interests" | "done";
+type Step = "loading" | "access_code" | "intro" | "landing" | "auth" | "selfie" | "interests" | "done";
 
 export default function EventLandingPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -19,7 +20,7 @@ export default function EventLandingPage() {
   const [event, setEvent] = useState<EventPublic | null>(null);
   const [error, setError] = useState("");
   const [step, setStep] = useState<Step>("loading");
-  const [, setUser] = useState<{ id: string; email?: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
 
   // Access code
   const [accessCode, setAccessCode] = useState("");
@@ -45,6 +46,16 @@ export default function EventLandingPage() {
   const [authName, setAuthName] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+
+  // Helper: decide si mostrar intro o ir directo al flujo
+  const getNextStepAfterAccessGate = useCallback((isLoggedIn: boolean): Step => {
+    if (typeof window === "undefined") {
+      return isLoggedIn ? "selfie" : "landing";
+    }
+    const introSeen = window.localStorage.getItem(`ngage-intro-seen-${slug}`);
+    if (!introSeen) return "intro";
+    return isLoggedIn ? "selfie" : "landing";
+  }, [slug]);
 
   // 1. Load event and validate access code
   useEffect(() => {
@@ -103,9 +114,9 @@ export default function EventLandingPage() {
           window.location.href = `/event/${evt.id}/search`;
           return;
         }
-        setStep("selfie");
+        setStep(getNextStepAfterAccessGate(true));
       } else {
-        setStep("landing");
+        setStep(getNextStepAfterAccessGate(false));
       }
     }
 
@@ -141,9 +152,9 @@ export default function EventLandingPage() {
           setCodeValidating(false);
           return;
         }
-        setStep("selfie");
+        setStep(getNextStepAfterAccessGate(true));
       } else {
-        setStep("landing");
+        setStep(getNextStepAfterAccessGate(false));
       }
     } else {
       setCodeError("Codigo de acceso invalido. Verifica e intenta de nuevo.");
@@ -456,6 +467,127 @@ export default function EventLandingPage() {
     );
   }
 
+  // ── STEP: Intro / Cómo funciona ──
+  if (step === "intro" && event) {
+    const eventDate = new Date(event.event_date).toLocaleDateString("es-MX", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+
+    const handleEnter = () => {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(`ngage-intro-seen-${slug}`, "1");
+      }
+      setStep(user ? "selfie" : "landing");
+    };
+
+    return (
+      <div className="min-h-screen flex flex-col px-4 py-6" style={{ background: "#07070F" }}>
+        {/* Event header */}
+        <div className="text-center mb-6 pt-2">
+          <div
+            className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
+            style={{
+              background: "rgba(255,45,120,0.1)",
+              color: "#FF2D78",
+              border: "1px solid rgba(255,45,120,0.2)",
+            }}
+          >
+            {EVENT_TYPE_LABELS[event.type] || "Evento"}
+          </div>
+          <h1 className="text-3xl font-black tracking-tight mb-1" style={{ color: "#F0F0FF" }}>
+            {event.name}
+          </h1>
+          <p className="text-sm capitalize" style={{ color: "#8585A8" }}>
+            {eventDate}
+          </p>
+        </div>
+
+        {/* How it works */}
+        <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+          <h2 className="text-lg font-black tracking-tight mb-4 text-center" style={{ color: "#F0F0FF" }}>
+            Como funciona?
+          </h2>
+
+          <div className="flex flex-col gap-3 mb-6">
+            {[
+              {
+                num: "1",
+                title: "Toma tu selfie del dia",
+                desc: "Asi te reconocen los demas invitados. Solo camara, no galeria.",
+              },
+              {
+                num: "2",
+                title: `${event.search_duration_minutes} min para conectar`,
+                desc: "Haz swipe sobre los solteros del evento. Like, no-like o super like.",
+              },
+              {
+                num: "3",
+                title: "Chatea con tus matches",
+                desc: "Si hay like mutuo, pueden platicar dentro de la app.",
+              },
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 p-4 rounded-2xl"
+                style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.06)" }}
+              >
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center text-lg font-black shrink-0"
+                  style={{ background: "rgba(255,45,120,0.08)", color: "#FF2D78" }}
+                >
+                  {s.num}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold mb-0.5" style={{ color: "#F0F0FF" }}>
+                    {s.title}
+                  </p>
+                  <p className="text-xs leading-snug" style={{ color: "#8585A8" }}>
+                    {s.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTAs */}
+        <div className="flex flex-col gap-2.5 max-w-md mx-auto w-full">
+          <button
+            onClick={handleEnter}
+            className="w-full py-4 rounded-xl text-sm font-bold transition-transform active:scale-[0.98]"
+            style={{
+              background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
+              color: "#fff",
+              boxShadow: "0 8px 24px rgba(255,45,120,0.25)",
+            }}
+          >
+            Entrar al evento
+          </button>
+
+          {event.whatsapp_group_url && (
+            <a
+              href={event.whatsapp_group_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3.5 rounded-xl text-sm font-semibold text-center transition-transform active:scale-[0.98]"
+              style={{
+                background: "rgba(37,211,102,0.08)",
+                border: "1px solid rgba(37,211,102,0.25)",
+                color: "#25D366",
+              }}
+            >
+              Unirme al grupo de WhatsApp
+            </a>
+          )}
+        </div>
+
+        <PoweredBy />
+      </div>
+    );
+  }
+
   // ── STEP: Landing del evento ──
   if (step === "landing") {
     return (
@@ -543,6 +675,8 @@ export default function EventLandingPage() {
           >
             Quiero participar!
           </button>
+
+          <PoweredBy />
         </div>
       </div>
     );
@@ -968,6 +1102,7 @@ export default function EventLandingPage() {
         >
           INICIAR BUSQUEDA
         </button>
+        <PoweredBy variant="muted" />
       </div>
     );
   }

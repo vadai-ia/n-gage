@@ -21,6 +21,7 @@ const PatchEventSchema = z.object({
   gender_extended_mode: z.boolean().optional(),
   language: z.string().optional(),
   status: z.enum(["draft", "active", "closed", "expired"]).optional(),
+  whatsapp_group_url: z.string().url().nullable().optional().or(z.literal("")),
 });
 
 const planLimits: Record<string, number> = {
@@ -87,6 +88,7 @@ export async function PATCH(
   if (d.language !== undefined) updateData.language = d.language;
   if (d.status !== undefined) updateData.status = d.status;
   if (d.max_guests !== undefined) updateData.max_guests = d.max_guests;
+  if (d.whatsapp_group_url !== undefined) updateData.whatsapp_group_url = d.whatsapp_group_url?.trim() || null;
   if (d.plan_guest_limit !== undefined) updateData.plan_guest_limit = d.plan_guest_limit;
   if (d.expiry_type !== undefined) updateData.expiry_type = d.expiry_type;
   if (d.expiry_days !== undefined) updateData.expiry_days = d.expiry_days;

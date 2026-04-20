@@ -21,6 +21,7 @@ const CreateEventSchema = z.object({
   gender_extended_mode: z.boolean().default(false),
   language: z.string().default("es-MX"),
   access_code: z.string().min(4).max(20),
+  whatsapp_group_url: z.string().url().optional().or(z.literal("")),
 });
 
 export async function GET() {
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
       plan: d.plan as never,
       plan_guest_limit: planLimits[d.plan],
       unique_slug,
+      whatsapp_group_url: d.whatsapp_group_url?.trim() || null,
       qr_code_url: qrDataUrl,
       access_codes: {
         create: {

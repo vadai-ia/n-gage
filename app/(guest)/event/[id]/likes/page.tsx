@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "motion/react";
+import { getRelationLabel } from "@/lib/utils/relationLabels";
 
 type LikeEntry = {
   id: string;
@@ -21,11 +22,7 @@ type LikeEntry = {
   };
 };
 
-const RELATION_LABELS: Record<string, string> = {
-  friend_bride: "Amigo/a de la novia", friend_groom: "Amigo/a del novio",
-  family_bride: "Familia de la novia", family_groom: "Familia del novio",
-  coworker: "Compañero/a", other: "Invitado/a",
-};
+// Labels imported from @/lib/utils/relationLabels
 
 export default function LikesPage() {
   const { id: eventId } = useParams<{ id: string }>();
@@ -147,7 +144,7 @@ export default function LikesPage() {
                     <p className="font-bold text-sm truncate" style={{ color: "#F0F0FF" }}>{firstName}</p>
                     {reg?.relation_type && (
                       <p className="text-[10px] truncate font-medium" style={{ color: "#8585A8" }}>
-                        {RELATION_LABELS[reg.relation_type] ?? "Invitado/a"}
+                        {getRelationLabel(reg.relation_type) ?? "Invitad@"}
                       </p>
                     )}
                   </div>

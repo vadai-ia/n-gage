@@ -175,6 +175,7 @@ model Event {
 
   // Access
   qr_code_url           String?
+  whatsapp_group_url    String?
   unique_slug           String      @unique
   max_guests            Int?
 

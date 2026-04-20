@@ -4,6 +4,7 @@ import { useState } from "react";
 import TinderCard from "react-tinder-card";
 import { motion, AnimatePresence } from "framer-motion";
 import { GlassWater } from "lucide-react"; // Using this as a 'Cheers' icon for super like
+import { getRelationLabel } from "@/lib/utils/relationLabels";
 
 export type Profile = {
   user_id: string;
@@ -19,14 +20,7 @@ export type Profile = {
   user: { full_name: string; avatar_url: string | null };
 };
 
-const RELATION_LABELS: Record<string, string> = {
-  friend_bride: "Amigo/a de la novia",
-  friend_groom: "Amigo/a del novio",
-  family_bride: "Familia de la novia",
-  family_groom: "Familia del novio",
-  coworker: "Compañero/a de trabajo",
-  other: "Invitado/a",
-};
+// Labels imported from @/lib/utils/relationLabels
 
 interface SwipeCardProps {
   profile: Profile;
@@ -166,8 +160,8 @@ export default function SwipeCard({
 
                 {/* Minimalist Relation/Table */}
                 <div className="flex items-center gap-2 text-[#F0F0FF]/70 text-sm font-body tracking-wide uppercase">
-                  {profile.relation_type && (
-                    <span>{RELATION_LABELS[profile.relation_type] ?? profile.relation_type}</span>
+                  {getRelationLabel(profile.relation_type) && (
+                    <span>{getRelationLabel(profile.relation_type)}</span>
                   )}
                   {profile.relation_type && profile.table_number && <span className="opacity-40">•</span>}
                   {profile.table_number && (

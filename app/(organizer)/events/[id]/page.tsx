@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import { getRelationLabel } from "@/lib/utils/relationLabels";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -105,11 +106,7 @@ const LOOKING_LABELS: Record<string, string> = {
   men: "Hombres", women: "Mujeres", everyone: "Todos", non_binary: "No binario",
 };
 
-const RELATION_LABELS: Record<string, string> = {
-  friend_bride: "Amigo/a novia", friend_groom: "Amigo/a novio",
-  family_bride: "Familia novia", family_groom: "Familia novio",
-  coworker: "Companero/a", other: "Otro",
-};
+// Labels imported from @/lib/utils/relationLabels
 
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -181,6 +178,7 @@ export default function EventDetailPage() {
   const [editMaxGuests, setEditMaxGuests] = useState("");
   const [editGenderExtended, setEditGenderExtended] = useState(false);
   const [editAccessCode, setEditAccessCode] = useState("");
+  const [editWhatsappGroupUrl, setEditWhatsappGroupUrl] = useState("");
 
   const loadData = useCallback(async () => {
     try {
@@ -205,6 +203,7 @@ export default function EventDetailPage() {
         setEditMaxGuests(ev.max_guests?.toString() ?? "");
         setEditGenderExtended(ev.gender_extended_mode);
         setEditAccessCode(ev.access_codes?.[0]?.code ?? "");
+        setEditWhatsappGroupUrl(ev.whatsapp_group_url ?? "");
       }
       setStats(statsRes);
     } catch {
@@ -332,6 +331,7 @@ export default function EventDetailPage() {
       expiry_type: "custom_days",
       max_guests: editMaxGuests ? parseInt(editMaxGuests) : null,
       gender_extended_mode: editGenderExtended,
+      whatsapp_group_url: editWhatsappGroupUrl.trim() || null,
     };
 
     const res = await fetch(`/api/v1/events/${id}`, {
@@ -856,6 +856,24 @@ export default function EventDetailPage() {
               </p>
             </div>
 
+            {/* WhatsApp Group URL */}
+            <div>
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: "#8585A8" }}>
+                URL del grupo de WhatsApp
+              </label>
+              <input
+                type="url"
+                placeholder="https://chat.whatsapp.com/..."
+                value={editWhatsappGroupUrl}
+                onChange={(e) => setEditWhatsappGroupUrl(e.target.value)}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                style={inputStyle}
+              />
+              <p className="text-xs mt-1" style={{ color: "#44445A" }}>
+                Los invitados veran un boton para unirse al grupo al escanear el QR.
+              </p>
+            </div>
+
             {/* Save */}
             <button
               onClick={handleSave}
@@ -959,7 +977,7 @@ export default function EventDetailPage() {
                         )}
                         {reg.relation_type && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(123,47,190,0.12)", color: "#A855F7" }}>
-                            {RELATION_LABELS[reg.relation_type] ?? reg.relation_type}
+                            {getRelationLabel(reg.relation_type) ?? reg.relation_type}
                           </span>
                         )}
                       </div>

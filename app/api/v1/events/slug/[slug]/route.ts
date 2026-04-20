@@ -28,6 +28,7 @@ export async function GET(
       max_guests: true,
       plan_guest_limit: true,
       gender_extended_mode: true,
+      whatsapp_group_url: true,
       unique_slug: true,
       organizer: { select: { full_name: true } },
       _count: { select: { registrations: true } },

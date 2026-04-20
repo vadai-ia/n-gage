@@ -136,6 +136,7 @@ export default function NewEventPage() {
   const [searchStartTime, setSearchStartTime] = useState("");
   const [searchEndTime, setSearchEndTime] = useState("");
   const [showSearchWindow, setShowSearchWindow] = useState(false);
+  const [whatsappGroupUrl, setWhatsappGroupUrl] = useState("");
 
   function handlePlanChange(p: string) {
     setPlan(p);
@@ -167,6 +168,9 @@ export default function NewEventPage() {
     }
     if (showSearchWindow && searchEndTime) {
       payload.search_end_time = searchEndTime;
+    }
+    if (whatsappGroupUrl.trim()) {
+      payload.whatsapp_group_url = whatsappGroupUrl.trim();
     }
 
     const res = await fetch("/api/v1/events", {
@@ -289,6 +293,24 @@ export default function NewEventPage() {
               style={inputStyle}
             />
           </div>
+        </div>
+
+        {/* WhatsApp Group */}
+        <div>
+          <label className="text-xs font-medium mb-1.5 block" style={{ color: "#8585A8" }}>
+            URL del grupo de WhatsApp <span style={{ color: "#44445A" }}>(opcional)</span>
+          </label>
+          <input
+            type="url"
+            placeholder="https://chat.whatsapp.com/..."
+            value={whatsappGroupUrl}
+            onChange={(e) => setWhatsappGroupUrl(e.target.value)}
+            className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+            style={inputStyle}
+          />
+          <p className="text-xs mt-1.5" style={{ color: "#44445A" }}>
+            Si lo activas, los invitados veran un boton para unirse al grupo al escanear el QR.
+          </p>
         </div>
 
         {/* Plan */}
