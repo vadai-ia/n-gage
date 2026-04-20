@@ -114,160 +114,107 @@ function formatDuration(minutes: number): string {
 
 function pad(n: number) { return n.toString().padStart(2, "0"); }
 
-// ── Custom Calendar Component ──
-function CalendarPicker({
-  selectedDate,
-  onSelect,
+// ── Date & Time Picker (compact with dropdown calendar) ──
+function DateTimePicker({
+  date, hour, minute,
+  onDateChange, onHourChange, onMinuteChange,
 }: {
-  selectedDate: Date | null;
-  onSelect: (d: Date) => void;
+  date: Date | null; hour: number; minute: number;
+  onDateChange: (d: Date) => void; onHourChange: (h: number) => void; onMinuteChange: (m: number) => void;
 }) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const [viewMonth, setViewMonth] = useState(selectedDate ? selectedDate.getMonth() : today.getMonth());
-  const [viewYear, setViewYear] = useState(selectedDate ? selectedDate.getFullYear() : today.getFullYear());
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const [open, setOpen] = useState(false);
+  const [viewMonth, setViewMonth] = useState(date ? date.getMonth() : today.getMonth());
+  const [viewYear, setViewYear] = useState(date ? date.getFullYear() : today.getFullYear());
 
   const days = useMemo(() => {
-    const firstDay = new Date(viewYear, viewMonth, 1);
-    // Monday=0 adjustment (JS getDay: 0=Sun)
-    let startDay = firstDay.getDay() - 1;
-    if (startDay < 0) startDay = 6;
-
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const first = new Date(viewYear, viewMonth, 1);
+    let start = first.getDay() - 1; if (start < 0) start = 6;
+    const count = new Date(viewYear, viewMonth + 1, 0).getDate();
     const cells: (number | null)[] = [];
-    for (let i = 0; i < startDay; i++) cells.push(null);
-    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+    for (let i = 0; i < start; i++) cells.push(null);
+    for (let d = 1; d <= count; d++) cells.push(d);
     return cells;
   }, [viewMonth, viewYear]);
 
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); }
-    else setViewMonth(viewMonth - 1);
-  };
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
-    else setViewMonth(viewMonth + 1);
-  };
+  const prevMonth = () => { if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1); } else setViewMonth(viewMonth - 1); };
+  const nextMonth = () => { if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); } else setViewMonth(viewMonth + 1); };
 
-  const isSelected = (day: number) =>
-    selectedDate &&
-    selectedDate.getDate() === day &&
-    selectedDate.getMonth() === viewMonth &&
-    selectedDate.getFullYear() === viewYear;
+  const isSel = (day: number) => date && date.getDate() === day && date.getMonth() === viewMonth && date.getFullYear() === viewYear;
+  const isToday = (day: number) => today.getDate() === day && today.getMonth() === viewMonth && today.getFullYear() === viewYear;
+  const isPast = (day: number) => new Date(viewYear, viewMonth, day) < today;
 
-  const isToday = (day: number) =>
-    today.getDate() === day &&
-    today.getMonth() === viewMonth &&
-    today.getFullYear() === viewYear;
-
-  const isPast = (day: number) => {
-    const d = new Date(viewYear, viewMonth, day);
-    return d < today;
-  };
+  const dateLabel = date
+    ? `${date.getDate()} ${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getFullYear()}`
+    : "Seleccionar fecha";
 
   return (
-    <div className="rounded-2xl p-4" style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.06)" }}>
-      {/* Month navigation */}
-      <div className="flex items-center justify-between mb-4">
-        <button type="button" onClick={prevMonth} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: "#8585A8" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+    <div className="flex flex-col gap-3">
+      {/* Date + Time row */}
+      <div className="flex gap-2">
+        {/* Date button */}
+        <button type="button" onClick={() => setOpen(!open)}
+          className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl text-sm text-left transition-all"
+          style={{
+            background: "rgba(255,255,255,0.04)", border: open ? "1px solid rgba(255,45,120,0.4)" : "1px solid rgba(255,255,255,0.04)",
+            color: date ? "#F0F0FF" : "#44445A",
+          }}>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke={date ? "#FF2D78" : "#44445A"} strokeWidth="1.5">
+            <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
+          <span className="font-medium">{dateLabel}</span>
         </button>
-        <span className="text-sm font-bold" style={{ color: "#F0F0FF" }}>
-          {MONTH_NAMES[viewMonth]} {viewYear}
-        </span>
-        <button type="button" onClick={nextMonth} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5" style={{ color: "#8585A8" }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
-        </button>
+
+        {/* Time selector */}
+        <div className="flex items-center rounded-xl px-3 gap-1" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.04)" }}>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#44445A" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+          <select value={hour} onChange={(e) => onHourChange(Number(e.target.value))}
+            className="bg-transparent text-sm font-bold outline-none appearance-none text-center w-8 cursor-pointer" style={{ color: "#F0F0FF" }}>
+            {Array.from({ length: 24 }, (_, i) => <option key={i} value={i} style={{ background: "#0F0F1A" }}>{pad(i)}</option>)}
+          </select>
+          <span className="text-sm font-bold" style={{ color: "#44445A" }}>:</span>
+          <select value={minute} onChange={(e) => onMinuteChange(Number(e.target.value))}
+            className="bg-transparent text-sm font-bold outline-none appearance-none text-center w-8 cursor-pointer" style={{ color: "#F0F0FF" }}>
+            {[0, 15, 30, 45].map((m) => <option key={m} value={m} style={{ background: "#0F0F1A" }}>{pad(m)}</option>)}
+          </select>
+        </div>
       </div>
 
-      {/* Day names */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {DAY_NAMES.map((d) => (
-          <div key={d} className="text-center text-[10px] font-bold py-1" style={{ color: "#44445A" }}>{d}</div>
-        ))}
-      </div>
-
-      {/* Days grid */}
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((day, i) => {
-          if (day === null) return <div key={`e-${i}`} />;
-          const past = isPast(day);
-          const sel = isSelected(day);
-          const tod = isToday(day);
-          return (
-            <button
-              key={day}
-              type="button"
-              disabled={past}
-              onClick={() => {
-                const d = new Date(viewYear, viewMonth, day);
-                if (selectedDate) { d.setHours(selectedDate.getHours(), selectedDate.getMinutes()); }
-                onSelect(d);
-              }}
-              className="aspect-square rounded-xl text-xs font-semibold flex items-center justify-center transition-all"
-              style={{
-                background: sel ? "#FF2D78" : tod ? "rgba(255,45,120,0.08)" : "transparent",
-                color: sel ? "#fff" : past ? "#2a2a3a" : tod ? "#FF2D78" : "#F0F0FF",
-                boxShadow: sel ? "0 4px 12px rgba(255,45,120,0.3)" : "none",
-              }}
-            >
-              {day}
+      {/* Dropdown calendar */}
+      {open && (
+        <div className="rounded-xl p-3" style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center justify-between mb-2">
+            <button type="button" onClick={prevMonth} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/5" style={{ color: "#8585A8" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ── Time Picker Component ──
-function TimePicker({
-  label,
-  hour,
-  minute,
-  onChangeHour,
-  onChangeMinute,
-}: {
-  label: string;
-  hour: number;
-  minute: number;
-  onChangeHour: (h: number) => void;
-  onChangeMinute: (m: number) => void;
-}) {
-  const scrollBtn = "w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90";
-
-  return (
-    <div>
-      <label className="text-xs font-medium mb-2 block" style={{ color: "#8585A8" }}>{label}</label>
-      <div className="flex items-center gap-2 justify-center">
-        {/* Hours */}
-        <div className="flex flex-col items-center gap-1">
-          <button type="button" onClick={() => onChangeHour((hour + 1) % 24)} className={scrollBtn} style={{ background: "rgba(255,255,255,0.04)", color: "#8585A8" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15" /></svg>
-          </button>
-          <div className="w-14 h-12 rounded-xl flex items-center justify-center text-xl font-black" style={{ background: "rgba(255,45,120,0.06)", border: "1px solid rgba(255,45,120,0.15)", color: "#F0F0FF" }}>
-            {pad(hour)}
+            <span className="text-xs font-bold" style={{ color: "#F0F0FF" }}>{MONTH_NAMES[viewMonth]} {viewYear}</span>
+            <button type="button" onClick={nextMonth} className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-white/5" style={{ color: "#8585A8" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+            </button>
           </div>
-          <button type="button" onClick={() => onChangeHour((hour - 1 + 24) % 24)} className={scrollBtn} style={{ background: "rgba(255,255,255,0.04)", color: "#8585A8" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
-          </button>
-        </div>
-
-        <span className="text-2xl font-black" style={{ color: "#44445A" }}>:</span>
-
-        {/* Minutes */}
-        <div className="flex flex-col items-center gap-1">
-          <button type="button" onClick={() => onChangeMinute((minute + 15) % 60)} className={scrollBtn} style={{ background: "rgba(255,255,255,0.04)", color: "#8585A8" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15" /></svg>
-          </button>
-          <div className="w-14 h-12 rounded-xl flex items-center justify-center text-xl font-black" style={{ background: "rgba(255,45,120,0.06)", border: "1px solid rgba(255,45,120,0.15)", color: "#F0F0FF" }}>
-            {pad(minute)}
+          <div className="grid grid-cols-7 gap-0.5 mb-1">
+            {DAY_NAMES.map((d) => <div key={d} className="text-center text-[9px] font-bold py-0.5" style={{ color: "#44445A" }}>{d}</div>)}
           </div>
-          <button type="button" onClick={() => onChangeMinute((minute - 15 + 60) % 60)} className={scrollBtn} style={{ background: "rgba(255,255,255,0.04)", color: "#8585A8" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
-          </button>
+          <div className="grid grid-cols-7 gap-0.5">
+            {days.map((day, i) => {
+              if (day === null) return <div key={`e-${i}`} />;
+              const past = isPast(day); const sel = isSel(day); const tod = isToday(day);
+              return (
+                <button key={day} type="button" disabled={past}
+                  onClick={() => { onDateChange(new Date(viewYear, viewMonth, day)); setOpen(false); }}
+                  className="w-full aspect-square rounded-lg text-[11px] font-semibold flex items-center justify-center transition-all"
+                  style={{
+                    background: sel ? "#FF2D78" : tod ? "rgba(255,45,120,0.08)" : "transparent",
+                    color: sel ? "#fff" : past ? "#2a2a3a" : tod ? "#FF2D78" : "#F0F0FF",
+                    boxShadow: sel ? "0 2px 8px rgba(255,45,120,0.3)" : "none",
+                  }}>
+                  {day}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -419,17 +366,15 @@ export default function NewEventPage() {
           </div>
         </div>
 
-        {/* Date — Calendar */}
+        {/* Date & Time */}
         <div>
-          <label className="text-sm mb-2 block font-semibold" style={{ color: "#8585A8" }}>Fecha del evento *</label>
-          <CalendarPicker selectedDate={eventDate} onSelect={(d) => setEventDate(d)} />
-          {eventDate && (
-            <div className="mt-3">
-              <TimePicker label="Hora del evento" hour={eventHour} minute={eventMinute} onChangeHour={setEventHour} onChangeMinute={setEventMinute} />
-            </div>
-          )}
+          <label className="text-sm mb-2 block font-semibold" style={{ color: "#8585A8" }}>Fecha y hora del evento *</label>
+          <DateTimePicker
+            date={eventDate} hour={eventHour} minute={eventMinute}
+            onDateChange={setEventDate} onHourChange={setEventHour} onMinuteChange={setEventMinute}
+          />
           {dateDisplay && (
-            <p className="text-xs mt-2 text-center font-semibold" style={{ color: "#FF2D78" }}>{dateDisplay}</p>
+            <p className="text-xs mt-2 font-medium" style={{ color: "#FF2D78" }}>{dateDisplay}</p>
           )}
         </div>
 
@@ -517,19 +462,26 @@ export default function NewEventPage() {
 
           {showSearchWindow && (
             <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-              <TimePicker label="Hora de inicio del swipe" hour={swipeHour} minute={swipeMinute} onChangeHour={setSwipeHour} onChangeMinute={setSwipeMinute} />
-
-              <div className="mt-3 p-3 rounded-xl text-center" style={{ background: "rgba(255,45,120,0.04)", border: "1px solid rgba(255,45,120,0.1)" }}>
-                <p className="text-xs" style={{ color: "#8585A8" }}>El swipe estara activo de</p>
-                <p className="text-sm font-black mt-1" style={{ color: "#F0F0FF" }}>
-                  {pad(swipeHour)}:{pad(swipeMinute)} — {swipeEndDisplay}
-                </p>
-                <p className="text-xs mt-1" style={{ color: "#44445A" }}>
-                  ({formatDuration(timerMinutes)} de duracion)
-                </p>
+              <label className="text-xs font-medium mb-2 block" style={{ color: "#8585A8" }}>Hora de inicio del swipe</label>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center rounded-xl px-3 py-2.5 gap-1" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#FF2D78" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
+                  <select value={swipeHour} onChange={(e) => setSwipeHour(Number(e.target.value))}
+                    className="bg-transparent text-sm font-bold outline-none appearance-none text-center w-8 cursor-pointer" style={{ color: "#F0F0FF" }}>
+                    {Array.from({ length: 24 }, (_, i) => <option key={i} value={i} style={{ background: "#0F0F1A" }}>{pad(i)}</option>)}
+                  </select>
+                  <span className="text-sm font-bold" style={{ color: "#44445A" }}>:</span>
+                  <select value={swipeMinute} onChange={(e) => setSwipeMinute(Number(e.target.value))}
+                    className="bg-transparent text-sm font-bold outline-none appearance-none text-center w-8 cursor-pointer" style={{ color: "#F0F0FF" }}>
+                    {[0, 15, 30, 45].map((m) => <option key={m} value={m} style={{ background: "#0F0F1A" }}>{pad(m)}</option>)}
+                  </select>
+                </div>
+                <span className="text-xs" style={{ color: "#44445A" }}>hasta</span>
+                <span className="text-sm font-bold" style={{ color: "#F0F0FF" }}>{swipeEndDisplay}</span>
+                <span className="text-xs" style={{ color: "#44445A" }}>({formatDuration(timerMinutes)})</span>
               </div>
 
-              <p className="text-xs mt-2" style={{ color: "#44445A" }}>
+              <p className="text-xs" style={{ color: "#44445A" }}>
                 Si no lo activas, cada invitado inicia su timer al presionar &quot;Iniciar busqueda&quot;
               </p>
             </div>
