@@ -38,6 +38,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(callbackUrl);
   }
 
+  // Auth callback: intercambiar el code por sesión en el servidor (PKCE)
+  if (pathname.startsWith("/auth/callback") && searchParams.get("code")) {
+    const code = searchParams.get("code")!;
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      // Si falla, redirigir a login con el error
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.searchParams.set("error", "auth");
+      loginUrl.searchParams.set("reason", "OAuth code could not be exchanged.");
+      return NextResponse.redirect(loginUrl);
+    }
+    // Continuar al callback page que hará el sync y redirect
+    return supabaseResponse;
+  }
+
   // Permitir rutas públicas, callbacks, APIs, y landing de eventos
   if (
     PUBLIC_ROUTES.includes(pathname) ||
