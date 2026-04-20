@@ -23,7 +23,7 @@ export async function POST(
   }
 
   const body = await req.json();
-  const { selfie_url, display_name, table_number, relation_type, interests, gender, looking_for } = body;
+  const { selfie_url, display_name, bio, table_number, relation_type, interests, gender, looking_for } = body;
 
   if (!gender || !looking_for) {
     return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
@@ -82,6 +82,7 @@ export async function POST(
       user_id: user.id,
       selfie_url: selfie_url || "",
       display_name: cleanDisplay,
+      bio: bio?.trim()?.slice(0, 160) || null,
       table_number: table_number || null,
       relation_type: relation_type || null,
       interests: interests || [],

@@ -16,6 +16,7 @@ export async function GET(
     select: {
       selfie_url: true,
       display_name: true,
+      bio: true,
       table_number: true,
       super_like_used: true,
       photos_taken: true,

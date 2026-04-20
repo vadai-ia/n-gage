@@ -36,6 +36,7 @@ export default function EventLandingPage() {
   const [lookingFor, setLookingFor] = useState("");
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [drink, setDrink] = useState("");
+  const [bio, setBio] = useState("");
   const [interestStep, setInterestStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -283,6 +284,7 @@ export default function EventLandingPage() {
         body: JSON.stringify({
           selfie_url,
           display_name: displayName.trim() || null,
+          bio: bio.trim() || null,
           table_number: tableNumber || null,
           relation_type: relationType || null,
           interests: [...selectedInterests, drink].filter(Boolean),
@@ -819,10 +821,13 @@ export default function EventLandingPage() {
         <ProgressBar activeIndex={0} />
 
         <h2 className="text-2xl font-black tracking-tight mb-1" style={{ color: textPrimary }}>
-          Tu selfie del dia
+          Tu perfil del evento
         </h2>
-        <p className="text-sm mb-6" style={{ color: textSecondary }}>
-          Esta foto te representara en <strong style={{ color: textPrimary }}>{event.name}</strong>. Solo desde camara, no galeria.
+        <p className="text-sm mb-1" style={{ color: textSecondary }}>
+          No solo importa el look, tambien el feel.
+        </p>
+        <p className="text-xs mb-6" style={{ color: textMuted }}>
+          Tu selfie y tu bio son lo que los demas veran al hacer swipe.
         </p>
 
         <div className="flex justify-center mb-6">
@@ -854,6 +859,27 @@ export default function EventLandingPage() {
                   Así te verán los demás en el evento
                 </p>
               )}
+            </div>
+
+            {/* Bio */}
+            <div>
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
+                Describete en pocas palabras <span style={{ color: textMuted }}>(opcional)</span>
+              </label>
+              <textarea
+                placeholder="Ej. Amante del cafe, los perros y las buenas platicas..."
+                value={bio}
+                onChange={(e) => setBio(e.target.value.slice(0, 160))}
+                rows={2}
+                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all resize-none"
+                style={{ background: inputBg, border: `1px solid ${bio.trim() ? purple : inputBorder}`, color: textPrimary }}
+              />
+              <p className="text-xs mt-1 text-right" style={{ color: textMuted }}>
+                {bio.length}/160
+              </p>
+              <p className="text-xs" style={{ color: textMuted }}>
+                Esto aparecera en tu tarjeta para que te conozcan mas alla del look
+              </p>
             </div>
 
             {/* Mesa */}
@@ -970,7 +996,8 @@ export default function EventLandingPage() {
         <h2 className="text-2xl font-black tracking-tight mb-1" style={{ color: textPrimary }}>
           {currentCatalog.title}
         </h2>
-        <p className="text-sm mb-6" style={{ color: textSecondary }}>Elige todos los que quieras</p>
+        <p className="text-sm mb-1" style={{ color: textSecondary }}>Elige todos los que quieras</p>
+        <p className="text-xs mb-6" style={{ color: textMuted }}>Los intereses en comun se resaltan en las tarjetas</p>
 
         <div className="grid grid-cols-3 gap-2.5 mb-6">
           {currentCatalog.options.map((opt) => {

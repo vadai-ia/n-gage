@@ -223,6 +223,7 @@ model EventRegistration {
   user_id           String
   selfie_url        String
   display_name      String?
+  bio               String?       @db.VarChar(160)
   table_number      String?
   relation_type     RelationType?
   interests         Json?

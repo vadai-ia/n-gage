@@ -10,6 +10,7 @@ export type Profile = {
   user_id: string;
   selfie_url: string;
   display_name?: string | null;
+  bio?: string | null;
   table_number: string | null;
   relation_type: string | null;
   interests: string[] | null;
@@ -186,6 +187,13 @@ export default function SwipeCard({
                 </div>
               )}
             </div>
+
+            {/* Bio */}
+            {profile.bio && (
+              <p className="text-xs leading-relaxed mb-3 italic" style={{ color: "rgba(240,240,255,0.7)" }}>
+                &ldquo;{profile.bio}&rdquo;
+              </p>
+            )}
 
             {/* Frost Glass Icebreaker Chips */}
             {interests.length > 0 && (
