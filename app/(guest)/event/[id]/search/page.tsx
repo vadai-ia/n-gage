@@ -44,8 +44,22 @@ export default function SearchPage() {
 
   const loadProfiles = useCallback(() => {
     fetch(`/api/v1/events/${eventId}/profiles`)
-      .then((r) => r.json())
+      .then(async (r) => {
+        // Not registered yet — force wizard
+        if (r.status === 403) {
+          const evRes = await fetch(`/api/v1/events/${eventId}`).then((x) => x.json()).catch(() => null);
+          const slug = evRes?.event?.unique_slug;
+          if (slug) {
+            window.location.href = `/e/${slug}`;
+          } else {
+            window.location.href = "/";
+          }
+          return null;
+        }
+        return r.json();
+      })
       .then((d) => {
+        if (!d) return;
         if (d.window_status === "before_start") {
           setWindowStatus("before_start");
           setSearchStartTime(d.search_start_time ?? null);

@@ -66,16 +66,8 @@ export default function SelfieCapture({ onCapture, onRetake, captured }: SelfieC
     const offsetX = (video.videoWidth - size) / 2;
     const offsetY = (video.videoHeight - size) / 2;
 
-    // Mirror only front camera
-    if (facingMode === "user") {
-      ctx.save();
-      ctx.translate(size, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, offsetX, offsetY, size, size, 0, 0, size, size);
-      ctx.restore();
-    } else {
-      ctx.drawImage(video, offsetX, offsetY, size, size, 0, 0, size, size);
-    }
+    // Never mirror the captured image — match native phone behavior
+    ctx.drawImage(video, offsetX, offsetY, size, size, 0, 0, size, size);
 
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     stopCamera();
@@ -113,7 +105,7 @@ export default function SelfieCapture({ onCapture, onRetake, captured }: SelfieC
         <video
           ref={videoRef}
           className="w-full h-full object-cover"
-          style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none", display: streaming ? "block" : "none" }}
+          style={{ display: streaming ? "block" : "none" }}
           playsInline
           muted
         />

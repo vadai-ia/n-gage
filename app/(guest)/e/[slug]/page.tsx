@@ -122,12 +122,19 @@ export default function EventLandingPage() {
       if (u) {
         setUser(u);
         setDisplayName(u.user_metadata?.full_name || u.user_metadata?.name || "");
-        // Check if already registered
-        const regRes = await fetch(`/api/v1/events/${evt.id}/my-registration`);
-        if (regRes.ok) {
-          window.location.href = `/event/${evt.id}/search`;
-          return;
-        }
+        // Check if already registered — must actually have a registration, not just a 200 OK
+        try {
+          const regRes = await fetch(`/api/v1/events/${evt.id}/my-registration`);
+          if (regRes.ok) {
+            const regData = await regRes.json();
+            // Only redirect if registration actually exists AND is complete (has a selfie)
+            if (regData?.registration?.selfie_url) {
+              window.location.href = `/event/${evt.id}/search`;
+              return;
+            }
+          }
+        } catch { /* proceed to wizard */ }
+        // No registration yet — force wizard
         setStep(getNextStepAfterAccessGate(true));
       } else {
         setStep(getNextStepAfterAccessGate(false));
@@ -160,12 +167,17 @@ export default function EventLandingPage() {
       const { data: { user: u } } = await supabase.auth.getUser();
       if (u) {
         setUser(u);
-        const regRes = await fetch(`/api/v1/events/${data.event.id}/my-registration`);
-        if (regRes.ok) {
-          window.location.href = `/event/${data.event.id}/search`;
-          setCodeValidating(false);
-          return;
-        }
+        try {
+          const regRes = await fetch(`/api/v1/events/${data.event.id}/my-registration`);
+          if (regRes.ok) {
+            const regData = await regRes.json();
+            if (regData?.registration?.selfie_url) {
+              window.location.href = `/event/${data.event.id}/search`;
+              setCodeValidating(false);
+              return;
+            }
+          }
+        } catch { /* proceed */ }
         setStep(getNextStepAfterAccessGate(true));
       } else {
         setStep(getNextStepAfterAccessGate(false));
