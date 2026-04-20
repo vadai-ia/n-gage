@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { getRelationLabel } from "@/lib/utils/relationLabels";
+import WindowGate from "@/components/event/WindowGate";
 
 type LikeEntry = {
   id: string;
@@ -29,6 +30,9 @@ export default function LikesPage() {
   const [loading, setLoading] = useState(true);
   const [matching, setMatching] = useState<string | null>(null);
 
+  // Window status
+  const [windowEnded, setWindowEnded] = useState(false);
+
   // Review gate
   const [hasReviewed, setHasReviewed] = useState<boolean | null>(null);
   const [showReviewPopup, setShowReviewPopup] = useState(false);
@@ -41,9 +45,11 @@ export default function LikesPage() {
     Promise.all([
       fetch(`/api/v1/events/${eventId}/likes?direction=received`).then((r) => r.json()),
       fetch(`/api/v1/events/${eventId}/reviews`).then((r) => r.json()),
-    ]).then(([likesData, reviewData]) => {
+      fetch(`/api/v1/events/${eventId}/window-status`).then((r) => r.json()),
+    ]).then(([likesData, reviewData, windowData]) => {
       setLikes(likesData.likes ?? []);
       setHasReviewed(reviewData.reviewed ?? false);
+      setWindowEnded(windowData.window_status === "ended");
       setLoading(false);
     });
   }, [eventId]);
@@ -95,6 +101,7 @@ export default function LikesPage() {
   }
 
   return (
+    <WindowGate eventId={eventId} allowWhenEnded>
     <div className="p-4 pt-6 relative">
       <h1 className="text-2xl font-black mb-0.5" style={{ color: "#F0F0FF" }}>Likes</h1>
       <p className="text-xs font-medium mb-5" style={{ color: "#44445A" }}>
@@ -160,33 +167,41 @@ export default function LikesPage() {
                     )}
                     <div className="absolute bottom-0 left-0 right-0 p-3">
                       <p className="font-bold text-sm truncate" style={{ color: "#F0F0FF" }}>{firstName}</p>
-                      {reg?.relation_type && (
+                      {/* Hide details after window ends — keep it mysterious */}
+                      {!windowEnded && reg?.relation_type && (
                         <p className="text-[10px] truncate font-medium" style={{ color: "#8585A8" }}>
                           {getRelationLabel(reg.relation_type) ?? "Invitad@"}
                         </p>
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleMatch(like.from_user_id)}
-                    disabled={matching === like.from_user_id}
-                    className="w-full py-3 text-xs font-bold transition-all active:scale-[0.97] disabled:opacity-60 flex items-center justify-center gap-1.5"
-                    style={{
-                      background: isSuperLike ? "linear-gradient(135deg, #FFB800, #FF8C00)" : "linear-gradient(135deg, #FF2D78, #7B2FBE)",
-                      color: "#fff",
-                    }}
-                  >
-                    {matching === like.from_user_id ? (
-                      <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
-                    ) : (
-                      <>
-                        <svg width={14} height={14} fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                        </svg>
-                        Match
-                      </>
-                    )}
-                  </button>
+                  {/* Match button — only during open window */}
+                  {!windowEnded ? (
+                    <button
+                      onClick={() => handleMatch(like.from_user_id)}
+                      disabled={matching === like.from_user_id}
+                      className="w-full py-3 text-xs font-bold transition-all active:scale-[0.97] disabled:opacity-60 flex items-center justify-center gap-1.5"
+                      style={{
+                        background: isSuperLike ? "linear-gradient(135deg, #FFB800, #FF8C00)" : "linear-gradient(135deg, #FF2D78, #7B2FBE)",
+                        color: "#fff",
+                      }}
+                    >
+                      {matching === like.from_user_id ? (
+                        <span className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#fff", borderTopColor: "transparent" }} />
+                      ) : (
+                        <>
+                          <svg width={14} height={14} fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+                          </svg>
+                          Match
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="w-full py-2.5 text-[10px] font-medium text-center" style={{ color: "#44445A", background: "rgba(255,255,255,0.02)" }}>
+                      Te dio like
+                    </div>
+                  )}
                 </motion.div>
               );
             })}
@@ -312,5 +327,6 @@ export default function LikesPage() {
         )}
       </AnimatePresence>
     </div>
+    </WindowGate>
   );
 }

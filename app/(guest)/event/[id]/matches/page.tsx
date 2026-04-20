@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "motion/react";
 import { getRelationLabel } from "@/lib/utils/relationLabels";
+import WindowGate from "@/components/event/WindowGate";
 
 type Match = {
   id: string;
@@ -39,6 +40,7 @@ export default function MatchesPage() {
   }
 
   return (
+    <WindowGate eventId={eventId} allowWhenEnded>
     <div className="p-4 pt-6">
       <h1 className="text-2xl font-black mb-0.5" style={{ color: "#F0F0FF" }}>Tus Matches</h1>
       <p className="text-xs font-medium mb-2" style={{ color: "#8585A8" }}>
@@ -117,5 +119,6 @@ export default function MatchesPage() {
         </div>
       )}
     </div>
+    </WindowGate>
   );
 }
