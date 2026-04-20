@@ -47,6 +47,7 @@ export default function EventLandingPage() {
   const [authName, setAuthName] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Helper: decide si mostrar intro o ir directo al flujo
   const getNextStepAfterAccessGate = useCallback((isLoggedIn: boolean): Step => {
@@ -222,6 +223,10 @@ export default function EventLandingPage() {
   }
 
   async function handleGoogle() {
+    if (authMode === "register" && !acceptedTerms) {
+      setAuthError("Debes aceptar los Terminos y Condiciones para continuar.");
+      return;
+    }
     // Build the return URL for after OAuth — go through /auth/callback which syncs the user
     const eventUrl = `/e/${slug}${searchParams.get("code") ? `?code=${searchParams.get("code")}` : ""}`;
     const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(eventUrl)}`;
@@ -754,9 +759,29 @@ export default function EventLandingPage() {
             </div>
           )}
 
+          {/* T&C checkbox — only for register */}
+          {authMode === "register" && (
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded accent-[#FF2D78] shrink-0"
+              />
+              <span className="text-xs leading-relaxed" style={{ color: textSecondary }}>
+                Soy mayor de 18 anos y acepto los{" "}
+                <a href="/terminos-condiciones" target="_blank" rel="noopener noreferrer"
+                  className="underline font-semibold" style={{ color: pink }}>
+                  Terminos y Condiciones y Aviso de Privacidad
+                </a>{" "}
+                de N&apos;GAGE
+              </span>
+            </label>
+          )}
+
           <button
             type="submit"
-            disabled={authLoading}
+            disabled={authLoading || (authMode === "register" && !acceptedTerms)}
             className="w-full py-3.5 rounded-xl font-bold text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
             style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}
           >

@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Rutas públicas — no requieren autenticación
-const PUBLIC_ROUTES = ["/", "/login", "/register", "/welcome"];
+const PUBLIC_ROUTES = ["/", "/login", "/register", "/welcome", "/terminos-condiciones"];
 const EVENT_LANDING_PATTERN = /^\/e\/[^/]+/; // /e/[slug]
 
 export async function middleware(request: NextRequest) {
