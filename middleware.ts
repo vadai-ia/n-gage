@@ -53,9 +53,9 @@ export async function middleware(request: NextRequest) {
     const cleanUrl = request.nextUrl.clone();
     cleanUrl.searchParams.delete("code");
     const redirectResponse = NextResponse.redirect(cleanUrl);
-    // Copiar las cookies de sesión que setAll() guardó en supabaseResponse
+    // Copiar las cookies de sesión con todas sus opciones (httpOnly, secure, path, etc.)
     supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value);
+      redirectResponse.cookies.set(cookie);
     });
     return redirectResponse;
   }
