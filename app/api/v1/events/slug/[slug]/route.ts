@@ -45,6 +45,15 @@ export async function GET(
   if (event.status === "expired") {
     return NextResponse.json({ error: "Este evento ha expirado" }, { status: 410 });
   }
+  if (event.status === "draft") {
+    return NextResponse.json(
+      { error: "El organizador aún no ha activado este evento. Vuelve más tarde." },
+      { status: 403 }
+    );
+  }
+  if (event.status === "closed") {
+    return NextResponse.json({ error: "Este evento ya está cerrado." }, { status: 410 });
+  }
 
   // Check capacity
   const limit = event.plan_guest_limit ?? event.max_guests;

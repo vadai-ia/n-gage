@@ -75,7 +75,7 @@ const plans = [
       { label: "Webhooks y API access", included: false },
       { label: "Soporte prioritario", included: false },
     ],
-    color: "#FF3CAC",
+    color: "#FF2D78",
     glow: "rgba(255,60,172,0.4)",
     popular: true,
   },
@@ -127,7 +127,7 @@ const plans = [
       { label: "Webhooks y API access", included: true },
       { label: "Soporte prioritario", included: true },
     ],
-    color: "#2B86C5",
+    color: "#1A6EFF",
     glow: "rgba(43,134,197,0.35)",
     popular: false,
   },
@@ -208,7 +208,7 @@ export default function NGAGEPricing() {
           padding: "6px 20px",
           marginBottom: "20px",
         }}>
-          <span style={{ color: "#FF3CAC", fontSize: "13px", fontWeight: "600", letterSpacing: "2px", textTransform: "uppercase" }}>
+          <span style={{ color: "#FF2D78", fontSize: "13px", fontWeight: "600", letterSpacing: "2px", textTransform: "uppercase" }}>
             Planes N'GAGE
           </span>
         </div>
@@ -216,7 +216,7 @@ export default function NGAGEPricing() {
         <h1 style={{
           fontSize: "clamp(36px, 6vw, 64px)",
           fontWeight: "800",
-          background: "linear-gradient(135deg, #fff 0%, #FF3CAC 50%, #784BA0 100%)",
+          background: "linear-gradient(135deg, #fff 0%, #FF2D78 50%, #7B2FBE 100%)",
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           backgroundClip: "text",
@@ -254,7 +254,7 @@ export default function NGAGEPricing() {
                   ? "linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))"
                   : "linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
                 border: isSelected
-                  ? `1px solid ${plan.color === "url(#exclusiveGrad)" ? "#FF3CAC" : plan.color}`
+                  ? `1px solid ${plan.color === "url(#exclusiveGrad)" ? "#FF2D78" : plan.color}`
                   : "1px solid rgba(255,255,255,0.07)",
                 borderRadius: "24px",
                 padding: "32px 24px",
@@ -275,7 +275,7 @@ export default function NGAGEPricing() {
                   top: "-14px",
                   left: "50%",
                   transform: "translateX(-50%)",
-                  background: "linear-gradient(135deg, #FF3CAC, #784BA0)",
+                  background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
                   borderRadius: "100px",
                   padding: "5px 18px",
                   fontSize: "12px",
@@ -299,7 +299,7 @@ export default function NGAGEPricing() {
                     fontWeight: "800",
                     color: plan.isExclusive ? "transparent" : plan.color,
                     background: plan.isExclusive
-                      ? "linear-gradient(135deg, #FF3CAC, #784BA0, #2B86C5)"
+                      ? "linear-gradient(135deg, #FF2D78, #7B2FBE, #1A6EFF)"
                       : "none",
                     WebkitBackgroundClip: plan.isExclusive ? "text" : "unset",
                     WebkitTextFillColor: plan.isExclusive ? "transparent" : "unset",
@@ -347,7 +347,7 @@ export default function NGAGEPricing() {
                   <div style={{
                     fontSize: "28px",
                     fontWeight: "900",
-                    background: "linear-gradient(135deg, #FF3CAC, #2B86C5)",
+                    background: "linear-gradient(135deg, #FF2D78, #1A6EFF)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
@@ -389,10 +389,10 @@ export default function NGAGEPricing() {
                       width: "18px", height: "18px", borderRadius: "50%", flexShrink: 0,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       background: f.included
-                        ? `${plan.color === "url(#exclusiveGrad)" ? "#FF3CAC" : plan.color}22`
+                        ? `${plan.color === "url(#exclusiveGrad)" ? "#FF2D78" : plan.color}22`
                         : "rgba(255,255,255,0.04)",
                       border: `1px solid ${f.included
-                        ? (plan.color === "url(#exclusiveGrad)" ? "#FF3CAC" : plan.color) + "55"
+                        ? (plan.color === "url(#exclusiveGrad)" ? "#FF2D78" : plan.color) + "55"
                         : "rgba(255,255,255,0.08)"}`,
                     }}>
                       <span style={{ fontSize: "10px" }}>
@@ -423,7 +423,7 @@ export default function NGAGEPricing() {
                 transition: "all 0.2s ease",
                 background: isSelected
                   ? plan.isExclusive
-                    ? "linear-gradient(135deg, #FF3CAC, #784BA0, #2B86C5)"
+                    ? "linear-gradient(135deg, #FF2D78, #7B2FBE, #1A6EFF)"
                     : plan.color
                   : "rgba(255,255,255,0.06)",
                 color: isSelected ? "#fff" : "#888899",
@@ -453,7 +453,7 @@ export default function NGAGEPricing() {
         </h3>
         <p style={{ color: "#666688", fontSize: "14px", margin: 0, lineHeight: 1.7 }}>
           El conteo es solo de los invitados que se registren como solteros — no del total de asistentes al evento.
-          Puedes estimar entre un <strong style={{ color: "#FF3CAC" }}>30% y 40%</strong> del total de invitados.
+          Puedes estimar entre un <strong style={{ color: "#FF2D78" }}>30% y 40%</strong> del total de invitados.
           Siempre puedes contactarnos para orientarte en el plan correcto.
         </p>
       </div>

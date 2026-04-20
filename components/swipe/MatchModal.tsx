@@ -19,9 +19,31 @@ export default function MatchModal({ myPhoto, theirPhoto, theirName, onClose, on
     if (hasAnimated.current) return;
     hasAnimated.current = true;
 
-    // Haptic for an elegant "collision" feeling
     if (navigator.vibrate) navigator.vibrate([30, 10, 50]);
-    // NO CONFETTI. We rely on the elegant UI motion.
+
+    // Confetti suave en colores de marca
+    import("canvas-confetti").then(({ default: confetti }) => {
+      setTimeout(() => {
+        confetti({
+          particleCount: 80,
+          spread: 65,
+          origin: { y: 0.55 },
+          colors: ["#FF2D78", "#7B2FBE", "#1A6EFF", "#FFB800"],
+          scalar: 0.9,
+          gravity: 0.8,
+        });
+      }, 400);
+
+      setTimeout(() => {
+        confetti({
+          particleCount: 40,
+          spread: 100,
+          origin: { y: 0.6 },
+          colors: ["#FF2D78", "#FFB800"],
+          scalar: 0.7,
+        });
+      }, 700);
+    });
   }, []);
 
   const firstName = theirName.split(" ")[0];
@@ -49,13 +71,14 @@ export default function MatchModal({ myPhoto, theirPhoto, theirName, onClose, on
           className="text-center mb-10"
         >
           <h1
-            className="font-display text-5xl font-medium tracking-tight mb-3"
+            className="text-5xl font-black tracking-tight mb-3"
             style={{
-              color: "#FAFAFA",
-              textShadow: "0 4px 20px rgba(255,255,255,0.1)",
+              background: "linear-gradient(135deg, #FF2D78, #FFB800)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
             }}
           >
-            La Conexión
+            Match!
           </h1>
           <p className="font-body text-sm tracking-wide opacity-70" style={{ color: "#E0E0E0" }}>
             Tú y <strong>{firstName}</strong> han coincidido
@@ -85,8 +108,8 @@ export default function MatchModal({ myPhoto, theirPhoto, theirName, onClose, on
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
             className="w-32 h-32 rounded-full overflow-hidden relative z-20"
             style={{
-              border: "1px solid rgba(214,40,90,0.3)", // Subtle brand ring on their photo
-              boxShadow: "0 10px 40px rgba(214,40,90,0.15)",
+              border: "1px solid rgba(255,45,120,0.3)", // Subtle brand ring on their photo
+              boxShadow: "0 10px 40px rgba(255,45,120,0.15)",
             }}
           >
             <img src={theirPhoto} alt={theirName} className="w-full h-full object-cover" />
@@ -104,7 +127,7 @@ export default function MatchModal({ myPhoto, theirPhoto, theirName, onClose, on
             onClick={onChat}
             className="w-full py-4 rounded-full font-body font-medium text-sm tracking-wide transition-all active:scale-[0.98]"
             style={{
-              background: "#FAFAFA",
+              background: "#F0F0FF",
               color: "#000000",
             }}
           >
@@ -117,7 +140,7 @@ export default function MatchModal({ myPhoto, theirPhoto, theirName, onClose, on
             style={{
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.1)",
-              color: "#FAFAFA",
+              color: "#F0F0FF",
             }}
           >
             Volver al evento

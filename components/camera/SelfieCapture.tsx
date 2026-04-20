@@ -75,14 +75,14 @@ export default function SelfieCapture({ onCapture, onRetake, captured }: SelfieC
     return (
       <div className="flex flex-col items-center gap-4">
         <div className="relative w-48 h-48 rounded-2xl overflow-hidden"
-          style={{ border: "3px solid #FF3CAC", boxShadow: "0 0 20px rgba(255,60,172,0.4)" }}>
+          style={{ border: "3px solid #FF2D78", boxShadow: "0 0 20px rgba(255,45,120,0.4)" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={captured} alt="Tu selfie" className="w-full h-full object-cover" />
         </div>
         <p className="text-sm" style={{ color: "#A0A0B0" }}>
           Tu selfie del día está lista ✨
         </p>
-        <button onClick={handleRetake} className="text-sm underline" style={{ color: "#FF3CAC" }}>
+        <button onClick={handleRetake} className="text-sm underline" style={{ color: "#FF2D78" }}>
           Tomar otra
         </button>
         <canvas ref={canvasRef} className="hidden" />
@@ -114,7 +114,7 @@ export default function SelfieCapture({ onCapture, onRetake, captured }: SelfieC
 
       {error && (
         <div className="rounded-xl p-3 text-sm text-center max-w-xs"
-          style={{ background: "rgba(255,60,172,0.1)", border: "1px solid rgba(255,60,172,0.3)", color: "#FF3CAC" }}>
+          style={{ background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.3)", color: "#FF2D78" }}>
           {error}
           <br />
           <span style={{ color: "#A0A0B0", fontSize: "12px" }}>
@@ -128,7 +128,7 @@ export default function SelfieCapture({ onCapture, onRetake, captured }: SelfieC
           onClick={startCamera}
           disabled={loading}
           className="px-6 py-3 rounded-xl font-bold text-sm disabled:opacity-60"
-          style={{ background: "linear-gradient(135deg, #FF3CAC, #784BA0)", color: "#fff" }}
+          style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}
         >
           {loading ? "Activando cámara..." : "Activar cámara"}
         </button>
@@ -136,8 +136,8 @@ export default function SelfieCapture({ onCapture, onRetake, captured }: SelfieC
         <button
           onClick={takeSelfie}
           className="w-16 h-16 rounded-full flex items-center justify-center text-2xl"
-          style={{ background: "linear-gradient(135deg, #FF3CAC, #784BA0)",
-            boxShadow: "0 0 0 4px rgba(255,60,172,0.3)" }}
+          style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
+            boxShadow: "0 0 0 4px rgba(255,45,120,0.3)" }}
           aria-label="Tomar selfie"
         >
           📸

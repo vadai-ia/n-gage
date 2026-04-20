@@ -52,6 +52,15 @@ export async function GET(
   });
   const seenIds = seen.map((s) => s.to_user_id);
 
+  // Mapear mi género a lo que el otro debería estar buscando para verme
+  const myGenderToLookingFor: Record<string, "men" | "women" | "non_binary" | "everyone"> = {
+    male: "men",
+    female: "women",
+    non_binary: "non_binary",
+    prefer_not_say: "everyone",
+  };
+  const reverseLookingFor = myGenderToLookingFor[me.gender] ?? "everyone";
+
   // Query con filtro de compatibilidad bidireccional
   const profiles = await prisma.eventRegistration.findMany({
     where: {
@@ -61,7 +70,7 @@ export async function GET(
       // El otro me busca a mí (o a todos)
       OR: [
         { looking_for: "everyone" },
-        { looking_for: me.gender === "male" ? "men" : me.gender === "female" ? "women" : "everyone" },
+        { looking_for: reverseLookingFor },
       ],
     },
     include: {
@@ -72,13 +81,14 @@ export async function GET(
   });
 
   // Filtrar: yo también debo buscar al otro
-  const filtered = profiles.filter((p) => {
-    if (me.looking_for === "everyone") return true;
-    if (me.looking_for === "men" && p.gender === "male") return true;
-    if (me.looking_for === "women" && p.gender === "female") return true;
-    if (me.looking_for === "non_binary" && p.gender === "non_binary") return true;
-    return false;
-  });
+  const lookingForToGender: Record<string, string[]> = {
+    men: ["male"],
+    women: ["female"],
+    non_binary: ["non_binary"],
+    everyone: ["male", "female", "non_binary", "prefer_not_say"],
+  };
+  const acceptedGenders = lookingForToGender[me.looking_for] ?? [];
+  const filtered = profiles.filter((p) => acceptedGenders.includes(p.gender));
 
   // Compatibility scoring — "Posible Soul"
   const myInterests = Array.isArray(me.interests) ? (me.interests as string[]) : [];

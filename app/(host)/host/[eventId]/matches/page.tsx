@@ -39,7 +39,7 @@ export default function HostMatchesPage() {
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-1">Matches del Evento</h1>
       <p className="text-sm mb-5" style={{ color: "#A0A0B0" }}>
-        <span style={{ color: "#FF3CAC", fontWeight: 700 }}>{total}</span> conexiones generadas 💑
+        <span style={{ color: "#FF2D78", fontWeight: 700 }}>{total}</span> conexiones generadas 💑
       </p>
 
       {matches.length === 0 ? (
@@ -60,14 +60,14 @@ export default function HostMatchesPage() {
 
               {/* Foto A */}
               <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0"
-                style={{ border: "2px solid #FF3CAC" }}>
+                style={{ border: "2px solid #FF2D78" }}>
                 {match.reg_a?.selfie_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={match.reg_a.selfie_url} alt={match.user_a.full_name}
                     className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-lg"
-                    style={{ background: "rgba(255,60,172,0.1)" }}>👤</div>
+                    style={{ background: "rgba(255,45,120,0.1)" }}>👤</div>
                 )}
               </div>
 
@@ -77,9 +77,9 @@ export default function HostMatchesPage() {
                   {match.user_a.full_name}
                 </p>
                 <div className="flex items-center gap-1 my-0.5">
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,60,172,0.3)" }} />
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,45,120,0.3)" }} />
                   <span className="text-xs">💗</span>
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,60,172,0.3)" }} />
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,45,120,0.3)" }} />
                 </div>
                 <p className="font-semibold text-sm leading-tight truncate">
                   {match.user_b.full_name}
@@ -94,14 +94,14 @@ export default function HostMatchesPage() {
 
               {/* Foto B */}
               <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0"
-                style={{ border: "2px solid #784BA0" }}>
+                style={{ border: "2px solid #7B2FBE" }}>
                 {match.reg_b?.selfie_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={match.reg_b.selfie_url} alt={match.user_b.full_name}
                     className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-lg"
-                    style={{ background: "rgba(120,75,160,0.1)" }}>👤</div>
+                    style={{ background: "rgba(123,47,190,0.1)" }}>👤</div>
                 )}
               </div>
             </div>

@@ -221,6 +221,7 @@ model EventRegistration {
   event_id          String
   user_id           String
   selfie_url        String
+  display_name      String?
   table_number      String?
   relation_type     RelationType?
   interests         Json?

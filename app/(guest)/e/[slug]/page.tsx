@@ -162,13 +162,26 @@ export default function EventLandingPage() {
         email: authEmail, password: authPassword,
         options: { data: { full_name: authName } },
       });
-      if (err) { setAuthError("Error al crear cuenta. Intenta con otro correo."); setAuthLoading(false); return; }
-
-      // If email confirmation is required and no session, show message
-      if (!data.session) {
-        setAuthError("Te enviamos un correo de confirmación. Revísalo para continuar.");
+      if (err) {
+        setAuthError("Error al crear cuenta. Intenta con otro correo.");
         setAuthLoading(false);
         return;
+      }
+
+      // Si Supabase tiene email confirmation activado y no hay sesión,
+      // intentar login directo como fallback
+      if (!data.session) {
+        const { error: loginErr } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password: authPassword,
+        });
+        if (loginErr) {
+          setAuthError(
+            "Te enviamos un correo de confirmación. Pídele al organizador desactivar la confirmación por email para acceso instantáneo."
+          );
+          setAuthLoading(false);
+          return;
+        }
       }
     } else {
       const { error: err } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
@@ -234,14 +247,23 @@ export default function EventLandingPage() {
     setAuthError("");
 
     try {
-      // Try to upload selfie — if it fails, proceed anyway without blocking the user
-      let selfie_url: string | null = null;
-      if (selfieDataUrl) {
-        try {
-          selfie_url = await uploadSelfie(selfieDataUrl);
-        } catch {
-          selfie_url = null;
-        }
+      if (!selfieDataUrl) {
+        setAuthError("Falta tu selfie del día. Vuelve atrás y tómala.");
+        setSubmitting(false);
+        return;
+      }
+
+      let selfie_url: string;
+      try {
+        selfie_url = await uploadSelfie(selfieDataUrl);
+      } catch (e) {
+        setAuthError(
+          e instanceof Error
+            ? e.message
+            : "No pudimos subir tu foto. Verifica tu conexión y reintenta."
+        );
+        setSubmitting(false);
+        return;
       }
 
       const res = await fetch(`/api/v1/events/${event.id}/register`, {
@@ -883,7 +905,7 @@ export default function EventLandingPage() {
           )}
           <button
             onClick={() => isLastStep ? handleSubmit() : setInterestStep((s) => s + 1)}
-            disabled={submitting}
+            disabled={submitting || !selfieDataUrl || !gender || !lookingFor}
             className="flex-1 py-3.5 rounded-xl font-bold text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
             style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}
           >

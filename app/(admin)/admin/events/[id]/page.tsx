@@ -285,7 +285,7 @@ export default function AdminEventDetailPage() {
           urls[ac.id] = await QRCode.toDataURL(eventUrl, {
             width: 400,
             margin: 2,
-            color: { dark: "#FF3CAC", light: "#0A0A0F" },
+            color: { dark: "#FF2D78", light: "#0A0A0F" },
           });
         } catch {
           // skip

@@ -23,7 +23,7 @@ export async function POST(
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
 
-  // Verificar super like disponible
+  // Verificar super like disponible (pre-check fuera de transacción)
   if (type === "super_like") {
     const reg = await prisma.eventRegistration.findUnique({
       where: { event_id_user_id: { event_id: eventId, user_id: user.id } },
@@ -31,17 +31,24 @@ export async function POST(
     if (reg?.super_like_used) {
       return NextResponse.json({ error: "Ya usaste tu super like en este evento" }, { status: 409 });
     }
-    await prisma.eventRegistration.update({
-      where: { event_id_user_id: { event_id: eventId, user_id: user.id } },
-      data: { super_like_used: true },
-    });
   }
 
-  // Guardar like
-  const like = await prisma.eventLike.upsert({
-    where: { event_id_from_user_id_to_user_id: { event_id: eventId, from_user_id: user.id, to_user_id } },
-    update: { type: type as never },
-    create: { event_id: eventId, from_user_id: user.id, to_user_id, type: type as never },
+  // Guardar like (transaccional para super_like)
+  const like = await prisma.$transaction(async (tx) => {
+    const created = await tx.eventLike.upsert({
+      where: { event_id_from_user_id_to_user_id: { event_id: eventId, from_user_id: user.id, to_user_id } },
+      update: { type: type as never },
+      create: { event_id: eventId, from_user_id: user.id, to_user_id, type: type as never },
+    });
+
+    if (type === "super_like") {
+      await tx.eventRegistration.update({
+        where: { event_id_user_id: { event_id: eventId, user_id: user.id } },
+        data: { super_like_used: true },
+      });
+    }
+
+    return created;
   });
 
   // Verificar match mutuo (solo en likes positivos)
@@ -69,16 +76,7 @@ export async function POST(
         },
       });
 
-      const welcome = await prisma.matchMessage.findFirst({ where: { match_id: match.id } });
-      if (!welcome) {
-        await prisma.matchMessage.create({
-          data: {
-            match_id: match.id,
-            sender_id: user.id,
-            content: "¡Hicieron match! 🎉 Digan hola...",
-          },
-        });
-      }
+      // Match created — no automatic welcome message, let users start the conversation
     }
   }
 
@@ -116,7 +114,7 @@ export async function GET(
           include: {
             registrations: {
               where: { user_id: { not: user.id } },
-              select: { selfie_url: true, table_number: true, relation_type: true,
+              select: { selfie_url: true, display_name: true, table_number: true, relation_type: true,
                 interests: true, gender: true, user_id: true },
             },
           },

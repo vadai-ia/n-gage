@@ -42,28 +42,28 @@ export default function HostStatsPage() {
       icon: "👥", title: "Registros",
       value: stats.registrations,
       sub: stats.capacity ? `de ${stats.capacity} máx (${((stats.registrations / stats.capacity) * 100).toFixed(0)}%)` : "sin límite",
-      color: "#2B86C5",
+      color: "#1A6EFF",
       bar: stats.capacity ? stats.registrations / stats.capacity : 1,
     },
     {
       icon: "🔍", title: "Búsquedas iniciadas",
       value: stats.searches_started,
       sub: `${searchRate}% de los registrados`,
-      color: "#784BA0",
+      color: "#7B2FBE",
       bar: parseFloat(searchRate) / 100,
     },
     {
       icon: "❤️", title: "Likes dados",
       value: stats.likes,
       sub: `${stats.registrations > 0 ? (stats.likes / stats.registrations).toFixed(1) : 0} likes por persona`,
-      color: "#FF3CAC",
+      color: "#FF2D78",
       bar: Math.min(1, stats.likes / (stats.registrations * 10 || 1)),
     },
     {
       icon: "💑", title: "Matches generados",
       value: stats.matches,
       sub: `${matchRate}% de los participantes hizo match`,
-      color: "#FF3CAC",
+      color: "#FF2D78",
       bar: parseFloat(matchRate) / 100,
     },
     {
@@ -103,13 +103,13 @@ export default function HostStatsPage() {
 
       {/* Resumen ejecutivo */}
       <div className="rounded-2xl p-4 mt-4"
-        style={{ background: "rgba(255,60,172,0.06)", border: "1px solid rgba(255,60,172,0.15)" }}>
-        <p className="font-bold mb-2" style={{ color: "#FF3CAC" }}>✨ Resumen del evento</p>
+        style={{ background: "rgba(255,45,120,0.06)", border: "1px solid rgba(255,45,120,0.15)" }}>
+        <p className="font-bold mb-2" style={{ color: "#FF2D78" }}>✨ Resumen del evento</p>
         <p className="text-sm" style={{ color: "#ccc", lineHeight: 1.7 }}>
           <strong>{stats.registrations}</strong> solteros participaron,
           se generaron <strong>{stats.matches}</strong> matches y se tomaron{" "}
           <strong>{stats.photos}</strong> fotos. Una tasa de match del{" "}
-          <strong style={{ color: "#FF3CAC" }}>{matchRate}%</strong>.
+          <strong style={{ color: "#FF2D78" }}>{matchRate}%</strong>.
         </p>
       </div>
     </div>

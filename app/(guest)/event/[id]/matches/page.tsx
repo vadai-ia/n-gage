@@ -10,6 +10,7 @@ type Match = {
   other_user: { id: string; full_name: string; avatar_url: string | null };
   other_selfie: string | null;
   other_table: string | null;
+  other_display_name: string | null;
   messages: { content: string; created_at: string; sender_id: string; read_at: string | null }[];
 };
 
@@ -62,7 +63,8 @@ export default function MatchesPage() {
             const photo = match.other_selfie || match.other_user.avatar_url;
             const lastMsg = match.messages[0];
             const isUnread = lastMsg && !lastMsg.read_at && lastMsg.sender_id !== match.other_user.id;
-            const firstName = match.other_user.full_name.split(" ")[0];
+            const displayed = match.other_display_name || match.other_user.full_name;
+            const firstName = displayed.split(" ")[0];
             const timeAgo = lastMsg
               ? new Date(lastMsg.created_at).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
               : new Date(match.matched_at).toLocaleDateString("es-MX", { day: "numeric", month: "short" });

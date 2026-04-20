@@ -28,9 +28,9 @@ const VIEW_ICONS: Record<ViewMode, string> = {
 
 const VIEW_COLORS: Record<ViewMode, string> = {
   admin:     "#F59E0B",
-  organizer: "#FF3CAC",
-  host:      "#784BA0",
-  guest:     "#2B86C5",
+  organizer: "#FF2D78",
+  host:      "#7B2FBE",
+  guest:     "#1A6EFF",
 };
 
 export default function ViewSwitcher() {

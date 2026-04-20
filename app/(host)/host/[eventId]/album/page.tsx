@@ -67,9 +67,9 @@ export default function HostAlbumPage() {
           <button key={f} onClick={() => setFilter(f)}
             className="px-3 py-1.5 rounded-xl text-xs font-semibold"
             style={{
-              background: filter === f ? "rgba(120,75,160,0.3)" : "rgba(255,255,255,0.05)",
-              border: `1px solid ${filter === f ? "#784BA0" : "rgba(255,255,255,0.08)"}`,
-              color: filter === f ? "#c48dff" : "#A0A0B0",
+              background: filter === f ? "rgba(123,47,190,0.3)" : "rgba(255,255,255,0.05)",
+              border: `1px solid ${filter === f ? "#7B2FBE" : "rgba(255,255,255,0.08)"}`,
+              color: filter === f ? "#FF2D78" : "#A0A0B0",
             }}>
             {f === "all" ? "Todas" : f === "visible" ? "Disponibles" : "Pendientes"}
           </button>
@@ -133,7 +133,7 @@ export default function HostAlbumPage() {
             <div className="flex gap-2">
               <a href={selected.cloudinary_url} download target="_blank" rel="noreferrer"
                 className="flex-1 py-3 rounded-xl font-bold text-sm text-center"
-                style={{ background: "linear-gradient(135deg, #784BA0, #2B86C5)", color: "#fff" }}>
+                style={{ background: "linear-gradient(135deg, #7B2FBE, #1A6EFF)", color: "#fff" }}>
                 ⬇️ Descargar
               </a>
               <button onClick={() => setSelected(null)}

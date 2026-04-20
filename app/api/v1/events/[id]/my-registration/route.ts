@@ -13,8 +13,15 @@ export async function GET(
 
   const registration = await prisma.eventRegistration.findUnique({
     where: { event_id_user_id: { event_id: eventId, user_id: user.id } },
+    select: {
+      selfie_url: true,
+      display_name: true,
+      table_number: true,
+      super_like_used: true,
+      photos_taken: true,
+      search_started_at: true,
+    },
   });
 
-  if (!registration) return NextResponse.json({ error: "No registrado" }, { status: 404 });
   return NextResponse.json({ registration });
 }

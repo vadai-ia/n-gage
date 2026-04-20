@@ -158,6 +158,12 @@ export default function EventDetailPage() {
   const [copied, setCopied] = useState(false);
   const [generatedQrUrl, setGeneratedQrUrl] = useState<string | null>(null);
 
+  // Host management
+  const [newHostEmail, setNewHostEmail] = useState("");
+  const [newHostLabel, setNewHostLabel] = useState("");
+  const [addingHost, setAddingHost] = useState(false);
+  const [hostError, setHostError] = useState("");
+
   // Tabs
   const [activeTab, setActiveTab] = useState<"config" | "registrations" | "matches">("config");
 
@@ -231,7 +237,7 @@ export default function EventDetailPage() {
     QRCode.toDataURL(url, {
       width: 400,
       margin: 2,
-      color: { dark: "#FF3CAC", light: "#0A0A0F" },
+      color: { dark: "#FF2D78", light: "#0A0A0F" },
     })
       .then(setGeneratedQrUrl)
       .catch(() => setGeneratedQrUrl(event.qr_code_url));
@@ -278,6 +284,35 @@ export default function EventDetailPage() {
     });
     setEvent((e) => (e ? { ...e, status: newStatus } : e));
     setActivating(false);
+  }
+
+  async function addHost() {
+    setAddingHost(true);
+    setHostError("");
+    const res = await fetch(`/api/v1/events/${id}/hosts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: newHostEmail.trim(), label: newHostLabel.trim() || null }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setHostError(data.error || "Error al agregar host");
+    } else {
+      setNewHostEmail("");
+      setNewHostLabel("");
+      loadData();
+    }
+    setAddingHost(false);
+  }
+
+  async function removeHost(hostId: string) {
+    if (!confirm("Eliminar este host?")) return;
+    await fetch(`/api/v1/events/${id}/hosts`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hostId }),
+    });
+    loadData();
   }
 
   async function handleSave() {
@@ -530,29 +565,66 @@ export default function EventDetailPage() {
 
       {/* ─── Hosts Section ──────────────────────────────── */}
       <div className="rounded-2xl p-4 mb-6" style={cardStyle}>
-        <h3 className="text-sm font-black tracking-tight mb-3" style={{ color: "#F0F0FF" }}>Hosts del evento</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-black tracking-tight" style={{ color: "#F0F0FF" }}>
+            Hosts del evento ({event.hosts.length}/3)
+          </h3>
+        </div>
+
         {event.hosts.length === 0 ? (
-          <p className="text-xs" style={{ color: "#44445A" }}>
-            Sin hosts asignados. Puedes asignar hosts desde el panel de administracion.
+          <p className="text-xs mb-3" style={{ color: "#44445A" }}>
+            Sin hosts asignados. Los hosts (anfitriones) ven todas las fotos y matches.
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 mb-3">
             {event.hosts.map((h) => (
               <div key={h.id} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: "rgba(255,255,255,0.02)" }}>
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                  style={{ background: "rgba(123,47,190,0.15)", color: "#7B2FBE" }}
-                >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{ background: "rgba(123,47,190,0.15)", color: "#7B2FBE" }}>
                   {h.user.full_name?.charAt(0) ?? "H"}
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="text-sm font-medium" style={{ color: "#F0F0FF" }}>{h.user.full_name}</p>
-                  <p className="text-xs" style={{ color: "#44445A" }}>
-                    {h.label ?? h.user.email}
-                  </p>
+                  <p className="text-xs" style={{ color: "#44445A" }}>{h.label ?? h.user.email}</p>
                 </div>
+                <button onClick={() => removeHost(h.id)}
+                  className="text-xs font-semibold px-2 py-1 rounded-lg"
+                  style={{ color: "#EF4444", background: "rgba(239,68,68,0.08)" }}>
+                  Quitar
+                </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {event.hosts.length < 3 && (
+          <div className="flex flex-col gap-2 pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+            <p className="text-xs font-bold" style={{ color: "#FFB800" }}>Agregar host</p>
+            <input
+              type="email"
+              placeholder="email del host (debe estar registrado en N'GAGE)"
+              value={newHostEmail}
+              onChange={(e) => setNewHostEmail(e.target.value)}
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+              style={inputStyle}
+            />
+            <input
+              type="text"
+              placeholder="Etiqueta (Novia, Novio, etc.) - opcional"
+              value={newHostLabel}
+              onChange={(e) => setNewHostLabel(e.target.value)}
+              className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+              style={inputStyle}
+            />
+            {hostError && <p className="text-xs" style={{ color: "#EF4444" }}>{hostError}</p>}
+            <button
+              onClick={addHost}
+              disabled={addingHost || !newHostEmail.trim()}
+              className="w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}
+            >
+              {addingHost ? "Agregando..." : "Agregar host"}
+            </button>
           </div>
         )}
       </div>

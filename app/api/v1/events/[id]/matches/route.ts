@@ -47,10 +47,10 @@ export async function GET(
       const otherUser = m.user_a_id === user.id ? m.user_b : m.user_a;
       const reg = await prisma.eventRegistration.findUnique({
         where: { event_id_user_id: { event_id: eventId, user_id: otherId } },
-        select: { selfie_url: true, table_number: true },
+        select: { selfie_url: true, table_number: true, display_name: true },
       });
       return { ...m, other_user: otherUser, other_selfie: reg?.selfie_url ?? null,
-        other_table: reg?.table_number ?? null };
+        other_table: reg?.table_number ?? null, other_display_name: reg?.display_name ?? null };
     })
   );
 
@@ -74,13 +74,6 @@ export async function POST(
     update: {},
     create: { event_id: eventId, user_a_id: userA, user_b_id: userB, initiated_by: user.id },
   });
-
-  const welcome = await prisma.matchMessage.findFirst({ where: { match_id: match.id } });
-  if (!welcome) {
-    await prisma.matchMessage.create({
-      data: { match_id: match.id, sender_id: user.id, content: "¡Hicieron match! 🎉 Digan hola..." },
-    });
-  }
 
   return NextResponse.json({ match }, { status: 201 });
 }

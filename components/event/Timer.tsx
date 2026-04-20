@@ -38,8 +38,8 @@ export default function Timer({ expiresAt, totalMinutes, onExpire, variant = "co
   const progress = totalMs ? Math.min(1, remaining / totalMs) : undefined;
 
   // Elegant colors
-  const color = isUrgent ? "#D6285A" : isWarning ? "#D4AF37" : "#E0E0E0";
-  const glowColor = isUrgent ? "rgba(214,40,90,0.3)" : isWarning ? "rgba(212,175,55,0.2)" : "transparent";
+  const color = isUrgent ? "#FF2D78" : isWarning ? "#FFB800" : "#E0E0E0";
+  const glowColor = isUrgent ? "rgba(255,45,120,0.3)" : isWarning ? "rgba(255,184,0,0.2)" : "transparent";
   const pad = (n: number) => String(n).padStart(2, "0");
 
   if (variant === "full") {
@@ -91,9 +91,9 @@ export default function Timer({ expiresAt, totalMinutes, onExpire, variant = "co
              <span
                 className="text-xs uppercase tracking-widest px-4 py-1.5 rounded-full"
                 style={{
-                    background: isUrgent ? "rgba(214,40,90,0.08)" : "rgba(212,175,55,0.08)",
-                    border: `1px solid ${isUrgent ? "rgba(214,40,90,0.2)" : "rgba(212,175,55,0.2)"}`,
-                    color: isUrgent ? "#D6285A" : "#D4AF37",
+                    background: isUrgent ? "rgba(255,45,120,0.08)" : "rgba(255,184,0,0.08)",
+                    border: `1px solid ${isUrgent ? "rgba(255,45,120,0.2)" : "rgba(255,184,0,0.2)"}`,
+                    color: isUrgent ? "#FF2D78" : "#FFB800",
                 }}
             >
                 {isUrgent ? "Tiempo Final" : "Aprovecha el momento"}

@@ -26,6 +26,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [otherName, setOtherName] = useState("");
   const [otherPhoto, setOtherPhoto] = useState("");
+  const [otherTable, setOtherTable] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,10 +46,11 @@ export default function ChatPage() {
     fetch(`/api/v1/events/${eventId}/matches`)
       .then((r) => r.json())
       .then((d) => {
-        const match = (d.matches ?? []).find((m: { id: string; other_user: { full_name: string }; other_selfie: string | null }) => m.id === matchId);
+        const match = (d.matches ?? []).find((m: { id: string; other_user: { full_name: string }; other_selfie: string | null; other_display_name: string | null; other_table: string | null }) => m.id === matchId);
         if (match) {
-          setOtherName(match.other_user.full_name);
+          setOtherName(match.other_display_name || match.other_user.full_name);
           setOtherPhoto(match.other_selfie || match.other_user.avatar_url || "");
+          setOtherTable(match.other_table);
         }
       });
   }, [eventId, matchId]);
@@ -156,10 +158,9 @@ export default function ChatPage() {
 
         <div className="flex-1 min-w-0">
           <p className="font-bold text-sm truncate" style={{ color: "#F0F0FF" }}>{firstName}</p>
-          <div className="flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#10B981" }} />
-            <span className="text-[10px] font-medium" style={{ color: "#10B981" }}>En línea</span>
-          </div>
+          <span className="text-[10px] font-medium" style={{ color: "#8585A8" }}>
+            {otherTable ? `Mesa ${otherTable}` : "En el evento"}
+          </span>
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import { GlassWater } from "lucide-react"; // Using this as a 'Cheers' icon for 
 export type Profile = {
   user_id: string;
   selfie_url: string;
+  display_name?: string | null;
   table_number: string | null;
   relation_type: string | null;
   interests: string[] | null;
@@ -72,7 +73,8 @@ export default function SwipeCard({
 
   const interests = Array.isArray(profile.interests) ? profile.interests.slice(0, 3) : [];
   const sharedInterests = profile.shared_interests ?? [];
-  const firstName = profile.user.full_name.split(" ")[0];
+  const displayedName = profile.display_name || profile.user.full_name;
+  const firstName = displayedName.split(" ")[0];
   const isSoul = (profile.compatibility_score ?? 0) >= 40;
 
   // Visual cues based on swipe direction direction
@@ -129,7 +131,7 @@ export default function SwipeCard({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 pointer-events-none z-10"
-                style={{ background: "linear-gradient(to right, transparent, rgba(214,40,90,0.15))" }}
+                style={{ background: "linear-gradient(to right, transparent, rgba(255,45,120,0.15))" }}
               />
             )}
             {isNoping && (
@@ -147,7 +149,7 @@ export default function SwipeCard({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="absolute inset-0 pointer-events-none z-10"
-                style={{ background: "linear-gradient(to top, transparent, rgba(212,175,55,0.2))" }}
+                style={{ background: "linear-gradient(to top, transparent, rgba(255,184,0,0.2))" }}
               />
             )}
           </AnimatePresence>
@@ -158,12 +160,12 @@ export default function SwipeCard({
             
             <div className="flex items-end justify-between mb-4">
               <div>
-                <h1 className="font-display font-medium text-4xl tracking-tight text-[#FAFAFA] mb-1 drop-shadow-md">
+                <h1 className="font-display font-medium text-4xl tracking-tight text-[#F0F0FF] mb-1 drop-shadow-md">
                   {firstName}
                 </h1>
 
                 {/* Minimalist Relation/Table */}
-                <div className="flex items-center gap-2 text-[#FAFAFA]/70 text-sm font-body tracking-wide uppercase">
+                <div className="flex items-center gap-2 text-[#F0F0FF]/70 text-sm font-body tracking-wide uppercase">
                   {profile.relation_type && (
                     <span>{RELATION_LABELS[profile.relation_type] ?? profile.relation_type}</span>
                   )}
@@ -183,7 +185,7 @@ export default function SwipeCard({
                     backdropFilter: "blur(12px)",
                     WebkitBackdropFilter: "blur(12px)",
                     border: "1px solid rgba(255,45,120,0.4)",
-                    color: "#FF7DB8",
+                    color: "#FF6BA8",
                   }}
                 >
                   ✦ Posible Soul
@@ -205,7 +207,7 @@ export default function SwipeCard({
                         backdropFilter: "blur(12px)",
                         WebkitBackdropFilter: "blur(12px)",
                         border: isShared ? "1px solid rgba(255,45,120,0.35)" : "1px solid rgba(255,255,255,0.04)",
-                        color: isShared ? "#FF7DB8" : "#E0E0E0",
+                        color: isShared ? "#FF6BA8" : "#E0E0E0",
                       }}
                     >
                       {interest}
@@ -246,11 +248,11 @@ export default function SwipeCard({
               style={{
                 background: "rgba(10,10,10,0.8)",
                 backdropFilter: "blur(16px)",
-                border: "1px solid rgba(212,175,55,0.3)",
-                boxShadow: "0 0 20px rgba(212,175,55,0.1)",
+                border: "1px solid rgba(255,184,0,0.3)",
+                boxShadow: "0 0 20px rgba(255,184,0,0.1)",
               }}
             >
-              <GlassWater className="w-6 h-6 text-[#D4AF37]" strokeWidth={1.5} />
+              <GlassWater className="w-6 h-6 text-[#FFB800]" strokeWidth={1.5} />
             </button>
 
             {/* LIKE (Brand Accent) */}
@@ -261,11 +263,11 @@ export default function SwipeCard({
               style={{
                 background: "rgba(10,10,10,0.8)",
                 backdropFilter: "blur(16px)",
-                border: "1px solid rgba(214,40,90,0.3)",
-                boxShadow: "0 0 25px rgba(214,40,90,0.15)",
+                border: "1px solid rgba(255,45,120,0.3)",
+                boxShadow: "0 0 25px rgba(255,45,120,0.15)",
               }}
             >
-               <svg width={22} height={22} fill="none" viewBox="0 0 24 24" stroke="#D6285A" strokeWidth={2}>
+               <svg width={22} height={22} fill="none" viewBox="0 0 24 24" stroke="#FF2D78" strokeWidth={2}>
                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" strokeLinecap="round" strokeLinejoin="round"/>
                </svg>
             </button>

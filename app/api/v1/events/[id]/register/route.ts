@@ -36,8 +36,12 @@ export async function POST(
   });
 
   if (!event) return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
-  if (event.status === "expired" || event.status === "closed") {
-    return NextResponse.json({ error: "El evento ya no está disponible" }, { status: 410 });
+  if (event.status !== "active") {
+    const errorMsg =
+      event.status === "draft"
+        ? "El organizador aún no ha activado este evento. Inténtalo más tarde."
+        : "Este evento ya no está disponible.";
+    return NextResponse.json({ error: errorMsg }, { status: 410 });
   }
 
   const limit = event.plan_guest_limit ?? event.max_guests;
@@ -53,11 +57,21 @@ export async function POST(
     return NextResponse.json({ registration: existing, alreadyRegistered: true });
   }
 
-  // Si el usuario envía un nombre/apodo, actualizarlo en su perfil
-  if (display_name?.trim()) {
+  // Si el usuario envía un nombre/apodo, solo actualizar full_name si está vacío o es el email
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { full_name: true, email: true },
+  });
+  const cleanDisplay = display_name?.trim() || null;
+  const isFullNameEmptyOrEmail =
+    !dbUser?.full_name ||
+    dbUser.full_name === dbUser.email?.split("@")[0] ||
+    dbUser.full_name === dbUser.email;
+
+  if (cleanDisplay && isFullNameEmptyOrEmail) {
     await prisma.user.update({
       where: { id: user.id },
-      data: { full_name: display_name.trim() },
+      data: { full_name: cleanDisplay },
     });
   }
 
@@ -67,6 +81,7 @@ export async function POST(
       event_id: eventId,
       user_id: user.id,
       selfie_url: selfie_url || "",
+      display_name: cleanDisplay,
       table_number: table_number || null,
       relation_type: relation_type || null,
       interests: interests || [],

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { useNotifications } from "@/lib/contexts/NotificationContext";
 
 const TABS = [
   {
@@ -10,8 +11,6 @@ const TABS = [
     label: "Descubrir",
     icon: (active: boolean) => (
       <svg width={22} height={22} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 2 : 1.5}>
-        <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
-        {/* Changed to a more editorial 'feed' or 'list' look rather than a generic magnifying glass, or keep simple */}
         <circle cx="11" cy="11" r="7" />
         <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
       </svg>
@@ -49,7 +48,7 @@ const TABS = [
   },
   {
     key: "album",
-    label: "Galería",
+    label: "Galeria",
     icon: (active: boolean) => (
       <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -58,26 +57,48 @@ const TABS = [
       </svg>
     ),
   },
+  {
+    key: "profile",
+    label: "Perfil",
+    icon: (active: boolean) => (
+      <svg width={22} height={22} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    ),
+  },
 ];
 
 export default function GuestNav() {
   const { id } = useParams<{ id: string }>();
   const pathname = usePathname();
+  const { counts, resetLikes, resetMatches, resetMessages } = useNotifications();
 
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 pb-safe"
       style={{
-        background: "rgba(10,10,10,0.85)", // Darker, less transparent base
+        background: "rgba(10,10,10,0.85)",
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
         borderTop: "1px solid rgba(255,255,255,0.05)",
       }}
     >
-      <div className="flex items-end justify-between px-4 pt-2 pb-2 max-w-md mx-auto relative">
+      <div className="flex items-end justify-between px-2 pt-2 pb-2 max-w-md mx-auto relative">
         {TABS.map((tab) => {
           const href = `/event/${id}/${tab.key}`;
           const active = pathname === href || pathname?.startsWith(href + "/");
+
+          // Badge count by tab
+          let badgeCount = 0;
+          if (tab.key === "likes") badgeCount = counts.likes;
+          if (tab.key === "matches") badgeCount = counts.matches + counts.messages;
+
+          // Reset count when entering the tab
+          const handleClick = () => {
+            if (tab.key === "likes") resetLikes();
+            if (tab.key === "matches") { resetMatches(); resetMessages(); }
+          };
 
           if (tab.isCamera) {
             return (
@@ -87,12 +108,12 @@ export default function GuestNav() {
                 className="flex items-center justify-center -mt-6 relative z-50 transition-transform active:scale-95"
               >
                 <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center"
+                  className="w-14 h-14 rounded-full flex items-center justify-center"
                   style={{
                     background: "linear-gradient(135deg, #1A1A1A, #0A0A0A)",
-                    border: "1px solid rgba(214,40,90,0.4)", // Brand ring
-                    boxShadow: "0 8px 30px rgba(0,0,0,0.6), 0 0 20px rgba(214,40,90,0.2)",
-                    color: "#FAFAFA",
+                    border: "1px solid rgba(255,45,120,0.4)",
+                    boxShadow: "0 8px 30px rgba(0,0,0,0.6), 0 0 20px rgba(255,45,120,0.2)",
+                    color: "#F0F0FF",
                   }}
                 >
                   {tab.icon(active)}
@@ -105,34 +126,40 @@ export default function GuestNav() {
             <Link
               key={tab.key}
               href={href}
-              className="flex flex-col items-center gap-1.5 py-2 px-1 relative w-16"
+              onClick={handleClick}
+              className="flex flex-col items-center gap-1 py-2 px-0.5 relative w-14"
             >
               <span
                 style={{
-                  color: active ? "#FAFAFA" : "#555555",
+                  color: active ? "#F0F0FF" : "#44445A",
                   transition: "color 0.3s ease",
                 }}
               >
                 {tab.icon(active)}
               </span>
+              {badgeCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-bold flex items-center justify-center"
+                  style={{ background: "#FF2D78", color: "#fff", boxShadow: "0 0 8px rgba(255,45,120,0.6)" }}>
+                  {badgeCount > 9 ? "9+" : badgeCount}
+                </span>
+              )}
               <span
-                className="text-[9px] font-body tracking-widest uppercase"
+                className="text-[8px] font-body tracking-wider uppercase"
                 style={{
-                  color: active ? "#FAFAFA" : "#555555",
+                  color: active ? "#F0F0FF" : "#44445A",
                   transition: "color 0.3s ease",
                 }}
               >
                 {tab.label}
               </span>
 
-              {/* Animated underline for active state (Framer Motion) */}
               {active && (
                 <motion.div
                   layoutId="activeTabIndicator"
-                  className="absolute -bottom-2 left-1/2 w-1 h-1 rounded-full bg-[#D6285A]"
+                  className="absolute -bottom-2 left-1/2 w-1 h-1 rounded-full bg-[#FF2D78]"
                   initial={false}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                  style={{ x: "-50%", boxShadow: "0 0 10px rgba(214,40,90,0.8)" }}
+                  style={{ x: "-50%", boxShadow: "0 0 10px rgba(255,45,120,0.8)" }}
                 />
               )}
             </Link>

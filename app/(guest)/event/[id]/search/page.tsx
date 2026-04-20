@@ -99,6 +99,16 @@ export default function SearchPage() {
     return () => clearInterval(interval);
   }, [windowStatus, searchStartTime, loadProfiles]);
 
+  // Auto-refresh polling: cuando se acaban perfiles, intentar recargar cada 25s
+  useEffect(() => {
+    if (!started || expired || windowStatus !== "open") return;
+    if (profiles.length > 0) return;
+    const interval = setInterval(() => {
+      loadProfiles();
+    }, 25000);
+    return () => clearInterval(interval);
+  }, [started, expired, windowStatus, profiles.length, loadProfiles]);
+
   async function handleStartSearch() {
     setStarting(true);
     if (navigator.vibrate) navigator.vibrate(30);
@@ -377,17 +387,24 @@ export default function SearchPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: "#07070F" }}>
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-          <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center"
-            style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.15)" }}>
-            <svg width={32} height={32} fill="none" viewBox="0 0 24 24" stroke="#10B981" strokeWidth={1.5}>
-              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" strokeLinecap="round" />
-              <path d="M22 4L12 14.01l-3-3" strokeLinecap="round" strokeLinejoin="round" />
+          <div className="relative w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center"
+            style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.15)" }}>
+            <div className="absolute inset-0 rounded-full animate-ping"
+              style={{ background: "rgba(255,45,120,0.2)" }} />
+            <svg width={32} height={32} fill="none" viewBox="0 0 24 24" stroke="#FF2D78" strokeWidth={1.5} className="relative z-10">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
             </svg>
           </div>
 
-          <h2 className="text-2xl font-bold mb-2" style={{ color: "#F0F0FF" }}>¡Eso es todo!</h2>
-          <p className="text-sm mb-8" style={{ color: "#8585A8" }}>
-            Ya viste todos los perfiles. Revisa tus likes.
+          <h2 className="text-2xl font-bold mb-2" style={{ color: "#F0F0FF" }}>
+            Esperando más invitados…
+          </h2>
+          <p className="text-sm mb-2" style={{ color: "#8585A8" }}>
+            Por ahora ya viste a todos. La búsqueda se actualiza sola.
+          </p>
+          <p className="text-xs mb-8" style={{ color: "#44445A" }}>
+            Mientras, revisa quién te dio like.
           </p>
 
           <div className="flex gap-3">
@@ -402,6 +419,14 @@ export default function SearchPage() {
               Ver matches
             </button>
           </div>
+
+          <button
+            onClick={() => loadProfiles()}
+            className="mt-4 text-xs font-semibold underline"
+            style={{ color: "#8585A8" }}
+          >
+            Recargar ahora
+          </button>
         </motion.div>
       </div>
     );

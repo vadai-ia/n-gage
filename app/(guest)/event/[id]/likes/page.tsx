@@ -13,6 +13,7 @@ type LikeEntry = {
   event: {
     registrations: {
       selfie_url: string;
+      display_name?: string | null;
       table_number: string | null;
       relation_type: string | null;
       user_id: string;
@@ -92,7 +93,8 @@ export default function LikesPage() {
             const reg = like.event.registrations.find((r) => r.user_id === like.from_user_id);
             const photo = reg?.selfie_url || like.from_user.avatar_url;
             const isSuperLike = like.type === "super_like";
-            const firstName = like.from_user.full_name.split(" ")[0];
+            const displayName = reg?.display_name || like.from_user.full_name;
+            const firstName = displayName.split(" ")[0];
 
             return (
               <motion.div
