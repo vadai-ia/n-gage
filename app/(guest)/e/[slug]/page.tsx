@@ -402,6 +402,10 @@ export default function EventLandingPage() {
     ? GENDER_OPTIONS
     : GENDER_OPTIONS.filter((g) => g.value === "male" || g.value === "female");
 
+  const lookingForOptions = event?.gender_extended_mode
+    ? LOOKING_FOR_OPTIONS
+    : LOOKING_FOR_OPTIONS.filter((l) => l.value === "men" || l.value === "women");
+
   /* ── shared style constants ── */
   const bg = "#07070F";
   const surface = "#0F0F1A";
@@ -1307,7 +1311,7 @@ export default function EventLandingPage() {
               Me interesan <span style={{ color: pink }}>*</span>
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {LOOKING_FOR_OPTIONS.map((l) => (
+              {lookingForOptions.map((l) => (
                 <button key={l.value} onClick={() => setLookingFor(l.value)}
                   className="py-3 px-3 rounded-xl text-sm font-medium"
                   style={{

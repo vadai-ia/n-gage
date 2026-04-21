@@ -45,6 +45,24 @@ export async function POST(
     return NextResponse.json({ error: errorMsg }, { status: 410 });
   }
 
+  // Gender scope guard: when extended mode is off, reject non-binary / everyone / prefer_not_say
+  if (!skip_profile && !event.gender_extended_mode) {
+    const allowedGenders = ["male", "female"];
+    const allowedLookingFor = ["men", "women"];
+    if (gender && !allowedGenders.includes(gender)) {
+      return NextResponse.json(
+        { error: "Este evento solo acepta hombre o mujer" },
+        { status: 400 }
+      );
+    }
+    if (looking_for && !allowedLookingFor.includes(looking_for)) {
+      return NextResponse.json(
+        { error: "Este evento solo permite buscar hombres o mujeres" },
+        { status: 400 }
+      );
+    }
+  }
+
   const limit = event.plan_guest_limit ?? event.max_guests;
   if (limit && event._count.registrations >= limit) {
     return NextResponse.json({ error: "El evento está lleno" }, { status: 409 });
