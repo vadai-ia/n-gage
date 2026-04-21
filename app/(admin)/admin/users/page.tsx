@@ -486,7 +486,7 @@ export default function AdminUsersPage() {
                           onClick={() => {
                             if (
                               confirm(
-                                `Seguro que quieres eliminar a ${u.full_name}?`
+                                `¿ELIMINAR a ${u.full_name} de forma permanente?\n\nEsto borrará su cuenta, sus eventos, registros, matches, fotos y cualquier otro dato. No se puede deshacer. El correo quedará libre para volver a registrarse.`
                               )
                             ) {
                               doAction(u.id, "delete");

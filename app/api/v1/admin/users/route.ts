@@ -87,13 +87,21 @@ export async function PATCH(req: Request) {
   const supabaseAdmin = getAdminClient();
 
   if (action === "suspend") {
-    await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "876600h" });
+    // Ban in Supabase Auth (blocks login + invalidates refresh) + stamp app_metadata
+    // so middleware can block any live JWT on its next request without a DB roundtrip.
+    await supabaseAdmin.auth.admin.updateUserById(userId, {
+      ban_duration: "876600h",
+      app_metadata: { suspended: true },
+    });
     await prisma.user.update({ where: { id: userId }, data: { is_active: false } });
     return NextResponse.json({ ok: true });
   }
 
   if (action === "activate") {
-    await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "none" });
+    await supabaseAdmin.auth.admin.updateUserById(userId, {
+      ban_duration: "none",
+      app_metadata: { suspended: false },
+    });
     await prisma.user.update({ where: { id: userId }, data: { is_active: true } });
     return NextResponse.json({ ok: true });
   }
@@ -119,12 +127,106 @@ export async function PATCH(req: Request) {
   }
 
   if (action === "delete") {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { is_active: false, deleted_at: new Date() },
-    });
-    await supabaseAdmin.auth.admin.updateUserById(userId, { ban_duration: "876600h" });
-    return NextResponse.json({ ok: true });
+    // Hard delete: wipe every row that references this user, plus every event they
+    // organized (and all dependent data under those events), then delete from
+    // Supabase Auth so the email can be reused.
+    try {
+      await prisma.$transaction(async (tx) => {
+        // 1. Events organized by this user cascade-delete everything under them.
+        const organizedEvents = await tx.event.findMany({
+          where: { organizer_id: userId },
+          select: { id: true },
+        });
+        const eventIds = organizedEvents.map((e) => e.id);
+
+        if (eventIds.length > 0) {
+          const matchesInEvents = await tx.eventMatch.findMany({
+            where: { event_id: { in: eventIds } },
+            select: { id: true },
+          });
+          const photosInEvents = await tx.eventPhoto.findMany({
+            where: { event_id: { in: eventIds } },
+            select: { id: true },
+          });
+          const webhooksInEvents = await tx.webhook.findMany({
+            where: { event_id: { in: eventIds } },
+            select: { id: true },
+          });
+
+          await tx.matchMessage.deleteMany({ where: { match_id: { in: matchesInEvents.map((m) => m.id) } } });
+          await tx.eventMatch.deleteMany({ where: { event_id: { in: eventIds } } });
+          await tx.eventLike.deleteMany({ where: { event_id: { in: eventIds } } });
+          await tx.photoReport.deleteMany({ where: { photo_id: { in: photosInEvents.map((p) => p.id) } } });
+          await tx.eventPhoto.deleteMany({ where: { event_id: { in: eventIds } } });
+          await tx.eventRegistration.deleteMany({ where: { event_id: { in: eventIds } } });
+          await tx.eventHost.deleteMany({ where: { event_id: { in: eventIds } } });
+          await tx.webhookLog.deleteMany({ where: { webhook_id: { in: webhooksInEvents.map((w) => w.id) } } });
+          await tx.webhook.deleteMany({ where: { event_id: { in: eventIds } } });
+          await tx.eventAccessCode.deleteMany({ where: { event_id: { in: eventIds } } });
+          await tx.appReview.deleteMany({ where: { event_id: { in: eventIds } } });
+          await tx.event.deleteMany({ where: { id: { in: eventIds } } });
+        }
+
+        // 2. Remaining user-scoped data in events the user did NOT organize.
+        const userMatches = await tx.eventMatch.findMany({
+          where: { OR: [{ user_a_id: userId }, { user_b_id: userId }, { initiated_by: userId }] },
+          select: { id: true },
+        });
+        const userPhotos = await tx.eventPhoto.findMany({
+          where: { user_id: userId },
+          select: { id: true },
+        });
+        const userWebhooks = await tx.webhook.findMany({
+          where: { owner_id: userId },
+          select: { id: true },
+        });
+
+        await tx.matchMessage.deleteMany({
+          where: { OR: [{ sender_id: userId }, { match_id: { in: userMatches.map((m) => m.id) } }] },
+        });
+        await tx.eventMatch.deleteMany({
+          where: { OR: [{ user_a_id: userId }, { user_b_id: userId }, { initiated_by: userId }] },
+        });
+        await tx.eventLike.deleteMany({
+          where: { OR: [{ from_user_id: userId }, { to_user_id: userId }] },
+        });
+        await tx.photoReport.deleteMany({
+          where: { OR: [{ reported_by: userId }, { photo_id: { in: userPhotos.map((p) => p.id) } }] },
+        });
+        await tx.eventPhoto.deleteMany({ where: { user_id: userId } });
+        await tx.eventRegistration.deleteMany({ where: { user_id: userId } });
+        await tx.eventHost.deleteMany({ where: { user_id: userId } });
+        await tx.appReview.deleteMany({ where: { user_id: userId } });
+        await tx.apiKey.deleteMany({ where: { owner_id: userId } });
+        await tx.webhookLog.deleteMany({ where: { webhook_id: { in: userWebhooks.map((w) => w.id) } } });
+        await tx.webhook.deleteMany({ where: { owner_id: userId } });
+        await tx.userProfile.deleteMany({ where: { user_id: userId } });
+
+        // Access codes: keep the code row but detach the user so the event's codes stay usable.
+        await tx.eventAccessCode.updateMany({
+          where: { used_by: userId },
+          data: { used_by: null, used_at: null },
+        });
+
+        await tx.user.delete({ where: { id: userId } });
+      });
+
+      // 3. Remove from Supabase Auth so the email is free to sign up again.
+      const { error: authErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (authErr) {
+        // DB side already gone; surface the auth error but don't roll back.
+        console.error("deleteUser auth error:", authErr);
+        return NextResponse.json(
+          { ok: true, warning: `Usuario eliminado de la BD, pero falló borrado en Auth: ${authErr.message}` }
+        );
+      }
+
+      return NextResponse.json({ ok: true });
+    } catch (err) {
+      console.error("Hard delete user error:", err);
+      const message = err instanceof Error ? err.message : "Error desconocido";
+      return NextResponse.json({ error: `No se pudo eliminar: ${message}` }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ error: "Accion no valida" }, { status: 400 });

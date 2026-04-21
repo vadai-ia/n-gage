@@ -16,7 +16,15 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const reasonParam = searchParams.get("reason");
-  const [error, setError] = useState(errorParam === "auth" ? (reasonParam ? `Error OAuth: ${reasonParam}` : "Error de autenticación. Intenta de nuevo.") : "");
+  const initialError =
+    errorParam === "suspended"
+      ? "Tu cuenta ha sido desactivada. Contacta al administrador."
+      : errorParam === "auth"
+      ? reasonParam
+        ? `Error OAuth: ${reasonParam}`
+        : "Error de autenticación. Intenta de nuevo."
+      : "";
+  const [error, setError] = useState(initialError);
 
   function roleToPath(role: string): string {
     if (role === "SUPER_ADMIN")     return "/admin";
