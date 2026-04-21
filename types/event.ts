@@ -13,6 +13,8 @@ export type EventPublic = {
   expiry_days: number;
   unique_slug: string;
   gender_extended_mode: boolean;
+  match_mode: "swipe" | "mosaic";
+  super_likes_max: number;
   whatsapp_group_url: string | null;
   organizer: { full_name: string };
   _count: { registrations: number };

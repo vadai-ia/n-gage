@@ -19,6 +19,8 @@ const PatchEventSchema = z.object({
   plan_guest_limit: z.number().nullable().optional(),
   max_guests: z.number().nullable().optional(),
   gender_extended_mode: z.boolean().optional(),
+  match_mode: z.enum(["swipe", "mosaic"]).optional(),
+  super_likes_max: z.number().int().min(0).max(20).optional(),
   language: z.string().optional(),
   status: z.enum(["draft", "active", "closed", "expired"]).optional(),
   whatsapp_group_url: z.string().url().nullable().optional().or(z.literal("")),
@@ -85,6 +87,8 @@ export async function PATCH(
   if (d.venue_city !== undefined) updateData.venue_city = d.venue_city;
   if (d.search_duration_minutes !== undefined) updateData.search_duration_minutes = d.search_duration_minutes;
   if (d.gender_extended_mode !== undefined) updateData.gender_extended_mode = d.gender_extended_mode;
+  if (d.match_mode !== undefined) updateData.match_mode = d.match_mode;
+  if (d.super_likes_max !== undefined) updateData.super_likes_max = d.super_likes_max;
   if (d.language !== undefined) updateData.language = d.language;
   if (d.status !== undefined) updateData.status = d.status;
   if (d.max_guests !== undefined) updateData.max_guests = d.max_guests;

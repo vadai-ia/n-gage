@@ -90,6 +90,11 @@ enum Plan {
   exclusive
 }
 
+enum MatchMode {
+  swipe
+  mosaic
+}
+
 // ─────────────────────────────────────────────
 // USERS
 // ─────────────────────────────────────────────
@@ -161,6 +166,8 @@ model Event {
   status                EventStatus @default(draft)
   language              String      @default("es-MX")
   gender_extended_mode  Boolean     @default(false)
+  match_mode            MatchMode   @default(mosaic)
+  super_likes_max       Int         @default(1)
 
   // Timer
   search_duration_minutes Int       @default(60)
@@ -238,7 +245,7 @@ model EventRegistration {
   search_expires_at DateTime?
   is_visible        Boolean      @default(true)
   photos_taken      Int          @default(0)
-  super_like_used   Boolean      @default(false)
+  super_likes_used  Int          @default(0)
   created_at        DateTime     @default(now())
   updated_at        DateTime     @updatedAt
 

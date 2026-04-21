@@ -10,7 +10,7 @@ import Timer from "@/components/event/Timer";
 type MyReg = {
   search_started_at: string | null;
   search_expires_at: string | null;
-  super_like_used: boolean;
+  super_likes_used: number;
   selfie_url: string;
   user_id: string;
   interests: string[] | null;
@@ -41,6 +41,9 @@ export default function SearchPage() {
   const [windowStatus, setWindowStatus] = useState<WindowStatus>(null);
   const [searchStartTime, setSearchStartTime] = useState<string | null>(null);
   const [countdown, setCountdown] = useState("");
+  const [matchMode, setMatchMode] = useState<"swipe" | "mosaic">("swipe");
+  const [superLikesMax, setSuperLikesMax] = useState<number>(1);
+  const [myLikesGiven, setMyLikesGiven] = useState<Array<{ to_user_id: string; type: "like" | "super_like" | "dislike" }>>([]);
 
   const loadProfiles = useCallback(() => {
     fetch(`/api/v1/events/${eventId}/profiles`)
@@ -75,6 +78,9 @@ export default function SearchPage() {
         setProfiles(d.profiles ?? []);
         setMyReg(d.my_registration ?? null);
         setSinglesCount(d.singles_count ?? (d.profiles?.length ?? 0));
+        if (d.match_mode) setMatchMode(d.match_mode);
+        if (typeof d.super_likes_max === "number") setSuperLikesMax(d.super_likes_max);
+        if (Array.isArray(d.my_likes_given)) setMyLikesGiven(d.my_likes_given);
         if (d.my_registration?.search_started_at) setStarted(true);
         if (d.my_registration?.search_expires_at) {
           const exp = new Date(d.my_registration.search_expires_at) < new Date();
@@ -157,7 +163,7 @@ export default function SearchPage() {
       setMatch({ data: result.match, profile: current });
     }
     if (type === "super_like") {
-      setMyReg((r) => r ? { ...r, super_like_used: true } : r);
+      setMyReg((r) => r ? { ...r, super_likes_used: r.super_likes_used + 1 } : r);
     }
   }, [profiles, sendLike]);
 
@@ -521,7 +527,7 @@ export default function SearchPage() {
                   onLike={() => handleAction("like")}
                   onDislike={() => handleAction("dislike")}
                   onSuperLike={() => handleAction("super_like")}
-                  superLikeAvailable={!myReg.super_like_used}
+                  superLikeAvailable={myReg.super_likes_used < superLikesMax}
                 />
               </motion.div>
             ))}

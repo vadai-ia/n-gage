@@ -24,7 +24,7 @@ export async function GET(
       interests: true,
       gender: true,
       looking_for: true,
-      super_like_used: true,
+      super_likes_used: true,
       photos_taken: true,
       search_started_at: true,
     },

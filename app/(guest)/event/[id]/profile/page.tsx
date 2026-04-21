@@ -16,7 +16,7 @@ type MyReg = {
   interests: string[] | null;
   gender: string;
   looking_for: string;
-  super_like_used: boolean;
+  super_likes_used: number;
   photos_taken: number;
 };
 
@@ -522,7 +522,7 @@ export default function ProfilePage() {
       {reg && (
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="rounded-xl p-3 text-center" style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.04)" }}>
-            <div className="text-xl font-black" style={{ color: "#FFB800" }}>{reg.super_like_used ? "Usado" : "1"}</div>
+            <div className="text-xl font-black" style={{ color: "#FFB800" }}>{reg.super_likes_used}</div>
             <div className="text-xs mt-1" style={{ color: "#8585A8" }}>Super like</div>
           </div>
           <div className="rounded-xl p-3 text-center" style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.04)" }}>

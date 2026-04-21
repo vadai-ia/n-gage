@@ -17,7 +17,7 @@ export type Profile = {
   relation_type: string | null;
   interests: string[] | null;
   gender: string;
-  super_like_used: boolean;
+  super_likes_used?: number;
   compatibility_score?: number;
   shared_interests?: string[];
   user: { full_name: string; avatar_url: string | null };
