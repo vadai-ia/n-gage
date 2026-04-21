@@ -157,6 +157,7 @@ model Event {
   venue_name            String?
   venue_city            String?
   cover_image_url       String?
+  event_photos          String[]    @default([])
   status                EventStatus @default(draft)
   language              String      @default("es-MX")
   gender_extended_mode  Boolean     @default(false)

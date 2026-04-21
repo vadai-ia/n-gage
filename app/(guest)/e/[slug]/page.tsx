@@ -11,7 +11,7 @@ import {
 } from "@/types/event";
 
 type Step =
-  | "loading" | "access_code" | "intro" | "landing" | "auth"
+  | "loading" | "access_code" | "intro" | "auth"
   | "wizard_team"      // 1. Team (bride/groom) — wedding only
   | "wizard_mesa"      // 2. Table + visibility
   | "wizard_selfie"    // 3. Selfie (MANDATORY)
@@ -52,6 +52,9 @@ export default function EventLandingPage() {
   const [interestStep, setInterestStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
+  // Photo carousel (background de bienvenida)
+  const [photoIdx, setPhotoIdx] = useState(0);
+
   // Auth form
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
   const [authEmail, setAuthEmail] = useState("");
@@ -61,14 +64,15 @@ export default function EventLandingPage() {
   const [authError, setAuthError] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-  // Helper: decide si mostrar intro o ir directo al flujo
+  // Helper: todos los guests ven la bienvenida con carrusel (intro).
+  // Si ya esta logeado y ya la vio, saltamos al wizard.
   const getNextStepAfterAccessGate = useCallback((isLoggedIn: boolean): Step => {
     if (typeof window === "undefined") {
-      return isLoggedIn ? "wizard_team" : "landing";
+      return isLoggedIn ? "wizard_team" : "intro";
     }
     const introSeen = window.localStorage.getItem(`ngage-intro-seen-${slug}`);
-    if (!introSeen) return "intro";
-    return isLoggedIn ? "wizard_team" : "landing";
+    if (isLoggedIn && introSeen) return "wizard_team";
+    return "intro";
   }, [slug]);
 
   // 1. Load event and validate access code
@@ -92,7 +96,7 @@ export default function EventLandingPage() {
         } else {
           setError(data.error || "Evento no disponible.");
         }
-        setStep("landing");
+        setStep("intro");
         return;
       }
 
@@ -144,6 +148,17 @@ export default function EventLandingPage() {
     loadEvent();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  // Auto-advance carousel en la pantalla de bienvenida
+  useEffect(() => {
+    if (step !== "intro") return;
+    const photos = event?.event_photos ?? [];
+    if (photos.length < 2) return;
+    const id = window.setInterval(() => {
+      setPhotoIdx((i) => (i + 1) % photos.length);
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [step, event?.event_photos]);
 
   // Validate access code manually entered
   async function handleCodeSubmit(e: React.FormEvent) {
@@ -405,7 +420,7 @@ export default function EventLandingPage() {
 
   const backButton = (
     <button
-      onClick={() => setStep("landing")}
+      onClick={() => setStep("intro")}
       className="flex items-center gap-1.5 text-sm mb-6 transition-colors"
       style={{ color: textSecondary }}
     >
@@ -458,10 +473,6 @@ export default function EventLandingPage() {
       </div>
     );
   }
-
-  const eventDate = new Date(event.event_date).toLocaleDateString("es-MX", {
-    weekday: "long", day: "numeric", month: "long", year: "numeric",
-  });
 
   // ── STEP: Access Code ──
   if (step === "access_code") {
@@ -541,103 +552,212 @@ export default function EventLandingPage() {
     );
   }
 
-  // ── STEP: Intro / Cómo funciona ──
+  // ── STEP: Bienvenida (carrusel + glass) ──
+  // Merge de intro + landing: UNA sola pantalla de acceso con fondo carrusel.
   if (step === "intro" && event) {
-    const eventDate = new Date(event.event_date).toLocaleDateString("es-MX", {
+    const niceDate = new Date(event.event_date).toLocaleDateString("es-MX", {
       weekday: "long",
       day: "numeric",
       month: "long",
     });
 
+    const photos = event.event_photos?.length
+      ? event.event_photos
+      : event.cover_image_url
+      ? [event.cover_image_url]
+      : [];
+
     const handleEnter = () => {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(`ngage-intro-seen-${slug}`, "1");
       }
-      setStep(user ? "wizard_team" : "landing");
+      setStep(user ? "wizard_team" : "auth");
     };
 
+    const steps = [
+      {
+        num: "1",
+        title: "Toma tu selfie del dia",
+        desc: "Asi te reconocen los demas invitados. Solo camara, no galeria.",
+      },
+      {
+        num: "2",
+        title: `${event.search_duration_minutes} min para conectar`,
+        desc: "Haz swipe sobre los solteros del evento. Like, no-like o super like.",
+      },
+      {
+        num: "3",
+        title: "Chatea con tus matches",
+        desc: "Si hay like mutuo, pueden platicar dentro de la app.",
+      },
+    ];
+
     return (
-      <div className="min-h-screen flex flex-col px-4 py-6" style={{ background: "#07070F" }}>
-        {/* Event header */}
-        <div className="text-center mb-6 pt-2">
+      <div className="relative min-h-dvh overflow-hidden" style={{ background: bg }}>
+        {/* ── Carrusel de fondo (full-bleed) ── */}
+        {photos.length > 0 ? (
+          photos.map((url, i) => (
+            <div
+              key={url}
+              aria-hidden
+              className="absolute inset-0 transition-opacity duration-[1200ms] ease-in-out"
+              style={{
+                opacity: i === photoIdx % photos.length ? 1 : 0,
+                backgroundImage: `url(${url})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                transform: "scale(1.04)",
+              }}
+            />
+          ))
+        ) : (
           <div
-            className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3"
+            aria-hidden
+            className="absolute inset-0"
+            style={{ background: gradientTriple }}
+          />
+        )}
+
+        {/* Overlay oscuro para legibilidad */}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(7,7,15,0.55) 0%, rgba(7,7,15,0.45) 35%, rgba(7,7,15,0.85) 75%, rgba(7,7,15,0.98) 100%)",
+          }}
+        />
+
+        {/* Tint de marca sutil arriba */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-56"
+          style={{
+            background:
+              "radial-gradient(ellipse at top, rgba(255,45,120,0.18), transparent 70%)",
+          }}
+        />
+
+        {/* ── Contenido ── */}
+        <div className="relative z-10 min-h-dvh flex flex-col px-4 pt-8 pb-6">
+          {/* Header */}
+          <div className="text-center pt-2">
+            <div
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest mb-4"
+              style={{
+                background: "rgba(255,45,120,0.22)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.2)",
+                backdropFilter: "blur(16px) saturate(160%)",
+                WebkitBackdropFilter: "blur(16px) saturate(160%)",
+              }}
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ background: pink, boxShadow: `0 0 8px ${pink}` }}
+              />
+              {EVENT_TYPE_LABELS[event.type] || "Evento"}
+            </div>
+            <h1
+              className="text-4xl font-black tracking-tight mb-1.5"
+              style={{
+                color: "#fff",
+                textShadow: "0 4px 24px rgba(0,0,0,0.55)",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              {event.name}
+            </h1>
+            <p
+              className="text-sm capitalize"
+              style={{ color: "rgba(255,255,255,0.82)", textShadow: "0 2px 10px rgba(0,0,0,0.6)" }}
+            >
+              {niceDate}
+              {event.venue_name && ` · ${event.venue_name}`}
+            </p>
+          </div>
+
+          {/* Spacer — deja respirar la foto */}
+          <div className="flex-1 min-h-[120px]" />
+
+          {/* Indicadores del carrusel */}
+          {photos.length > 1 && (
+            <div className="flex justify-center items-center gap-1.5 mb-4">
+              {photos.map((_, i) => {
+                const active = i === photoIdx % photos.length;
+                return (
+                  <span
+                    key={i}
+                    className="h-1.5 rounded-full transition-all duration-500"
+                    style={{
+                      width: active ? 22 : 6,
+                      background: active ? "#fff" : "rgba(255,255,255,0.4)",
+                      boxShadow: active ? "0 0 8px rgba(255,255,255,0.6)" : "none",
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {/* Glass card — Cómo funciona */}
+          <div
+            className="rounded-3xl p-4 mb-3"
             style={{
-              background: "rgba(255,45,120,0.1)",
-              color: "#FF2D78",
-              border: "1px solid rgba(255,45,120,0.2)",
+              background: "rgba(15,15,26,0.5)",
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
             }}
           >
-            {EVENT_TYPE_LABELS[event.type] || "Evento"}
-          </div>
-          <h1 className="text-3xl font-black tracking-tight mb-1" style={{ color: "#F0F0FF" }}>
-            {event.name}
-          </h1>
-          <p className="text-sm capitalize" style={{ color: "#8585A8" }}>
-            {eventDate}
-          </p>
-        </div>
-
-        {/* How it works */}
-        <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
-          <h2 className="text-lg font-black tracking-tight mb-4 text-center" style={{ color: "#F0F0FF" }}>
-            Como funciona?
-          </h2>
-
-          <div className="flex flex-col gap-3 mb-6">
-            {[
-              {
-                num: "1",
-                title: "Toma tu selfie del dia",
-                desc: "Asi te reconocen los demas invitados. Solo camara, no galeria.",
-              },
-              {
-                num: "2",
-                title: `${event.search_duration_minutes} min para conectar`,
-                desc: "Haz swipe sobre los solteros del evento. Like, no-like o super like.",
-              },
-              {
-                num: "3",
-                title: "Chatea con tus matches",
-                desc: "Si hay like mutuo, pueden platicar dentro de la app.",
-              },
-            ].map((s, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 p-4 rounded-2xl"
-                style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.06)" }}
-              >
+            <h2 className="text-sm font-black tracking-widest uppercase mb-3 text-center" style={{ color: "rgba(255,255,255,0.92)" }}>
+              Como funciona
+            </h2>
+            <div className="flex flex-col gap-2">
+              {steps.map((s) => (
                 <div
-                  className="w-11 h-11 rounded-xl flex items-center justify-center text-lg font-black shrink-0"
-                  style={{ background: "rgba(255,45,120,0.08)", color: "#FF2D78" }}
+                  key={s.num}
+                  className="flex items-center gap-3 p-2.5 rounded-2xl"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
                 >
-                  {s.num}
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0"
+                    style={{
+                      background: "linear-gradient(135deg, rgba(255,45,120,0.3), rgba(123,47,190,0.3))",
+                      border: "1px solid rgba(255,45,120,0.35)",
+                      color: "#fff",
+                    }}
+                  >
+                    {s.num}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-bold mb-0.5" style={{ color: "#fff" }}>
+                      {s.title}
+                    </p>
+                    <p className="text-[11px] leading-snug" style={{ color: "rgba(255,255,255,0.65)" }}>
+                      {s.desc}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold mb-0.5" style={{ color: "#F0F0FF" }}>
-                    {s.title}
-                  </p>
-                  <p className="text-xs leading-snug" style={{ color: "#8585A8" }}>
-                    {s.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* CTAs */}
-        <div className="flex flex-col gap-2.5 max-w-md mx-auto w-full">
+          {/* CTA principal */}
           <button
             onClick={handleEnter}
-            className="w-full py-4 rounded-xl text-sm font-bold transition-transform active:scale-[0.98]"
+            className="w-full py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.98]"
             style={{
-              background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
+              background: gradientTriple,
               color: "#fff",
-              boxShadow: "0 8px 24px rgba(255,45,120,0.25)",
+              boxShadow: "0 12px 40px rgba(255,45,120,0.5), 0 0 0 1px rgba(255,255,255,0.12) inset",
             }}
           >
-            Entrar al evento
+            Quiero participar
           </button>
 
           {event.whatsapp_group_url && (
@@ -645,112 +765,20 @@ export default function EventLandingPage() {
               href={event.whatsapp_group_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-3.5 rounded-xl text-sm font-semibold text-center transition-transform active:scale-[0.98]"
+              className="w-full mt-2.5 py-3 rounded-2xl text-sm font-semibold text-center transition-transform active:scale-[0.98]"
               style={{
-                background: "rgba(37,211,102,0.08)",
-                border: "1px solid rgba(37,211,102,0.25)",
+                background: "rgba(37,211,102,0.12)",
+                border: "1px solid rgba(37,211,102,0.35)",
                 color: "#25D366",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
               }}
             >
               Unirme al grupo de WhatsApp
             </a>
           )}
-        </div>
 
-        <PoweredBy />
-      </div>
-    );
-  }
-
-  // ── STEP: Landing del evento ──
-  if (step === "landing") {
-    return (
-      <div className="min-h-screen flex flex-col" style={{ background: bg }}>
-        {/* Cover */}
-        <div
-          className="relative h-60 flex-shrink-0"
-          style={{
-            background: event.cover_image_url
-              ? `url(${event.cover_image_url}) center/cover`
-              : `linear-gradient(225deg, ${pink} 0%, ${purple} 50%, ${blue} 100%)`,
-          }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{ background: `linear-gradient(to bottom, transparent 30%, ${bg} 100%)` }}
-          />
-          <div className="absolute bottom-4 left-4 right-4">
-            <span
-              className="text-xs font-bold px-3 py-1.5 rounded-full"
-              style={{
-                background: "rgba(255,255,255,0.1)",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                color: textPrimary,
-                border: `1px solid ${borderSubtle}`,
-              }}
-            >
-              {EVENT_TYPE_LABELS[event.type] || "Evento"}
-            </span>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 px-4 pt-3 pb-8">
-          <h1
-            className="text-3xl font-black tracking-tight mb-1"
-            style={{ color: textPrimary }}
-          >
-            {event.name}
-          </h1>
-          <p className="text-sm mb-5" style={{ color: textSecondary }}>
-            {eventDate}
-            {event.venue_name && ` · ${event.venue_name}`}
-            {event.venue_city && `, ${event.venue_city}`}
-          </p>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {[
-              { label: "Tiempo de busqueda", value: `${event.search_duration_minutes} min` },
-              { label: "Participantes", value: `${event._count.registrations} registrados` },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="rounded-2xl p-3.5"
-                style={{ background: surface, border: `1px solid ${borderSubtle}` }}
-              >
-                <div className="text-xs font-medium mb-1" style={{ color: textSecondary }}>{s.label}</div>
-                <div className="font-bold text-sm" style={{ color: textPrimary }}>{s.value}</div>
-              </div>
-            ))}
-          </div>
-
-          <div
-            className="rounded-2xl p-4 mb-6"
-            style={{ background: "rgba(255,45,120,0.06)", border: `1px solid rgba(255,45,120,0.15)` }}
-          >
-            <p className="text-sm font-bold" style={{ color: pink }}>
-              Estas soltero/a y buscas conectar?
-            </p>
-            <p className="text-sm mt-1.5" style={{ color: textSecondary }}>
-              Registrate, haz swipe y conecta con personas del mismo evento. Tu perfil expira en {event.expiry_days} dias.
-            </p>
-          </div>
-
-          <button
-            onClick={() => setStep("auth")}
-            className="w-full py-4 rounded-2xl font-bold text-lg active:scale-[0.98] transition-transform"
-            style={{
-              background: gradientCta,
-              color: "#fff",
-              boxShadow: glowShadow,
-            }}
-          >
-            Quiero participar!
-          </button>
-
-          <PoweredBy />
+          <PoweredBy variant="muted" />
         </div>
       </div>
     );

@@ -19,6 +19,7 @@ export async function GET(
       venue_name: true,
       venue_city: true,
       cover_image_url: true,
+      event_photos: true,
       status: true,
       language: true,
       search_duration_minutes: true,

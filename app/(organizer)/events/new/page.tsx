@@ -242,6 +242,11 @@ export default function NewEventPage() {
   const [genderExtended, setGenderExtended] = useState(false);
   const [whatsappGroupUrl, setWhatsappGroupUrl] = useState("");
 
+  // Event photos — hasta 10 fotos que se muestran en el carrusel de bienvenida
+  const [eventPhotos, setEventPhotos] = useState<string[]>([]); // URLs de Cloudinary (ya subidas)
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+
   // Swipe window — solo hora de inicio, el fin se calcula
   const [showSearchWindow, setShowSearchWindow] = useState(false);
   const [swipeHour, setSwipeHour] = useState(21);
@@ -257,6 +262,77 @@ export default function NewEventPage() {
   function handlePlanChange(p: string) {
     setPlan(p);
     setTimerMinutes(TIMER_DEFAULTS[p] ?? 60);
+  }
+
+  // Resize a File to max dimension and return as base64 data URL (JPEG 0.88)
+  async function resizeImageFile(file: File, maxDim = 1600): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { reject(new Error("Canvas no disponible")); return; }
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.88));
+        };
+        img.onerror = () => reject(new Error("No se pudo leer la imagen"));
+        img.src = reader.result as string;
+      };
+      reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handlePhotosChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setPhotoError("");
+    setPhotoUploading(true);
+
+    const remaining = 10 - eventPhotos.length;
+    const toProcess = files.slice(0, remaining);
+
+    for (const file of toProcess) {
+      try {
+        const dataUrl = await resizeImageFile(file, 1600);
+        const res = await fetch("/api/v1/upload/selfie", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl, kind: "event_photo" }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.url) {
+          setPhotoError(data.error || "No se pudo subir una de las fotos");
+          continue;
+        }
+        setEventPhotos((prev) => [...prev, data.url]);
+      } catch (err) {
+        setPhotoError(err instanceof Error ? err.message : "Error al procesar la imagen");
+      }
+    }
+    setPhotoUploading(false);
+  }
+
+  function removePhoto(i: number) {
+    setEventPhotos((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  function movePhoto(i: number, dir: -1 | 1) {
+    setEventPhotos((prev) => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const copy = [...prev];
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+      return copy;
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -298,6 +374,10 @@ export default function NewEventPage() {
 
     if (whatsappGroupUrl.trim()) {
       payload.whatsapp_group_url = whatsappGroupUrl.trim();
+    }
+
+    if (eventPhotos.length > 0) {
+      payload.event_photos = eventPhotos;
     }
 
     const res = await fetch("/api/v1/events", {
@@ -388,6 +468,95 @@ export default function NewEventPage() {
             <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>Ciudad</label>
             <input type="text" value={venueCity} onChange={(e) => setVenueCity(e.target.value)} placeholder="Ciudad" className="w-full rounded-xl px-4 py-3 text-sm outline-none" style={inputStyle} />
           </div>
+        </div>
+
+        {/* Event photos — carrusel de bienvenida */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold" style={{ color: "#8585A8" }}>
+              Fotos del evento <span style={{ color: "#44445A" }}>(hasta 10)</span>
+            </label>
+            <span className="text-xs font-mono px-2 py-0.5 rounded-md"
+              style={{ background: eventPhotos.length > 0 ? "rgba(255,45,120,0.08)" : "rgba(255,255,255,0.03)", color: eventPhotos.length > 0 ? "#FF2D78" : "#44445A" }}>
+              {eventPhotos.length}/10
+            </span>
+          </div>
+          <p className="text-xs mb-3" style={{ color: "#44445A" }}>
+            Se mostraran como carrusel de fondo en la portada de bienvenida. Sube fotos de los novios, del venue, del vibe del evento...
+          </p>
+
+          <div className="grid grid-cols-4 gap-2 mb-3">
+            {eventPhotos.map((url, i) => (
+              <div key={url}
+                className="relative aspect-square rounded-xl overflow-hidden group"
+                style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                {i === 0 && (
+                  <span className="absolute top-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md"
+                    style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}>
+                    PORTADA
+                  </span>
+                )}
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-1 py-1"
+                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85), transparent)" }}>
+                  <div className="flex gap-0.5">
+                    <button type="button" onClick={() => movePhoto(i, -1)} disabled={i === 0}
+                      className="w-5 h-5 rounded-md flex items-center justify-center disabled:opacity-30"
+                      style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
+                      aria-label="Mover izquierda">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="15 18 9 12 15 6" /></svg>
+                    </button>
+                    <button type="button" onClick={() => movePhoto(i, 1)} disabled={i === eventPhotos.length - 1}
+                      className="w-5 h-5 rounded-md flex items-center justify-center disabled:opacity-30"
+                      style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}
+                      aria-label="Mover derecha">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="9 18 15 12 9 6" /></svg>
+                    </button>
+                  </div>
+                  <button type="button" onClick={() => removePhoto(i)}
+                    className="w-5 h-5 rounded-md flex items-center justify-center"
+                    style={{ background: "rgba(239,68,68,0.9)", color: "#fff" }}
+                    aria-label="Eliminar foto">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {eventPhotos.length < 10 && (
+              <label
+                className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer transition-transform active:scale-[0.97]"
+                style={{
+                  background: "linear-gradient(135deg, rgba(255,45,120,0.08), rgba(123,47,190,0.08))",
+                  border: "1px dashed rgba(255,45,120,0.35)",
+                }}>
+                {photoUploading ? (
+                  <>
+                    <span className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "#FF2D78", borderTopColor: "transparent" }} />
+                    <span className="text-[10px] font-semibold" style={{ color: "#FF2D78" }}>Subiendo...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="#FF2D78" strokeWidth="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <path d="M21 15l-5-5L5 21" />
+                    </svg>
+                    <span className="text-[10px] font-bold tracking-wide text-center px-1" style={{ color: "#FF2D78" }}>
+                      Subir fotos
+                    </span>
+                  </>
+                )}
+                <input type="file" accept="image/*" multiple className="hidden"
+                  onChange={handlePhotosChange} disabled={photoUploading} />
+              </label>
+            )}
+          </div>
+
+          {photoError && (
+            <p className="text-xs mt-1" style={{ color: "#EF4444" }}>{photoError}</p>
+          )}
         </div>
 
         {/* WhatsApp Group */}

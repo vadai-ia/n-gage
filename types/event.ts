@@ -6,6 +6,7 @@ export type EventPublic = {
   venue_name: string | null;
   venue_city: string | null;
   cover_image_url: string | null;
+  event_photos: string[];
   status: string;
   language: string;
   search_duration_minutes: number;

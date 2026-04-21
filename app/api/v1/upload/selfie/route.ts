@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
-    const { dataUrl, kind } = await req.json() as { dataUrl?: string; kind?: "selfie" | "gallery" };
+    const { dataUrl, kind } = await req.json() as { dataUrl?: string; kind?: "selfie" | "gallery" | "event_photo" };
     if (!dataUrl) return NextResponse.json({ error: "Sin imagen" }, { status: 400 });
 
     // Validate it looks like a data URL
@@ -31,14 +31,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Formato de imagen invalido" }, { status: 400 });
     }
 
-    // Selfies use face gravity; gallery uses auto (works for non-face photos)
-    const transformation = kind === "gallery"
+    const folderByKind: Record<string, string> = {
+      selfie: "ngage/selfies",
+      gallery: "ngage/gallery",
+      event_photo: "ngage/event-photos",
+    };
+
+    // Selfies use face gravity; event_photo and gallery use large limit (portrait/landscape friendly)
+    const transformation = kind === "event_photo"
+      ? [{ width: 1600, height: 1600, crop: "limit", quality: "auto" }]
+      : kind === "gallery"
       ? [{ width: 1080, height: 1080, crop: "limit", quality: "auto" }]
       : [{ width: 600, height: 600, crop: "fill", gravity: "face" }];
 
     try {
       const result = await cloudinary.uploader.upload(dataUrl, {
-        folder: kind === "gallery" ? "ngage/gallery" : "ngage/selfies",
+        folder: folderByKind[kind ?? "selfie"] ?? "ngage/selfies",
         public_id: `${kind ?? "selfie"}_${user.id}_${Date.now()}`,
         transformation,
       });
