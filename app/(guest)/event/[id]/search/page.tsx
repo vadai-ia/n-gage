@@ -6,6 +6,8 @@ import { motion, AnimatePresence } from "motion/react";
 import SwipeCard, { type Profile } from "@/components/swipe/SwipeCard";
 import MatchModal from "@/components/swipe/MatchModal";
 import Timer from "@/components/event/Timer";
+import MosaicCard, { type LikeState } from "@/components/mosaic/MosaicCard";
+import ExpandedProfileSheet from "@/components/mosaic/ExpandedProfileSheet";
 
 type MyReg = {
   search_started_at: string | null;
@@ -44,6 +46,8 @@ export default function SearchPage() {
   const [matchMode, setMatchMode] = useState<"swipe" | "mosaic">("swipe");
   const [superLikesMax, setSuperLikesMax] = useState<number>(1);
   const [myLikesGiven, setMyLikesGiven] = useState<Array<{ to_user_id: string; type: "like" | "super_like" | "dislike" }>>([]);
+  const [expandedProfile, setExpandedProfile] = useState<Profile | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const loadProfiles = useCallback(() => {
     fetch(`/api/v1/events/${eventId}/profiles`)
@@ -166,6 +170,65 @@ export default function SearchPage() {
       setMyReg((r) => r ? { ...r, super_likes_used: r.super_likes_used + 1 } : r);
     }
   }, [profiles, sendLike]);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 2600);
+  }, []);
+
+  const handleMosaicToggle = useCallback(async (toUserId: string, desired: "like" | "super_like") => {
+    const currentType = myLikesGiven.find((l) => l.to_user_id === toUserId)?.type;
+
+    // Same button tapped while already in that state -> unlike (DELETE)
+    if (currentType === desired) {
+      const res = await fetch(
+        `/api/v1/events/${eventId}/likes?to_user_id=${encodeURIComponent(toUserId)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: "No se pudo quitar el like" }));
+        showToast(data.error || "No se pudo quitar el like");
+        return;
+      }
+      setMyLikesGiven((prev) => prev.filter((l) => l.to_user_id !== toUserId));
+      if (currentType === "super_like") {
+        setMyReg((r) => r ? { ...r, super_likes_used: Math.max(0, r.super_likes_used - 1) } : r);
+      }
+      return;
+    }
+
+    // New like or transition between like <-> super_like
+    const profile = profiles.find((p) => p.user_id === toUserId);
+    const result = await sendLike(toUserId, desired);
+    if (result?.error) {
+      showToast(result.error);
+      return;
+    }
+    if (result.is_match && result.match && profile) {
+      setMatch({ data: result.match, profile });
+    }
+    setMyLikesGiven((prev) => {
+      const without = prev.filter((l) => l.to_user_id !== toUserId);
+      return [...without, { to_user_id: toUserId, type: desired }];
+    });
+    setMyReg((r) => {
+      if (!r) return r;
+      if (desired === "super_like" && currentType !== "super_like") {
+        return { ...r, super_likes_used: r.super_likes_used + 1 };
+      }
+      if (desired === "like" && currentType === "super_like") {
+        return { ...r, super_likes_used: Math.max(0, r.super_likes_used - 1) };
+      }
+      return r;
+    });
+  }, [eventId, myLikesGiven, profiles, sendLike, showToast]);
+
+  const likeStateFor = useCallback((userId: string): LikeState => {
+    const t = myLikesGiven.find((l) => l.to_user_id === userId)?.type;
+    if (t === "super_like") return "super_like";
+    if (t === "like") return "like";
+    return "none";
+  }, [myLikesGiven]);
 
   // ── LOADING ──
   if (loading) {
@@ -425,8 +488,8 @@ export default function SearchPage() {
     );
   }
 
-  // ── NO MORE PROFILES ──
-  if (profiles.length === 0) {
+  // ── NO MORE PROFILES (swipe only — mosaic shows empty grid state below) ──
+  if (profiles.length === 0 && matchMode !== "mosaic") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: "#07070F" }}>
         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
@@ -471,6 +534,127 @@ export default function SearchPage() {
             Recargar ahora
           </button>
         </motion.div>
+      </div>
+    );
+  }
+
+  // ── MOSAIC MODE ──
+  if (matchMode === "mosaic") {
+    const superLikeAvailable = myReg.super_likes_used < superLikesMax;
+    return (
+      <div className="flex flex-col" style={{ minHeight: "calc(100dvh - 70px)", background: "#07070F" }}>
+        {/* Header */}
+        <div className="sticky top-0 z-20 flex items-center justify-between px-4 py-2.5 flex-shrink-0"
+          style={{ background: "rgba(7,7,15,0.85)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+          <span className="font-black text-sm tracking-tight">
+            <span style={{
+              background: "linear-gradient(135deg, #FF2D78, #7B2FBE)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}>N&apos;GAGE</span>
+          </span>
+
+          {myReg.search_expires_at && (
+            <Timer
+              expiresAt={myReg.search_expires_at}
+              totalMinutes={eventDuration}
+              onExpire={() => setExpired(true)}
+            />
+          )}
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+              style={{ background: "rgba(255,184,0,0.12)", color: "#FFB800", border: "1px solid rgba(255,184,0,0.2)" }}>
+              ★ {Math.max(0, superLikesMax - myReg.super_likes_used)}
+            </span>
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+              style={{ background: "rgba(255,255,255,0.05)", color: "#8585A8" }}>
+              {profiles.length}
+            </span>
+          </div>
+        </div>
+
+        {/* Grid 2 cols */}
+        {profiles.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-16">
+            <div className="w-20 h-20 rounded-full mb-6 flex items-center justify-center"
+              style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.15)" }}>
+              <svg width={32} height={32} fill="none" viewBox="0 0 24 24" stroke="#FF2D78" strokeWidth={1.5}>
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold mb-2" style={{ color: "#F0F0FF" }}>Esperando más invitados…</h2>
+            <p className="text-sm mb-6" style={{ color: "#8585A8" }}>Nuevos perfiles aparecerán aquí en cuanto se registren.</p>
+            <button
+              onClick={() => loadProfiles()}
+              className="px-5 py-2.5 rounded-xl text-sm font-bold transition-transform active:scale-95"
+              style={{ background: "rgba(255,45,120,0.12)", border: "1px solid rgba(255,45,120,0.2)", color: "#FF2D78" }}
+            >
+              Recargar
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 px-3 py-3">
+            {profiles.map((profile) => (
+              <MosaicCard
+                key={profile.user_id}
+                profile={profile}
+                likeState={likeStateFor(profile.user_id)}
+                superLikeAvailable={superLikeAvailable}
+                onOpen={() => setExpandedProfile(profile)}
+                onLike={() => handleMosaicToggle(profile.user_id, "like")}
+                onSuperLike={() => handleMosaicToggle(profile.user_id, "super_like")}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Expanded profile sheet */}
+        {expandedProfile && (
+          <ExpandedProfileSheet
+            profile={expandedProfile}
+            likeState={likeStateFor(expandedProfile.user_id)}
+            superLikeAvailable={superLikeAvailable}
+            onClose={() => setExpandedProfile(null)}
+            onLike={() => handleMosaicToggle(expandedProfile.user_id, "like")}
+            onSuperLike={() => handleMosaicToggle(expandedProfile.user_id, "super_like")}
+          />
+        )}
+
+        {/* Toast */}
+        <AnimatePresence>
+          {toastMsg && (
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              className="fixed left-1/2 -translate-x-1/2 z-[200] px-4 py-2.5 rounded-full text-xs font-bold"
+              style={{
+                bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+                background: "rgba(20,20,30,0.95)",
+                border: "1px solid rgba(255,184,0,0.35)",
+                color: "#FFD97A",
+                backdropFilter: "blur(12px)",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+              }}
+            >
+              {toastMsg}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Match modal */}
+        {match && (
+          <MatchModal
+            myPhoto={myReg.selfie_url}
+            theirPhoto={match.profile.selfie_url || match.profile.user.avatar_url || ""}
+            theirName={match.profile.user.full_name}
+            matchId={match.data.id}
+            onClose={() => setMatch(null)}
+            onChat={() => router.push(`/event/${eventId}/matches`)}
+          />
+        )}
       </div>
     );
   }

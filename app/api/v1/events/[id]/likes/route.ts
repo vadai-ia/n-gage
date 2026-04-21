@@ -58,11 +58,16 @@ export async function POST(
       create: { event_id: eventId, from_user_id: user.id, to_user_id, type: type as never },
     });
 
-    // Only increment super_likes_used when the like becomes super_like and wasn't before
+    // Keep super_likes_used in sync with transitions
     if (type === "super_like" && prev?.type !== "super_like") {
       await tx.eventRegistration.update({
         where: { event_id_user_id: { event_id: eventId, user_id: user.id } },
         data: { super_likes_used: { increment: 1 } },
+      });
+    } else if (prev?.type === "super_like" && type !== "super_like") {
+      await tx.eventRegistration.update({
+        where: { event_id_user_id: { event_id: eventId, user_id: user.id } },
+        data: { super_likes_used: { decrement: 1 } },
       });
     }
 
