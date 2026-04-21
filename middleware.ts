@@ -60,6 +60,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Bloquear usuarios suspendidos (app_metadata.suspended lo setea el super admin).
+  // Supabase refresca app_metadata en cada getUser, así que el flag aparece sin esperar
+  // a que expire el JWT.
+  if (user.app_metadata?.suspended === true) {
+    await supabase.auth.signOut();
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("error", "suspended");
+    return NextResponse.redirect(loginUrl);
+  }
+
   const role = user.user_metadata?.role;
 
   // Protección de rutas de admin
@@ -71,14 +82,15 @@ export async function middleware(request: NextRequest) {
 
   // SUPER_ADMIN siempre va a /admin (no a /dashboard o /events)
   if (role === "SUPER_ADMIN" && (pathname === "/dashboard" || pathname.startsWith("/events"))) {
-    // Allow /events/[id] redirect to /admin/events/[id] for consistent routing
+    // /events/new DEBE chequearse ANTES del regex /events/[id], porque "new"
+    // tambien matchea [^/]+ y terminariamos en /admin/events/new -> 404.
+    if (pathname === "/events/new") {
+      return supabaseResponse;
+    }
+    // /events/[id] -> /admin/events/[id] para ruta consistente
     if (pathname.match(/^\/events\/[^/]+$/)) {
       const id = pathname.split("/")[2];
       return NextResponse.redirect(new URL(`/admin/events/${id}`, request.url));
-    }
-    if (pathname === "/events/new") {
-      // Allow admin to create events via the same route
-      return supabaseResponse;
     }
     return NextResponse.redirect(new URL("/admin", request.url));
   }
