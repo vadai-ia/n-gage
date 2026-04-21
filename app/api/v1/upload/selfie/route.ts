@@ -51,9 +51,15 @@ export async function POST(req: Request) {
         transformation,
       });
       return NextResponse.json({ url: result.secure_url, public_id: result.public_id });
-    } catch (cloudErr) {
+    } catch (cloudErr: unknown) {
       console.error("Cloudinary upload error:", cloudErr);
-      const message = cloudErr instanceof Error ? cloudErr.message : "Error con el servicio de imagenes";
+      let message = "Error desconocido";
+      if (cloudErr instanceof Error) {
+        message = cloudErr.message;
+      } else if (cloudErr && typeof cloudErr === "object") {
+        const e = cloudErr as { message?: string; error?: { message?: string }; http_code?: number };
+        message = e.error?.message ?? e.message ?? `HTTP ${e.http_code ?? "?"}`;
+      }
       return NextResponse.json({ error: `Fallo al procesar imagen: ${message}` }, { status: 500 });
     }
   } catch (err) {
