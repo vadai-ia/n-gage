@@ -380,19 +380,39 @@ export default function NewEventPage() {
       payload.event_photos = eventPhotos;
     }
 
-    const res = await fetch("/api/v1/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch("/api/v1/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "Error al crear el evento");
+      let data: { event?: { id?: string }; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        setError(`Error del servidor (HTTP ${res.status}). Intenta de nuevo.`);
+        setLoading(false);
+        return;
+      }
+
+      if (!res.ok) {
+        setError(data.error || `Error al crear el evento (HTTP ${res.status})`);
+        setLoading(false);
+        return;
+      }
+
+      if (!data.event?.id) {
+        setError("Respuesta inválida del servidor: el evento no tiene ID");
+        setLoading(false);
+        return;
+      }
+
+      router.push(`/events/${data.event.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error de red al crear el evento");
       setLoading(false);
-      return;
     }
-    router.push(`/events/${data.event.id}`);
   }
 
   const inputStyle = {
