@@ -268,16 +268,45 @@ export default function EventLandingPage() {
     );
   }, []);
 
-  // Upload selfie to Cloudinary
-  async function uploadSelfie(dataUrl: string): Promise<string> {
+  // Resize a File to max dimension and return as base64 data URL (JPEG 0.85)
+  async function resizeImageFile(file: File, maxDim = 1080): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { reject(new Error("Canvas no disponible")); return; }
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.onerror = () => reject(new Error("No se pudo leer la imagen"));
+        img.src = reader.result as string;
+      };
+      reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Upload selfie or gallery photo to Cloudinary
+  async function uploadSelfie(dataUrl: string, kind: "selfie" | "gallery" = "selfie"): Promise<string> {
     const res = await fetch("/api/v1/upload/selfie", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dataUrl }),
+      body: JSON.stringify({ dataUrl, kind }),
     });
-    if (!res.ok) throw new Error("Error al subir la foto. Intenta de nuevo.");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "" }));
+      throw new Error(data.error || `Error al subir la foto (${res.status})`);
+    }
     const data = await res.json();
-    if (!data.url) throw new Error("Error al subir la foto. Intenta de nuevo.");
+    if (!data.url) throw new Error("El servidor no devolvio URL de imagen");
     return data.url;
   }
 
@@ -310,7 +339,9 @@ export default function EventLandingPage() {
       const uploadedGallery: string[] = [];
       for (const g of galleryPhotos) {
         try {
-          const url = await uploadSelfie(g);
+          // Already uploaded URLs (https://) can be reused as-is
+          if (g.startsWith("http")) { uploadedGallery.push(g); continue; }
+          const url = await uploadSelfie(g, "gallery");
           uploadedGallery.push(url);
         } catch {
           // ignore individual upload failures
@@ -1040,17 +1071,55 @@ export default function EventLandingPage() {
           ))}
         </div>
 
-        {/* Camera for adding */}
+        {/* Camera + Gallery upload for adding extra photos */}
         {galleryPhotos.length < 5 && (
           <div className="mb-4">
-            <SelfieCapture
-              captured={galleryPhotoCapture}
-              onCapture={(url) => {
-                setGalleryPhotos((p) => [...p, url]);
-                setGalleryPhotoCapture(null);
-              }}
-              onRetake={() => setGalleryPhotoCapture(null)}
-            />
+            <div className="flex flex-col gap-3">
+              {/* File picker — phone gallery */}
+              <label className="w-full rounded-xl cursor-pointer transition-transform active:scale-[0.98]"
+                style={{
+                  background: "linear-gradient(135deg, rgba(123,47,190,0.12), rgba(255,45,120,0.12))",
+                  border: "1px solid rgba(123,47,190,0.3)",
+                }}>
+                <div className="py-4 px-4 flex items-center justify-center gap-2.5">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#A855F7" strokeWidth={1.5}>
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                  <span className="text-sm font-bold" style={{ color: "#A855F7" }}>
+                    Subir de mi galeria
+                  </span>
+                </div>
+                <input type="file" accept="image/*" multiple className="hidden"
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    const remaining = 5 - galleryPhotos.length;
+                    const toProcess = files.slice(0, remaining);
+                    for (const file of toProcess) {
+                      const dataUrl = await resizeImageFile(file, 1080);
+                      setGalleryPhotos((p) => [...p, dataUrl]);
+                    }
+                    e.target.value = ""; // allow re-selecting the same file later
+                  }} />
+              </label>
+
+              {/* Or separator */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px" style={{ background: borderSubtle }} />
+                <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: textMuted }}>o toma una en vivo</span>
+                <div className="flex-1 h-px" style={{ background: borderSubtle }} />
+              </div>
+
+              <SelfieCapture
+                captured={galleryPhotoCapture}
+                onCapture={(url) => {
+                  setGalleryPhotos((p) => [...p, url]);
+                  setGalleryPhotoCapture(null);
+                }}
+                onRetake={() => setGalleryPhotoCapture(null)}
+              />
+            </div>
           </div>
         )}
 

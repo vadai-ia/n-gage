@@ -20,14 +20,18 @@ type MyReg = {
   photos_taken: number;
 };
 
-async function uploadSelfie(dataUrl: string): Promise<string> {
+async function uploadSelfie(dataUrl: string, kind: "selfie" | "gallery" = "selfie"): Promise<string> {
   const res = await fetch("/api/v1/upload/selfie", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ dataUrl }),
+    body: JSON.stringify({ dataUrl, kind }),
   });
-  if (!res.ok) throw new Error("Error al subir la foto");
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `Error al subir la foto (${res.status})`);
+  }
   const data = await res.json();
+  if (!data.url) throw new Error("El servidor no devolvio URL de imagen");
   return data.url;
 }
 
