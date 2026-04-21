@@ -251,12 +251,17 @@ export default function EventLandingPage() {
 
     if (u) {
       setDisplayName(u.user_metadata?.full_name || u.user_metadata?.name || authName || "");
-      // Check if already registered
-      const regRes = await fetch(`/api/v1/events/${event?.id}/my-registration`);
-      if (regRes.ok) {
-        window.location.href = `/event/${event?.id}/search`;
-        return;
-      }
+      // Only skip the wizard if the user already completed it for THIS event (selfie_url present)
+      try {
+        const regRes = await fetch(`/api/v1/events/${event?.id}/my-registration`);
+        if (regRes.ok) {
+          const regData = await regRes.json();
+          if (regData?.registration?.selfie_url) {
+            window.location.href = `/event/${event?.id}/search`;
+            return;
+          }
+        }
+      } catch { /* proceed to wizard */ }
     }
     setStep("wizard_team");
   }
