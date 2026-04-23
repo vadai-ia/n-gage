@@ -54,6 +54,7 @@ export default function EventLandingPage() {
 
   // Photo carousel (background de bienvenida)
   const [photoIdx, setPhotoIdx] = useState(0);
+  const [showSteps, setShowSteps] = useState(false);
 
   // Auth form
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
@@ -586,18 +587,18 @@ export default function EventLandingPage() {
     const steps = [
       {
         num: "1",
-        title: "Toma tu selfie del dia",
-        desc: "Asi te reconocen los demas invitados. Solo camara, no galeria.",
+        title: "Tu selfie, tu pase de entrada",
+        desc: "Asi te reconocen los demas. Sin filtros, sin galeria — solo tu, en tu mejor noche.",
       },
       {
         num: "2",
-        title: `${event.search_duration_minutes} min para conectar`,
-        desc: "Haz swipe sobre los solteros del evento. Like, no-like o super like.",
+        title: `${event.search_duration_minutes} min para descubrir el ambiente`,
+        desc: "Recorre los perfiles del evento, dale like a quien te llame la atencion o lanza un super like donde de verdad importe.",
       },
       {
         num: "3",
-        title: "Chatea con tus matches",
-        desc: "Si hay like mutuo, pueden platicar dentro de la app.",
+        title: "Match cuando el sentimiento es mutuo",
+        desc: "Si los dos dicen que si, te avisamos al instante. Lo que pase despues... ya es entre ustedes.",
       },
     ];
 
@@ -709,9 +710,9 @@ export default function EventLandingPage() {
             </div>
           )}
 
-          {/* Glass card — Cómo funciona */}
+          {/* Glass dropdown — Cómo funciona (cerrado por defecto) */}
           <div
-            className="rounded-3xl p-4 mb-3"
+            className="rounded-3xl mb-3 overflow-hidden"
             style={{
               background: "rgba(15,15,26,0.5)",
               backdropFilter: "blur(24px) saturate(180%)",
@@ -720,39 +721,95 @@ export default function EventLandingPage() {
               boxShadow: "0 20px 60px rgba(0,0,0,0.45)",
             }}
           >
-            <h2 className="text-sm font-black tracking-widest uppercase mb-3 text-center" style={{ color: "rgba(255,255,255,0.92)" }}>
-              Como funciona
-            </h2>
-            <div className="flex flex-col gap-2">
-              {steps.map((s) => (
+            <button
+              type="button"
+              onClick={() => setShowSteps((v) => !v)}
+              aria-expanded={showSteps}
+              aria-controls="how-it-works-content"
+              className="w-full flex items-center justify-between gap-3 px-4 py-3.5 active:opacity-80 transition-opacity"
+            >
+              <div className="flex items-center gap-2.5">
                 <div
-                  key={s.num}
-                  className="flex items-center gap-3 p-2.5 rounded-2xl"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    background: "linear-gradient(135deg, rgba(255,45,120,0.35), rgba(123,47,190,0.35))",
+                    border: "1px solid rgba(255,45,120,0.4)",
                   }}
                 >
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5}>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <span className="text-sm font-black tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.95)" }}>
+                  Como funciona
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {!showSteps && (
+                  <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.55)" }}>
+                    Toca aqui
+                  </span>
+                )}
+                <svg
+                  width={18}
+                  height={18}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.85)"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    transform: showSteps ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 280ms ease",
+                  }}
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
+            </button>
+
+            <div
+              id="how-it-works-content"
+              style={{
+                maxHeight: showSteps ? 360 : 0,
+                opacity: showSteps ? 1 : 0,
+                transition: "max-height 320ms ease, opacity 220ms ease",
+                overflow: "hidden",
+              }}
+            >
+              <div className="px-4 pb-4 pt-1 flex flex-col gap-2">
+                {steps.map((s) => (
                   <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0"
+                    key={s.num}
+                    className="flex items-center gap-3 p-2.5 rounded-2xl"
                     style={{
-                      background: "linear-gradient(135deg, rgba(255,45,120,0.3), rgba(123,47,190,0.3))",
-                      border: "1px solid rgba(255,45,120,0.35)",
-                      color: "#fff",
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.06)",
                     }}
                   >
-                    {s.num}
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(255,45,120,0.3), rgba(123,47,190,0.3))",
+                        border: "1px solid rgba(255,45,120,0.35)",
+                        color: "#fff",
+                      }}
+                    >
+                      {s.num}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-bold mb-0.5" style={{ color: "#fff" }}>
+                        {s.title}
+                      </p>
+                      <p className="text-[11px] leading-snug" style={{ color: "rgba(255,255,255,0.65)" }}>
+                        {s.desc}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-bold mb-0.5" style={{ color: "#fff" }}>
-                      {s.title}
-                    </p>
-                    <p className="text-[11px] leading-snug" style={{ color: "rgba(255,255,255,0.65)" }}>
-                      {s.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
