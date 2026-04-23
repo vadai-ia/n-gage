@@ -20,6 +20,8 @@ type EventData = {
   match_mode: "swipe" | "mosaic";
   super_likes_max: number;
   search_duration_minutes: number;
+  search_start_time: string | null;
+  search_end_time: string | null;
   expiry_days: number;
   unique_slug: string;
   qr_code_url: string | null;
@@ -163,6 +165,9 @@ export default function AdminEventDetailPage() {
   const [editMatchMode, setEditMatchMode] = useState<"swipe" | "mosaic">("mosaic");
   const [editSuperLikesMax, setEditSuperLikesMax] = useState<number>(1);
   const [editGenderExtended, setEditGenderExtended] = useState<boolean>(false);
+  const [editStartHour, setEditStartHour] = useState<number>(21);
+  const [editStartMinute, setEditStartMinute] = useState<number>(0);
+  const [editStartEnabled, setEditStartEnabled] = useState<boolean>(false);
 
   // Tab data
   const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -205,6 +210,14 @@ export default function AdminEventDetailPage() {
         setEditMatchMode(ev.match_mode ?? "mosaic");
         setEditSuperLikesMax(ev.super_likes_max ?? 1);
         setEditGenderExtended(!!ev.gender_extended_mode);
+        if (ev.search_start_time) {
+          const startDate = new Date(ev.search_start_time);
+          setEditStartHour(startDate.getHours());
+          setEditStartMinute(startDate.getMinutes());
+          setEditStartEnabled(true);
+        } else {
+          setEditStartEnabled(false);
+        }
       }
       if (stData.registrations !== undefined) {
         setStats(stData);
@@ -337,6 +350,19 @@ export default function AdminEventDetailPage() {
         gender_extended_mode: editGenderExtended,
       };
       if (editMaxGuests !== "") body.max_guests = Number(editMaxGuests);
+
+      // Search window — recompute start + end from selected hour/minute against event date
+      if (editStartEnabled && editDate) {
+        const start = new Date(editDate);
+        start.setHours(editStartHour, editStartMinute, 0, 0);
+        const end = new Date(start);
+        end.setMinutes(end.getMinutes() + editDuration);
+        body.search_start_time = start.toISOString();
+        body.search_end_time = end.toISOString();
+      } else {
+        body.search_start_time = null;
+        body.search_end_time = null;
+      }
 
       const res = await fetch(`/api/v1/events/${id}`, {
         method: "PATCH",
@@ -715,12 +741,70 @@ export default function AdminEventDetailPage() {
               <EditField label="Nombre" value={editName} onChange={setEditName} />
               <EditField label="Fecha" value={editDate} onChange={setEditDate} type="date" />
               <EditField label="Lugar" value={editVenue} onChange={setEditVenue} />
-              <EditField
-                label="Duracion busqueda (min)"
-                value={String(editDuration)}
-                onChange={(v) => setEditDuration(Number(v))}
-                type="number"
-              />
+              <div>
+                <label className="text-xs font-semibold block mb-1" style={{ color: "#8585A8" }}>
+                  Duracion del swipe
+                </label>
+                <select
+                  value={editDuration}
+                  onChange={(e) => setEditDuration(Number(e.target.value))}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: "#16162a", border: "1px solid rgba(255,255,255,0.08)", color: "#F0F0FF" }}
+                >
+                  {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].map((m) => (
+                    <option key={m} value={m} style={{ background: "#0F0F1A" }}>{m} min</option>
+                  ))}
+                  {[120, 180, 240, 300, 360].map((m) => (
+                    <option key={m} value={m} style={{ background: "#0F0F1A" }}>{m / 60} hrs</option>
+                  ))}
+                </select>
+                <p className="text-[10px] mt-1" style={{ color: "#44445A" }}>
+                  De 5 en 5 hasta 1 h, despues de hora en hora hasta 6 h.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold block mb-1" style={{ color: "#8585A8" }}>
+                  Hora de inicio del swipe
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditStartEnabled((v) => !v)}
+                    className="w-12 h-6 rounded-full transition-all relative shrink-0"
+                    style={{ background: editStartEnabled ? "#FF2D78" : "rgba(255,255,255,0.08)" }}
+                    aria-pressed={editStartEnabled}
+                  >
+                    <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all" style={{ left: editStartEnabled ? "calc(100% - 22px)" : "2px" }} />
+                  </button>
+                  <select
+                    value={editStartHour}
+                    onChange={(e) => setEditStartHour(Number(e.target.value))}
+                    disabled={!editStartEnabled}
+                    className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-40"
+                    style={{ background: "#16162a", border: "1px solid rgba(255,255,255,0.08)", color: "#F0F0FF" }}
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i} style={{ background: "#0F0F1A" }}>{String(i).padStart(2, "0")} h</option>
+                    ))}
+                  </select>
+                  <select
+                    value={editStartMinute}
+                    onChange={(e) => setEditStartMinute(Number(e.target.value))}
+                    disabled={!editStartEnabled}
+                    className="flex-1 px-3 py-2.5 rounded-xl text-sm outline-none disabled:opacity-40"
+                    style={{ background: "#16162a", border: "1px solid rgba(255,255,255,0.08)", color: "#F0F0FF" }}
+                  >
+                    {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map((m) => (
+                      <option key={m} value={m} style={{ background: "#0F0F1A" }}>{String(m).padStart(2, "0")} min</option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-[10px] mt-1" style={{ color: "#44445A" }}>
+                  {editStartEnabled
+                    ? "El swipe abre solo a esa hora del dia del evento."
+                    : "Cada invitado arranca su timer al pulsar Iniciar."}
+                </p>
+              </div>
               <EditField
                 label="Dias de expiracion"
                 value={String(editExpiry)}

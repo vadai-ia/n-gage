@@ -98,7 +98,7 @@ const PLAN_COLORS: Record<string, string> = {
 };
 
 const TIMER_DEFAULTS: Record<string, number> = {
-  spark: 60, connect: 120, vibe: 180, luxe: 240, elite: 360, exclusive: 480,
+  spark: 60, connect: 120, vibe: 180, luxe: 240, elite: 360, exclusive: 360,
 };
 
 const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -621,16 +621,28 @@ export default function NewEventPage() {
           </div>
         </div>
 
-        {/* Timer / Search duration */}
+        {/* Timer / Search duration — 5min steps up to 1h, then 1h steps up to 6h */}
         <div>
           <label className="text-sm mb-1 block font-semibold" style={{ color: "#8585A8" }}>
             Duracion del swipe:{" "}
             <strong style={{ color: "#FF2D78" }}>{formatDuration(timerMinutes)}</strong>
           </label>
-          <input type="range" min={15} max={480} step={15} value={timerMinutes} onChange={(e) => setTimerMinutes(Number(e.target.value))} className="w-full" style={{ accentColor: "#FF2D78" }} />
-          <div className="flex justify-between text-xs mt-1" style={{ color: "#44445A" }}>
-            <span>15 min</span><span>8 hrs</span>
-          </div>
+          <select
+            value={timerMinutes}
+            onChange={(e) => setTimerMinutes(Number(e.target.value))}
+            className="w-full px-3 py-2.5 rounded-xl text-sm font-bold outline-none"
+            style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.06)", color: "#F0F0FF" }}
+          >
+            {[5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60].map((m) => (
+              <option key={m} value={m} style={{ background: "#0F0F1A" }}>{m} min</option>
+            ))}
+            {[120, 180, 240, 300, 360].map((m) => (
+              <option key={m} value={m} style={{ background: "#0F0F1A" }}>{m / 60} hr{m === 60 ? "" : "s"}</option>
+            ))}
+          </select>
+          <p className="text-xs mt-1" style={{ color: "#44445A" }}>
+            De 5 en 5 min hasta 1 hora, despues de hora en hora hasta 6 horas.
+          </p>
         </div>
 
         {/* Swipe Window — simplified */}

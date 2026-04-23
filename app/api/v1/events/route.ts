@@ -11,7 +11,7 @@ const CreateEventSchema = z.object({
   event_date: z.string(),
   venue_name: z.string().optional(),
   venue_city: z.string().optional(),
-  search_duration_minutes: z.number().min(15).max(480).default(60),
+  search_duration_minutes: z.number().min(5).max(360).default(60),
   search_start_time: z.string().nullable().optional(),
   search_end_time: z.string().nullable().optional(),
   expiry_type: z.enum(["next_day", "custom_days", "never"]).default("custom_days"),

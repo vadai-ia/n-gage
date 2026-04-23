@@ -10,7 +10,7 @@ const PatchEventSchema = z.object({
   event_date: z.string().optional(),
   venue_name: z.string().nullable().optional(),
   venue_city: z.string().nullable().optional(),
-  search_duration_minutes: z.number().min(15).max(480).optional(),
+  search_duration_minutes: z.number().min(5).max(360).optional(),
   search_start_time: z.string().nullable().optional(),
   search_end_time: z.string().nullable().optional(),
   expiry_type: z.enum(["next_day", "custom_days", "never"]).optional(),
