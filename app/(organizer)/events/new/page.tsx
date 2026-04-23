@@ -674,7 +674,7 @@ export default function NewEventPage() {
                   <span className="text-sm font-bold" style={{ color: "#44445A" }}>:</span>
                   <select value={swipeMinute} onChange={(e) => setSwipeMinute(Number(e.target.value))}
                     className="bg-transparent text-sm font-bold outline-none appearance-none text-center w-8 cursor-pointer" style={{ color: "#F0F0FF" }}>
-                    {[0, 15, 30, 45].map((m) => <option key={m} value={m} style={{ background: "#0F0F1A" }}>{pad(m)}</option>)}
+                    {Array.from({ length: 12 }, (_, i) => i * 5).map((m) => <option key={m} value={m} style={{ background: "#0F0F1A" }}>{pad(m)}</option>)}
                   </select>
                 </div>
                 <span className="text-xs" style={{ color: "#44445A" }}>hasta</span>
