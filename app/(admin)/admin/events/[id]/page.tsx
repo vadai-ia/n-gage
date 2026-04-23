@@ -186,6 +186,10 @@ export default function AdminEventDetailPage() {
   const [qrUrls, setQrUrls] = useState<Record<string, string>>({});
   const [expandedQr, setExpandedQr] = useState<string | null>(null);
 
+  // Main QR color picker
+  const [qrColorKey, setQrColorKey] = useState<"pink" | "purple" | "blackOnWhite" | "whiteOnBlack">("pink");
+  const [mainQrUrl, setMainQrUrl] = useState<string>("");
+
   const loadEvent = useCallback(async () => {
     setLoading(true);
     try {
@@ -316,6 +320,24 @@ export default function AdminEventDetailPage() {
     }
     generateQRs();
   }, [accessCodes, event]);
+
+  // Regenerate main QR on color change
+  useEffect(() => {
+    if (!event) return;
+    const globalCode = event.access_codes?.[0]?.code;
+    if (!globalCode) return;
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const eventUrl = `${baseUrl}/e/${event.unique_slug}?code=${encodeURIComponent(globalCode)}`;
+    const palette: Record<typeof qrColorKey, { dark: string; light: string }> = {
+      pink: { dark: "#FF2D78", light: "#0A0A0F" },
+      purple: { dark: "#7B2FBE", light: "#0A0A0F" },
+      blackOnWhite: { dark: "#000000", light: "#FFFFFF" },
+      whiteOnBlack: { dark: "#FFFFFF", light: "#000000" },
+    };
+    QRCode.toDataURL(eventUrl, { width: 600, margin: 2, color: palette[qrColorKey] })
+      .then(setMainQrUrl)
+      .catch(() => {});
+  }, [event, qrColorKey]);
 
   function downloadCodeQR(ac: AccessCode) {
     const dataUrl = qrUrls[ac.id];
@@ -664,27 +686,65 @@ export default function AdminEventDetailPage() {
                 value={String(event.super_likes_max ?? 1)}
               />
               <InfoRow label="Slug" value={event.unique_slug} />
-              {event.qr_code_url && (
-                <div>
-                  <label className="text-xs font-semibold block mb-1" style={{ color: "#8585A8" }}>
+              {(mainQrUrl || event.qr_code_url) && (
+                <div className="lg:col-span-2">
+                  <label className="text-xs font-semibold block mb-2" style={{ color: "#8585A8" }}>
                     Codigo QR
                   </label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={event.qr_code_url}
+                      src={mainQrUrl || event.qr_code_url || ""}
                       alt="QR"
-                      className="w-20 h-20 rounded-xl"
-                      style={{ background: "#fff" }}
+                      className="w-32 h-32 rounded-xl shrink-0"
+                      style={{ background: qrColorKey === "blackOnWhite" ? "#FFF" : qrColorKey === "whiteOnBlack" ? "#000" : "#0A0A0F" }}
                     />
-                    <a
-                      href={event.qr_code_url}
-                      download={`qr-${event.unique_slug}.png`}
-                      className="px-3 py-1.5 rounded-xl text-xs font-semibold"
-                      style={{ background: "rgba(26,110,255,0.15)", color: "#1A6EFF" }}
-                    >
-                      Descargar QR
-                    </a>
+                    <div className="flex flex-col gap-2 flex-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#44445A" }}>
+                        Color
+                      </span>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {([
+                          { k: "pink", label: "Rosa", swatch: "#FF2D78", bg: "#0A0A0F" },
+                          { k: "purple", label: "Morado", swatch: "#7B2FBE", bg: "#0A0A0F" },
+                          { k: "blackOnWhite", label: "Negro / blanco", swatch: "#000000", bg: "#FFFFFF" },
+                          { k: "whiteOnBlack", label: "Blanco / negro", swatch: "#FFFFFF", bg: "#000000" },
+                        ] as const).map((opt) => {
+                          const active = qrColorKey === opt.k;
+                          return (
+                            <button
+                              key={opt.k}
+                              type="button"
+                              onClick={() => setQrColorKey(opt.k)}
+                              className="flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-semibold transition-colors text-left"
+                              style={{
+                                background: active ? "rgba(255,45,120,0.12)" : "rgba(255,255,255,0.04)",
+                                border: `1px solid ${active ? "rgba(255,45,120,0.4)" : "rgba(255,255,255,0.06)"}`,
+                                color: active ? "#FF2D78" : "#F0F0FF",
+                              }}
+                            >
+                              <span
+                                className="w-5 h-5 rounded shrink-0"
+                                style={{ background: opt.bg, border: "1px solid rgba(255,255,255,0.15)" }}
+                              >
+                                <span className="block w-full h-full" style={{
+                                  background: `repeating-conic-gradient(${opt.swatch} 0% 25%, transparent 0% 50%) 50% / 50% 50%`,
+                                }} />
+                              </span>
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <a
+                        href={mainQrUrl || event.qr_code_url || ""}
+                        download={`qr-${event.unique_slug}-${qrColorKey}.png`}
+                        className="self-start mt-1 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                        style={{ background: "rgba(26,110,255,0.15)", color: "#1A6EFF" }}
+                      >
+                        Descargar PNG
+                      </a>
+                    </div>
                   </div>
                 </div>
               )}
