@@ -341,7 +341,8 @@ export default function NewEventPage() {
     setLoading(true);
     setError("");
 
-    // Build event_date ISO
+    // eventDate is a Date built from year/month/day in local time by the calendar
+    // widget, so cloning it and calling setHours() keeps the calendar day stable.
     const fullDate = new Date(eventDate);
     fullDate.setHours(eventHour, eventMinute, 0, 0);
 

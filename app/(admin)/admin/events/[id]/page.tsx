@@ -416,11 +416,12 @@ export default function AdminEventDetailPage() {
       if (editMaxGuests !== "") body.max_guests = Number(editMaxGuests);
 
       // Search window — recompute start + end from selected hour/minute against event date
+      // editDate is "YYYY-MM-DD"; parse parts manually so the Date is built in LOCAL time
+      // (new Date("YYYY-MM-DD") parses as UTC midnight, which shifts a day in negative offsets).
       if (editStartEnabled && editDate) {
-        const start = new Date(editDate);
-        start.setHours(editStartHour, editStartMinute, 0, 0);
-        const end = new Date(start);
-        end.setMinutes(end.getMinutes() + editDuration);
+        const [y, mo, d] = editDate.split("-").map(Number);
+        const start = new Date(y, mo - 1, d, editStartHour, editStartMinute, 0, 0);
+        const end = new Date(start.getTime() + editDuration * 60 * 1000);
         body.search_start_time = start.toISOString();
         body.search_end_time = end.toISOString();
       } else {

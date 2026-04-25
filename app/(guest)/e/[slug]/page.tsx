@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SelfieCapture from "@/components/camera/SelfieCapture";
 import PoweredBy from "@/components/event/PoweredBy";
+import { formatEventDate } from "@/lib/utils/date";
 import {
   EventPublic, EVENT_TYPE_LABELS, RELATION_TYPE_OPTIONS,
   GENDER_OPTIONS, LOOKING_FOR_OPTIONS, INTERESTS_CATALOG, DRINK_OPTIONS,
@@ -564,7 +565,7 @@ export default function EventLandingPage() {
   // ── STEP: Bienvenida (carrusel + glass) ──
   // Merge de intro + landing: UNA sola pantalla de acceso con fondo carrusel.
   if (step === "intro" && event) {
-    const niceDate = new Date(event.event_date).toLocaleDateString("es-MX", {
+    const niceDate = formatEventDate(event.event_date, {
       weekday: "long",
       day: "numeric",
       month: "long",

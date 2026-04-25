@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { formatEventDate } from "@/lib/utils/date";
 
 type Event = {
   id: string;
@@ -227,7 +228,7 @@ export default function DashboardPage() {
             const s = STATUS_COLORS[ev.status] ?? STATUS_COLORS.draft;
             const planInfo = PLAN_LABELS[ev.plan] ?? PLAN_LABELS.vibe;
             const typeIcon = TYPE_ICONS[ev.type] ?? TYPE_ICONS.other;
-            const date = new Date(ev.event_date).toLocaleDateString("es-MX", {
+            const date = formatEventDate(ev.event_date, {
               day: "numeric", month: "short", year: "numeric",
             });
             return (

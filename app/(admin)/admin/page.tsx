@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { formatEventDate } from "@/lib/utils/date";
 
 type Stats = {
   totalEvents: number;
@@ -201,7 +202,7 @@ export default function AdminHomePage() {
                     <p className="font-bold text-base truncate mb-1.5" style={{ color: "#F0F0FF" }}>{ev.name}</p>
                     <p className="text-xs font-medium truncate mb-0.5" style={{ color: "#8585A8" }}>Host: {ev.organizer.full_name}</p>
                     <p className="text-[11px] font-medium" style={{ color: "#44445A" }}>
-                      {new Date(ev.event_date).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+                      {formatEventDate(ev.event_date, { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   </div>
                   <div className="text-right ml-4 flex-shrink-0 flex flex-col items-end">

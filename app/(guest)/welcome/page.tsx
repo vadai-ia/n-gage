@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import PoweredBy from "@/components/event/PoweredBy";
+import { formatEventDate } from "@/lib/utils/date";
 
 type EventItem = {
   id: string;
@@ -118,7 +119,7 @@ export default function WelcomePage() {
                 >
                   <p className="font-semibold text-sm" style={{ color: "#F0F0FF" }}>{reg.event.name}</p>
                   <p className="text-xs mt-1" style={{ color: "#8585A8" }}>
-                    {new Date(reg.event.event_date).toLocaleDateString("es-MX", {
+                    {formatEventDate(reg.event.event_date, {
                       day: "numeric", month: "long", year: "numeric",
                     })}
                     {reg.event.venue_name && ` · ${reg.event.venue_name}`}

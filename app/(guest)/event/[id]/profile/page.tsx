@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import SelfieCapture from "@/components/camera/SelfieCapture";
 import { RELATION_TYPE_OPTIONS, GENDER_OPTIONS, LOOKING_FOR_OPTIONS, INTERESTS_CATALOG, DRINK_OPTIONS } from "@/types/event";
 import { getRelationLabel } from "@/lib/utils/relationLabels";
+import { formatEventDate } from "@/lib/utils/date";
 
 type MyReg = {
   selfie_url: string;
@@ -565,7 +566,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold truncate" style={{ color: "#F0F0FF" }}>{r.event.name}</p>
                     <p className="text-[10px]" style={{ color: "#8585A8" }}>
-                      {new Date(r.event.event_date).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+                      {formatEventDate(r.event.event_date, { day: "numeric", month: "short", year: "numeric" })}
                       {r.event.venue_name && ` · ${r.event.venue_name}`}
                     </p>
                   </div>

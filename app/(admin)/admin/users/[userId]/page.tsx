@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { formatEventDate } from "@/lib/utils/date";
 
 type UserDetail = {
   id: string;
@@ -160,7 +161,7 @@ export default function UserDetailPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate" style={{ color: "#F0F0FF" }}>{r.event.name}</p>
                   <p className="text-[10px]" style={{ color: "#8585A8" }}>
-                    {new Date(r.event.event_date).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })}
+                    {formatEventDate(r.event.event_date, { day: "numeric", month: "short", year: "numeric" })}
                     {r.event.venue_city && ` · ${r.event.venue_city}`}
                   </p>
                 </div>

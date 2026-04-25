@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { formatEventDate } from "@/lib/utils/date";
 
 type Event = {
   id: string;
@@ -310,7 +311,7 @@ export default function AdminEventsPage() {
                         {ev.name}
                       </Link>
                       <p className="text-[10px]" style={{ color: "#44445A" }}>
-                        {new Date(ev.event_date).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })} &middot; {ev.organizer.full_name}
+                        {formatEventDate(ev.event_date, { day: "numeric", month: "short", year: "numeric" })} &middot; {ev.organizer.full_name}
                       </p>
                     </td>
                     <td className="px-4 py-3 text-xs" style={{ color: "#8585A8" }}>
@@ -403,7 +404,7 @@ function EventCard({ ev, onDelete, onClose, onToggleStatus }: {
             {ev.organizer.full_name} &middot; {ev.venue_city ?? "Sin ciudad"}
           </p>
           <p className="text-[10px] mt-0.5" style={{ color: "#44445A" }}>
-            {new Date(ev.event_date).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" })} &middot; {TYPE_LABEL[ev.type] ?? ev.type}
+            {formatEventDate(ev.event_date, { day: "numeric", month: "short", year: "numeric" })} &middot; {TYPE_LABEL[ev.type] ?? ev.type}
           </p>
         </Link>
         <div className="flex flex-col items-end gap-1 shrink-0">

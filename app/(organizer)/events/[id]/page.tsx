@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { getRelationLabel } from "@/lib/utils/relationLabels";
+import { formatEventDate } from "@/lib/utils/date";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Types ───────────────────────────────────────────────
@@ -438,7 +439,7 @@ export default function EventDetailPage() {
             {event.name}
           </h1>
           <p className="text-sm mt-1" style={{ color: "#8585A8" }}>
-            {new Date(event.event_date).toLocaleDateString("es-MX", {
+            {formatEventDate(event.event_date, {
               weekday: "long", day: "numeric", month: "long", year: "numeric",
             })}
             {event.venue_city ? ` · ${event.venue_city}` : ""}

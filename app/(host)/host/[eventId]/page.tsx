@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { formatEventDate } from "@/lib/utils/date";
 
 type EventData = {
   id: string;
@@ -72,7 +73,7 @@ export default function HostHomePage() {
     );
   }
 
-  const eventDate = new Date(event.event_date).toLocaleDateString("es-MX", {
+  const eventDate = formatEventDate(event.event_date, {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
