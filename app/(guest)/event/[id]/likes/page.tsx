@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { getRelationLabel } from "@/lib/utils/relationLabels";
 import WindowGate from "@/components/event/WindowGate";
+import MatchModal from "@/components/swipe/MatchModal";
 
 type LikeEntry = {
   id: string;
@@ -23,12 +24,21 @@ type LikeEntry = {
   };
 };
 
+type MatchPopup = {
+  matchId: string;
+  myPhoto: string;
+  theirPhoto: string;
+  theirName: string;
+};
+
 export default function LikesPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const router = useRouter();
   const [likes, setLikes] = useState<LikeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [matching, setMatching] = useState<string | null>(null);
+  const [mySelfie, setMySelfie] = useState<string>("");
+  const [matchPopup, setMatchPopup] = useState<MatchPopup | null>(null);
 
   // Window status
   const [windowEnded, setWindowEnded] = useState(false);
@@ -46,26 +56,45 @@ export default function LikesPage() {
       fetch(`/api/v1/events/${eventId}/likes?direction=received`).then((r) => r.json()),
       fetch(`/api/v1/events/${eventId}/reviews`).then((r) => r.json()),
       fetch(`/api/v1/events/${eventId}/window-status`).then((r) => r.json()),
-    ]).then(([likesData, reviewData, windowData]) => {
+      fetch(`/api/v1/events/${eventId}/my-registration`).then((r) => r.json()),
+    ]).then(([likesData, reviewData, windowData, regData]) => {
       setLikes(likesData.likes ?? []);
       setHasReviewed(reviewData.reviewed ?? false);
       setWindowEnded(windowData.window_status === "ended");
+      setMySelfie(regData?.registration?.selfie_url ?? "");
       setLoading(false);
     });
   }, [eventId]);
 
-  async function handleMatch(fromUserId: string) {
-    setMatching(fromUserId);
+  async function handleMatch(like: LikeEntry) {
+    setMatching(like.from_user_id);
     if (navigator.vibrate) navigator.vibrate(20);
-    const res = await fetch(`/api/v1/events/${eventId}/matches`, {
+
+    // Use the likes endpoint so backend detects the mutual like and creates the match atomically
+    const res = await fetch(`/api/v1/events/${eventId}/likes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ with_user_id: fromUserId }),
+      body: JSON.stringify({ to_user_id: like.from_user_id, type: "like" }),
     });
-    if (res.ok) {
+    const data = await res.json().catch(() => null);
+    setMatching(null);
+
+    if (res.ok && data?.is_match && data.match) {
+      const reg = like.event.registrations.find((r) => r.user_id === like.from_user_id);
+      const theirPhoto = reg?.selfie_url || like.from_user.avatar_url || "";
+      const theirName = reg?.display_name || like.from_user.full_name;
+      setMatchPopup({
+        matchId: data.match.id,
+        myPhoto: mySelfie,
+        theirPhoto,
+        theirName,
+      });
+      // Optimistically remove the like from the list (it has now turned into a match)
+      setLikes((prev) => prev.filter((l) => l.from_user_id !== like.from_user_id));
+    } else if (res.ok) {
+      // Edge case: like recorded but no mutual yet — go to matches anyway
       router.push(`/event/${eventId}/matches`);
     }
-    setMatching(null);
   }
 
   async function submitReview() {
@@ -178,7 +207,7 @@ export default function LikesPage() {
                   {/* Match button — only during open window */}
                   {!windowEnded ? (
                     <button
-                      onClick={() => handleMatch(like.from_user_id)}
+                      onClick={() => handleMatch(like)}
                       disabled={matching === like.from_user_id}
                       className="w-full py-3 text-xs font-bold transition-all active:scale-[0.97] disabled:opacity-60 flex items-center justify-center gap-1.5"
                       style={{
@@ -327,6 +356,20 @@ export default function LikesPage() {
         )}
       </AnimatePresence>
     </div>
+
+    {matchPopup && (
+      <MatchModal
+        matchId={matchPopup.matchId}
+        myPhoto={matchPopup.myPhoto}
+        theirPhoto={matchPopup.theirPhoto}
+        theirName={matchPopup.theirName}
+        onClose={() => setMatchPopup(null)}
+        onChat={() => {
+          setMatchPopup(null);
+          router.push(`/event/${eventId}/matches`);
+        }}
+      />
+    )}
     </WindowGate>
   );
 }

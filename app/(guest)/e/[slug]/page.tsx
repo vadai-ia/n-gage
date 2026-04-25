@@ -49,7 +49,6 @@ export default function EventLandingPage() {
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [drink, setDrink] = useState("");
   const [bio, setBio] = useState("");
-  const [interestStep, setInterestStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
   // Photo carousel (background de bienvenida)
@@ -984,7 +983,7 @@ export default function EventLandingPage() {
     ? { wizard_team: 1, wizard_mesa: 2, wizard_selfie: 3, wizard_gallery: 4, wizard_interests: 5, wizard_bio: 6, wizard_gender: 7 }
     : { wizard_mesa: 1, wizard_selfie: 2, wizard_gallery: 3, wizard_interests: 4, wizard_bio: 5, wizard_gender: 6 };
 
-  function WizardHeader({ currentStep, title, subtitle }: { currentStep: string; title: string; subtitle?: string }) {
+  function WizardHeader({ currentStep, title, subtitle, hint }: { currentStep: string; title: string; subtitle?: string; hint?: string }) {
     const n = stepNumber[currentStep] ?? 1;
     const progress = (n / TOTAL_WIZARD_STEPS) * 100;
     return (
@@ -999,7 +998,25 @@ export default function EventLandingPage() {
           </div>
         </div>
         <h2 className="text-2xl font-black tracking-tight mb-1" style={{ color: textPrimary }}>{title}</h2>
-        {subtitle && <p className="text-sm mb-5" style={{ color: textSecondary }}>{subtitle}</p>}
+        {subtitle && <p className="text-sm" style={{ color: textSecondary }}>{subtitle}</p>}
+        {hint && (
+          <div
+            className="mt-3 mb-5 flex items-start gap-2 p-3 rounded-2xl"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,45,120,0.08), rgba(123,47,190,0.08))",
+              border: "1px solid rgba(255,45,120,0.15)",
+            }}
+          >
+            <span
+              className="w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0"
+              style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}
+            >
+              i
+            </span>
+            <p className="text-[12px] leading-snug" style={{ color: "rgba(240,240,255,0.85)" }}>{hint}</p>
+          </div>
+        )}
+        {!hint && <div className="mb-5" />}
       </>
     );
   }
@@ -1013,7 +1030,12 @@ export default function EventLandingPage() {
     }
     return (
       <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
-        <WizardHeader currentStep="wizard_team" title="Vienes de parte de la novia o del novio?" subtitle="Ayudanos a identificar con que equipo estas" />
+        <WizardHeader
+          currentStep="wizard_team"
+          title="Vienes de parte de la novia o del novio?"
+          subtitle="Ayudanos a identificar con que equipo estas"
+          hint="Esto solo lo ven los novios y los anfitriones. Tu equipo, tu secreto — pero ayuda mucho a romper el hielo."
+        />
         <div className="flex flex-col gap-2.5 mb-6">
           {RELATION_TYPE_OPTIONS.map((r) => (
             <button key={r.value} onClick={() => setRelationType(r.value)}
@@ -1040,7 +1062,12 @@ export default function EventLandingPage() {
   if (step === "wizard_mesa") {
     return (
       <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
-        <WizardHeader currentStep="wizard_mesa" title="Tu mesa en el evento" subtitle="Compartela o manten el misterio" />
+        <WizardHeader
+          currentStep="wizard_mesa"
+          title="Tu mesa en el evento"
+          subtitle="Compartela o manten el misterio"
+          hint="Si la compartes, sera mas facil que te encuentren cuando algo bonito pase. Si la ocultas, que vengan a buscarte."
+        />
         <div className="flex flex-col gap-5 mb-6">
           <div>
             <label className="text-xs font-medium mb-1.5 block" style={{ color: textSecondary }}>
@@ -1102,7 +1129,12 @@ export default function EventLandingPage() {
   if (step === "wizard_selfie") {
     return (
       <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
-        <WizardHeader currentStep="wizard_selfie" title="Tu selfie del evento" subtitle="Es obligatoria — asi te reconoceran los demas" />
+        <WizardHeader
+          currentStep="wizard_selfie"
+          title="Tu selfie del evento"
+          subtitle="Es obligatoria — asi te reconoceran los demas"
+          hint="Sin filtros, sin galeria. Solo tu, en tiempo real. Es lo unico que la gente vera primero — vale la pena la sonrisa."
+        />
 
         <div className="flex justify-center mb-6">
           <SelfieCapture onCapture={(url) => setSelfieDataUrl(url)}
@@ -1129,7 +1161,12 @@ export default function EventLandingPage() {
   if (step === "wizard_gallery") {
     return (
       <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
-        <WizardHeader currentStep="wizard_gallery" title="Tu galeria (opcional)" subtitle={`Agrega hasta 5 fotos mas. Al tocar tu tarjeta las veran todas.`} />
+        <WizardHeader
+          currentStep="wizard_gallery"
+          title="Tu galeria (opcional)"
+          subtitle={`Agrega hasta 5 fotos mas. Al tocar tu tarjeta las veran todas.`}
+          hint="Una sola foto cuenta poco. Mientras mas muestres de ti, mas conexion generas — y mas likes recibes."
+        />
 
         {/* Photos grid */}
         <div className="grid grid-cols-3 gap-2 mb-4">
@@ -1239,66 +1276,79 @@ export default function EventLandingPage() {
 
   // ── STEP 5: Interests (3 sub-steps) ──
   if (step === "wizard_interests") {
-    const currentCatalog = INTERESTS_CATALOG[interestStep];
-    const isLastSubStep = interestStep === INTERESTS_CATALOG.length - 1;
     return (
       <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
-        <WizardHeader currentStep="wizard_interests" title={currentCatalog.title} subtitle={`${interestStep + 1} de ${INTERESTS_CATALOG.length} categorias`} />
-        <p className="text-xs mb-4" style={{ color: textMuted }}>Los intereses en comun se resaltan en las tarjetas</p>
+        <WizardHeader
+          currentStep="wizard_interests"
+          title="Que te define?"
+          subtitle="Selecciona lo que va contigo — sin presion, sin minimos"
+          hint="Los intereses en comun se resaltan en cada tarjeta. Mientras mas honesto seas con lo que te gusta, mejor calidad de match."
+        />
 
-        <div className="grid grid-cols-3 gap-2.5 mb-5">
-          {currentCatalog.options.map((opt) => {
-            const selected = selectedInterests.includes(opt.value);
-            return (
-              <button key={opt.value} onClick={() => toggleInterest(opt.value)}
-                className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl"
-                style={{
-                  background: selected ? selectionBg : "rgba(255,255,255,0.03)",
-                  border: `1px solid ${selected ? pink : borderSubtle}`,
-                }}>
-                <span className="text-2xl">{opt.emoji}</span>
-                <span className="text-xs font-medium text-center" style={{ color: selected ? pink : textSecondary }}>
-                  {opt.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {isLastSubStep && (
-          <div className="mb-5">
-            <p className="text-xs font-bold mb-2" style={{ color: textPrimary }}>Tu bebida favorita?</p>
-            <div className="flex flex-wrap gap-2">
-              {DRINK_OPTIONS.map((d) => (
-                <button key={d.value} onClick={() => setDrink(d.value === drink ? "" : d.value)}
-                  className="py-2 px-4 rounded-xl text-sm font-medium"
-                  style={{
-                    background: drink === d.value ? selectionBgPurple : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${drink === d.value ? purple : borderSubtle}`,
-                    color: drink === d.value ? purple : textSecondary,
-                  }}>
-                  {d.label}
-                </button>
-              ))}
+        {INTERESTS_CATALOG.map((catalog) => (
+          <div key={catalog.step} className="mb-5">
+            <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: pink }}>
+              {catalog.title}
+            </p>
+            <div className="grid grid-cols-3 gap-2.5">
+              {catalog.options.map((opt) => {
+                const selected = selectedInterests.includes(opt.value);
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => toggleInterest(opt.value)}
+                    className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all active:scale-[0.97]"
+                    style={{
+                      background: selected ? selectionBg : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${selected ? pink : borderSubtle}`,
+                    }}
+                  >
+                    <span className="text-2xl">{opt.emoji}</span>
+                    <span className="text-xs font-medium text-center" style={{ color: selected ? pink : textSecondary }}>
+                      {opt.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        )}
+        ))}
+
+        <div className="mb-6">
+          <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: purple }}>
+            Tu bebida favorita
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {DRINK_OPTIONS.map((d) => (
+              <button
+                key={d.value}
+                onClick={() => setDrink(d.value === drink ? "" : d.value)}
+                className="py-2 px-4 rounded-xl text-sm font-medium transition-all active:scale-[0.97]"
+                style={{
+                  background: drink === d.value ? selectionBgPurple : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${drink === d.value ? purple : borderSubtle}`,
+                  color: drink === d.value ? purple : textSecondary,
+                }}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="flex gap-3 mt-auto">
-          <button onClick={() => {
-              if (interestStep > 0) setInterestStep((s) => s - 1);
-              else setStep("wizard_gallery");
-            }}
+          <button
+            onClick={() => setStep("wizard_gallery")}
             className="flex-1 py-3.5 rounded-xl font-semibold text-sm"
-            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}>
+            style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${borderLight}`, color: textSecondary }}
+          >
             Atras
           </button>
-          <button onClick={() => {
-              if (isLastSubStep) setStep("wizard_bio");
-              else setInterestStep((s) => s + 1);
-            }}
+          <button
+            onClick={() => setStep("wizard_bio")}
             className="flex-1 py-3.5 rounded-xl font-bold text-sm"
-            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}>
+            style={{ background: gradientCta, color: "#fff", boxShadow: glowShadow }}
+          >
             Continuar
           </button>
         </div>
@@ -1310,7 +1360,12 @@ export default function EventLandingPage() {
   if (step === "wizard_bio") {
     return (
       <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
-        <WizardHeader currentStep="wizard_bio" title="Una pequena bio" subtitle="No solo importa el look, tambien el feel" />
+        <WizardHeader
+          currentStep="wizard_bio"
+          title="Una pequena bio"
+          subtitle="No solo importa el look, tambien el feel"
+          hint="El selfie llama la atencion. La bio decide si se quedan a ver mas. Una linea con personalidad puede cambiarlo todo."
+        />
 
         <textarea placeholder="Ej. Amante del cafe, los perros y las buenas platicas..."
           value={bio} onChange={(e) => setBio(e.target.value.slice(0, 160))} rows={4}
@@ -1341,7 +1396,12 @@ export default function EventLandingPage() {
   if (step === "wizard_gender") {
     return (
       <div className="min-h-screen flex flex-col px-4 py-8" style={{ background: bg }}>
-        <WizardHeader currentStep="wizard_gender" title="A quien quieres encontrar?" subtitle="Este es el filtro mas importante de tu experiencia" />
+        <WizardHeader
+          currentStep="wizard_gender"
+          title="A quien quieres encontrar?"
+          subtitle="Este es el filtro mas importante de tu experiencia"
+          hint="Define a quien ves y a quien le apareces. Tomalo en serio — el algoritmo es honesto, no adivina."
+        />
 
         <div className="flex flex-col gap-5 mb-6">
           <div>

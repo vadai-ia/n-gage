@@ -82,6 +82,36 @@ type Like = {
   to_user: { full_name: string };
 };
 
+type AnalyticsMatch = {
+  id: string;
+  matched_at: string;
+  initiated_by: string | null;
+  user_a: { id: string; full_name: string; avatar_url: string | null; selfie_url: string | null; gender: string | null };
+  user_b: { id: string; full_name: string; avatar_url: string | null; selfie_url: string | null; gender: string | null };
+  shared_interests: string[];
+  affinity_percent: number;
+  messages_count: number;
+};
+
+type Analytics = {
+  summary: {
+    registrations_total: number;
+    likes_total: number;
+    likes_positive: number;
+    super_likes_total: number;
+    dislikes_total: number;
+    matches_total: number;
+    avg_affinity_percent: number;
+    match_conversion_percent: number;
+    messages_total: number;
+  };
+  likes_by_type: Record<string, number>;
+  likes_by_gender_pair: Record<string, number>;
+  gender_distribution: Record<string, number>;
+  top_liked: { user_id: string; count: number; display_name: string | null; selfie_url: string | null }[];
+  matches: AnalyticsMatch[];
+};
+
 type AccessCode = {
   id: string;
   code: string;
@@ -176,6 +206,8 @@ export default function AdminEventDetailPage() {
   const [likes, setLikes] = useState<Like[]>([]);
   const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
   const [tabLoading, setTabLoading] = useState(false);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   // New code creation
   const [newCodeType, setNewCodeType] = useState("global");
@@ -252,13 +284,18 @@ export default function AdminEventDetailPage() {
         })
         .catch(() => setTabLoading(false));
     } else if (tab === "matches") {
-      fetch(`/api/v1/events/${id}/matches`)
-        .then((r) => r.json())
-        .then((d) => {
-          setMatches(d.matches ?? []);
+      setAnalyticsLoading(true);
+      Promise.all([
+        fetch(`/api/v1/events/${id}/matches`).then((r) => r.json()),
+        fetch(`/api/v1/events/${id}/analytics`).then((r) => r.json()),
+      ])
+        .then(([mData, aData]) => {
+          setMatches(mData.matches ?? []);
+          if (!aData.error) setAnalytics(aData);
           setTabLoading(false);
+          setAnalyticsLoading(false);
         })
-        .catch(() => setTabLoading(false));
+        .catch(() => { setTabLoading(false); setAnalyticsLoading(false); });
     } else if (tab === "fotos") {
       fetch(`/api/v1/events/${id}/photos`)
         .then((r) => r.json())
@@ -268,13 +305,18 @@ export default function AdminEventDetailPage() {
         })
         .catch(() => setTabLoading(false));
     } else if (tab === "likes") {
-      fetch(`/api/v1/events/${id}/likes`)
-        .then((r) => r.json())
-        .then((d) => {
-          setLikes(d.likes ?? []);
+      setAnalyticsLoading(true);
+      Promise.all([
+        fetch(`/api/v1/events/${id}/likes`).then((r) => r.json()),
+        fetch(`/api/v1/events/${id}/analytics`).then((r) => r.json()),
+      ])
+        .then(([lData, aData]) => {
+          setLikes(lData.likes ?? []);
+          if (!aData.error) setAnalytics(aData);
           setTabLoading(false);
+          setAnalyticsLoading(false);
         })
-        .catch(() => setTabLoading(false));
+        .catch(() => { setTabLoading(false); setAnalyticsLoading(false); });
     } else if (tab === "codigos") {
       fetch(`/api/v1/events/${id}/codes`)
         .then((r) => r.json())
@@ -1101,68 +1143,11 @@ export default function AdminEventDetailPage() {
 
         {/* ─── MATCHES TAB ─── */}
         {tab === "matches" && (
-          <div>
-            <h2 className="text-sm font-bold mb-4" style={{ color: "#F0F0FF" }}>
-              Matches ({matches.length})
-            </h2>
-            {tabLoading ? (
-              <TabSkeleton />
-            ) : matches.length === 0 ? (
-              <EmptyTab message="No hay matches en este evento" />
-            ) : (
-              <div className="flex flex-col gap-2">
-                {matches.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ background: "rgba(255,255,255,0.03)" }}
-                  >
-                    {/* User A avatar */}
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold overflow-hidden flex-shrink-0"
-                      style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}
-                    >
-                      {m.user_a.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={m.user_a.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        m.user_a.full_name?.charAt(0) ?? "?"
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold" style={{ color: "#F0F0FF" }}>
-                        {m.user_a.full_name}
-                        <span style={{ color: "#FF2D78" }}> &hearts; </span>
-                        {m.user_b.full_name}
-                      </p>
-                      <div className="flex gap-3 mt-0.5">
-                        <span className="text-xs" style={{ color: "#44445A" }}>
-                          {new Date(m.matched_at).toLocaleDateString("es-MX")}
-                        </span>
-                        <span className="text-xs" style={{ color: "#7B2FBE" }}>
-                          {m._count.messages} mensajes
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* User B avatar */}
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold overflow-hidden flex-shrink-0"
-                      style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}
-                    >
-                      {m.user_b.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={m.user_b.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        m.user_b.full_name?.charAt(0) ?? "?"
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <MatchesDashboard
+            tabLoading={tabLoading}
+            analyticsLoading={analyticsLoading}
+            analytics={analytics}
+          />
         )}
 
         {/* ─── PHOTOS TAB ─── */}
@@ -1216,64 +1201,12 @@ export default function AdminEventDetailPage() {
 
         {/* ─── LIKES TAB ─── */}
         {tab === "likes" && (
-          <div>
-            <h2 className="text-sm font-bold mb-2" style={{ color: "#F0F0FF" }}>
-              Likes ({likes.length})
-            </h2>
-            {stats && (
-              <div className="flex gap-4 mb-4">
-                <span className="text-xs" style={{ color: "#10B981" }}>
-                  {stats.likesByType.like} likes
-                </span>
-                <span className="text-xs" style={{ color: "#EF4444" }}>
-                  {stats.likesByType.dislike} dislikes
-                </span>
-                <span className="text-xs" style={{ color: "#FFB800" }}>
-                  {stats.likesByType.super_like} super likes
-                </span>
-              </div>
-            )}
-            {tabLoading ? (
-              <TabSkeleton />
-            ) : likes.length === 0 ? (
-              <EmptyTab message="No hay likes en este evento" />
-            ) : (
-              <div className="flex flex-col gap-1">
-                {likes.map((l) => (
-                  <div
-                    key={l.id}
-                    className="flex items-center gap-3 p-2.5 rounded-xl"
-                    style={{ background: "rgba(255,255,255,0.02)" }}
-                  >
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0 min-w-[70px] text-center"
-                      style={{
-                        background: `${LIKE_TYPE_COLOR[l.type] ?? "#555"}20`,
-                        color: LIKE_TYPE_COLOR[l.type] ?? "#555",
-                      }}
-                    >
-                      {LIKE_TYPE_LABEL[l.type] ?? l.type}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate" style={{ color: "#F0F0FF" }}>
-                        <span className="font-semibold">{l.from_user.full_name}</span>
-                        <span style={{ color: "#44445A" }}> &rarr; </span>
-                        <span className="font-semibold">{l.to_user.full_name}</span>
-                      </p>
-                    </div>
-                    <span className="text-xs flex-shrink-0" style={{ color: "#44445A" }}>
-                      {new Date(l.created_at).toLocaleString("es-MX", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        day: "numeric",
-                        month: "short",
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <LikesDashboard
+            tabLoading={tabLoading}
+            analyticsLoading={analyticsLoading}
+            analytics={analytics}
+            likes={likes}
+          />
         )}
 
         {/* ─── ACCESS CODES TAB ─── */}
@@ -1532,6 +1465,253 @@ function EmptyTab({ message }: { message: string }) {
       <p className="text-sm" style={{ color: "#44445A" }}>
         {message}
       </p>
+    </div>
+  );
+}
+
+/* ─── Dashboard helpers ─── */
+
+function StatCard({ label, value, color = "#F0F0FF", sub }: { label: string; value: string | number; color?: string; sub?: string }) {
+  return (
+    <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <p className="text-[10px] uppercase tracking-wider font-bold mb-1.5" style={{ color: "#44445A" }}>{label}</p>
+      <p className="text-2xl font-black tracking-tight" style={{ color }}>{value}</p>
+      {sub && <p className="text-[10px] mt-1" style={{ color: "#44445A" }}>{sub}</p>}
+    </div>
+  );
+}
+
+function GenderPairChart({ pairs, label, color }: { pairs: Record<string, number>; label: string; color: string }) {
+  const entries: Array<{ key: string; from: string; to: string; count: number }> = [];
+  for (const [key, count] of Object.entries(pairs)) {
+    if (count === 0) continue;
+    const [from, , to] = key.split("_");
+    entries.push({ key, from, to, count });
+  }
+  entries.sort((a, b) => b.count - a.count);
+  const max = Math.max(1, ...entries.map((e) => e.count));
+
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#8585A8" }}>{label}</p>
+        <p className="text-xs" style={{ color: "#44445A" }}>Sin datos todavia.</p>
+      </div>
+    );
+  }
+
+  const labelFor = (k: string) => GENDER_LABEL[k] ?? k;
+  const arrow = (from: string, to: string) => `${labelFor(from)} → ${labelFor(to)}`;
+
+  return (
+    <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#8585A8" }}>{label}</p>
+      <div className="flex flex-col gap-2.5">
+        {entries.map((e) => (
+          <div key={e.key} className="flex items-center gap-3">
+            <span className="text-xs font-medium w-32 shrink-0" style={{ color: "#F0F0FF" }}>
+              {arrow(e.from, e.to)}
+            </span>
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.04)" }}>
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${(e.count / max) * 100}%`, background: color, boxShadow: `0 0 8px ${color}66` }}
+              />
+            </div>
+            <span className="text-xs font-bold w-8 text-right shrink-0" style={{ color }}>{e.count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MatchesDashboard({ tabLoading, analyticsLoading, analytics }: {
+  tabLoading: boolean;
+  analyticsLoading: boolean;
+  analytics: Analytics | null;
+}) {
+  if (tabLoading || analyticsLoading || !analytics) return <TabSkeleton />;
+  const s = analytics.summary;
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div>
+        <h2 className="text-base font-black mb-0.5" style={{ color: "#F0F0FF" }}>Analitica de matches</h2>
+        <p className="text-xs" style={{ color: "#44445A" }}>Resumen, afinidad por pareja y conversaciones generadas.</p>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Matches" value={s.matches_total} color="#FF2D78" />
+        <StatCard label="Afinidad promedio" value={`${s.avg_affinity_percent}%`} color="#7B2FBE" sub="Intereses en comun" />
+        <StatCard label="Conversion" value={`${s.match_conversion_percent}%`} color="#1A6EFF" sub="Likers que matchearon" />
+        <StatCard label="Mensajes enviados" value={s.messages_total} color="#10B981" />
+      </div>
+
+      {/* Match list with affinity */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#8585A8" }}>
+          Matches del evento
+        </p>
+        {analytics.matches.length === 0 ? (
+          <EmptyTab message="No hay matches todavia" />
+        ) : (
+          <div className="flex flex-col gap-2">
+            {analytics.matches.map((m) => {
+              const aPic = m.user_a.selfie_url || m.user_a.avatar_url;
+              const bPic = m.user_b.selfie_url || m.user_b.avatar_url;
+              const aff = m.affinity_percent;
+              const affColor = aff >= 70 ? "#10B981" : aff >= 40 ? "#FFB800" : "#8585A8";
+              return (
+                <div key={m.id} className="flex items-center gap-3 p-3 rounded-xl"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.04)" }}>
+                  <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0" style={{ background: "rgba(255,45,120,0.15)" }}>
+                    {aPic ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={aPic} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs font-bold" style={{ color: "#FF2D78" }}>
+                        {m.user_a.full_name?.charAt(0) ?? "?"}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: "#F0F0FF" }}>
+                      {m.user_a.full_name}
+                      <span style={{ color: "#FF2D78" }}> ♥ </span>
+                      {m.user_b.full_name}
+                    </p>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="text-[11px]" style={{ color: "#44445A" }}>
+                        {new Date(m.matched_at).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      {m.shared_interests.length > 0 && (
+                        <span className="text-[11px]" style={{ color: "#7B2FBE" }}>
+                          {m.shared_interests.length} intereses en comun
+                        </span>
+                      )}
+                      <span className="text-[11px]" style={{ color: "#7B2FBE" }}>
+                        {m.messages_count} msg
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-0.5 shrink-0">
+                    <span className="text-[10px] uppercase tracking-wider font-bold" style={{ color: "#44445A" }}>Afinidad</span>
+                    <span className="text-sm font-black" style={{ color: affColor }}>{aff}%</span>
+                  </div>
+                  <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0" style={{ background: "rgba(255,45,120,0.15)" }}>
+                    {bPic ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={bPic} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs font-bold" style={{ color: "#FF2D78" }}>
+                        {m.user_b.full_name?.charAt(0) ?? "?"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LikesDashboard({ tabLoading, analyticsLoading, analytics, likes }: {
+  tabLoading: boolean;
+  analyticsLoading: boolean;
+  analytics: Analytics | null;
+  likes: Like[];
+}) {
+  if (tabLoading || analyticsLoading || !analytics) return <TabSkeleton />;
+  const s = analytics.summary;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <h2 className="text-base font-black mb-0.5" style={{ color: "#F0F0FF" }}>Analitica de likes</h2>
+        <p className="text-xs" style={{ color: "#44445A" }}>Quien le da like a quien, y cuanto se convierte en match.</p>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Likes positivos" value={s.likes_positive} color="#10B981" />
+        <StatCard label="Super likes" value={s.super_likes_total} color="#FFB800" />
+        <StatCard label="Dislikes" value={s.dislikes_total} color="#EF4444" />
+        <StatCard label="Conversion" value={`${s.match_conversion_percent}%`} color="#FF2D78" sub="A match" />
+      </div>
+
+      {/* Gender pair chart */}
+      <GenderPairChart
+        pairs={analytics.likes_by_gender_pair}
+        label="Likes por genero (de → a)"
+        color="#FF2D78"
+      />
+
+      {/* Top liked profiles */}
+      {analytics.top_liked.length > 0 && (
+        <div className="rounded-2xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+          <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: "#8585A8" }}>
+            Perfiles mas likeados
+          </p>
+          <div className="flex flex-col gap-2">
+            {analytics.top_liked.map((t, i) => (
+              <div key={t.user_id} className="flex items-center gap-3">
+                <span className="w-5 text-center text-xs font-black" style={{ color: i === 0 ? "#FFB800" : "#44445A" }}>
+                  {i + 1}
+                </span>
+                <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0" style={{ background: "rgba(255,45,120,0.15)" }}>
+                  {t.selfie_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={t.selfie_url} alt="" className="w-full h-full object-cover" />
+                  ) : null}
+                </div>
+                <span className="flex-1 text-sm truncate" style={{ color: "#F0F0FF" }}>{t.display_name ?? "Sin nombre"}</span>
+                <span className="text-sm font-black" style={{ color: "#FF2D78" }}>{t.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Raw likes log */}
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: "#8585A8" }}>
+          Registro completo ({likes.length})
+        </p>
+        {likes.length === 0 ? (
+          <EmptyTab message="No hay likes en este evento" />
+        ) : (
+          <div className="flex flex-col gap-1">
+            {likes.map((l) => (
+              <div key={l.id} className="flex items-center gap-3 p-2.5 rounded-xl"
+                style={{ background: "rgba(255,255,255,0.02)" }}>
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0 min-w-[70px] text-center"
+                  style={{
+                    background: `${LIKE_TYPE_COLOR[l.type] ?? "#555"}20`,
+                    color: LIKE_TYPE_COLOR[l.type] ?? "#555",
+                  }}>
+                  {LIKE_TYPE_LABEL[l.type] ?? l.type}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm truncate" style={{ color: "#F0F0FF" }}>
+                    <span className="font-semibold">{l.from_user.full_name}</span>
+                    <span style={{ color: "#44445A" }}> → </span>
+                    <span className="font-semibold">{l.to_user.full_name}</span>
+                  </p>
+                </div>
+                <span className="text-xs flex-shrink-0" style={{ color: "#44445A" }}>
+                  {new Date(l.created_at).toLocaleString("es-MX", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
