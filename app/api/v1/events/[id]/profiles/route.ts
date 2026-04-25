@@ -52,18 +52,23 @@ export async function GET(
     select: {
       search_start_time: true,
       search_end_time: true,
+      search_duration_minutes: true,
       match_mode: true,
       super_likes_max: true,
     },
   });
   const now = new Date();
+  const hasGlobalWindow = !!(eventInfo?.search_start_time && eventInfo?.search_end_time);
   if (eventInfo?.search_start_time && now < eventInfo.search_start_time) {
     return NextResponse.json({
       profiles: [],
       window_status: "before_start",
       search_start_time: eventInfo.search_start_time.toISOString(),
+      search_end_time: eventInfo.search_end_time?.toISOString() ?? null,
+      search_duration_minutes: eventInfo.search_duration_minutes,
       match_mode: eventInfo.match_mode,
       super_likes_max: eventInfo.super_likes_max,
+      has_global_window: hasGlobalWindow,
     });
   }
   if (eventInfo?.search_end_time && now > eventInfo.search_end_time) {
@@ -72,6 +77,7 @@ export async function GET(
       window_status: "ended",
       match_mode: eventInfo?.match_mode,
       super_likes_max: eventInfo?.super_likes_max,
+      has_global_window: hasGlobalWindow,
     });
   }
 
@@ -157,6 +163,10 @@ export async function GET(
     window_status: "open",
     match_mode: eventInfo?.match_mode,
     super_likes_max: eventInfo?.super_likes_max ?? 1,
+    search_start_time: eventInfo?.search_start_time?.toISOString() ?? null,
+    search_end_time: eventInfo?.search_end_time?.toISOString() ?? null,
+    search_duration_minutes: eventInfo?.search_duration_minutes,
+    has_global_window: hasGlobalWindow,
     my_likes_given,
   });
 }

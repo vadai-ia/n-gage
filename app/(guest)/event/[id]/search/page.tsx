@@ -42,6 +42,8 @@ export default function SearchPage() {
   const [singlesCount, setSinglesCount] = useState<number>(0);
   const [windowStatus, setWindowStatus] = useState<WindowStatus>(null);
   const [searchStartTime, setSearchStartTime] = useState<string | null>(null);
+  const [searchEndTime, setSearchEndTime] = useState<string | null>(null);
+  const [hasGlobalWindow, setHasGlobalWindow] = useState(false);
   const [countdown, setCountdown] = useState("");
   const [matchMode, setMatchMode] = useState<"swipe" | "mosaic">("swipe");
   const [superLikesMax, setSuperLikesMax] = useState<number>(1);
@@ -70,11 +72,14 @@ export default function SearchPage() {
         if (d.window_status === "before_start") {
           setWindowStatus("before_start");
           setSearchStartTime(d.search_start_time ?? null);
+          setSearchEndTime(d.search_end_time ?? null);
+          setHasGlobalWindow(!!d.has_global_window);
           setLoading(false);
           return;
         }
         if (d.window_status === "ended") {
           setWindowStatus("ended");
+          setHasGlobalWindow(!!d.has_global_window);
           setLoading(false);
           return;
         }
@@ -85,14 +90,29 @@ export default function SearchPage() {
         if (d.match_mode) setMatchMode(d.match_mode);
         if (typeof d.super_likes_max === "number") setSuperLikesMax(d.super_likes_max);
         if (Array.isArray(d.my_likes_given)) setMyLikesGiven(d.my_likes_given);
-        if (d.my_registration?.search_started_at) setStarted(true);
-        if (d.my_registration?.search_expires_at) {
-          const exp = new Date(d.my_registration.search_expires_at) < new Date();
-          setExpired(exp);
-          if (d.my_registration.search_started_at) {
-            const total = new Date(d.my_registration.search_expires_at).getTime()
-              - new Date(d.my_registration.search_started_at).getTime();
-            setEventDuration(total / 60000);
+
+        const globalWindow = !!d.has_global_window;
+        setHasGlobalWindow(globalWindow);
+        setSearchStartTime(d.search_start_time ?? null);
+        setSearchEndTime(d.search_end_time ?? null);
+
+        if (globalWindow && d.search_end_time) {
+          // Global window: timer is shared by everyone; auto-start the swipe view
+          setStarted(true);
+          setExpired(new Date(d.search_end_time) < new Date());
+          if (typeof d.search_duration_minutes === "number") {
+            setEventDuration(d.search_duration_minutes);
+          }
+        } else {
+          if (d.my_registration?.search_started_at) setStarted(true);
+          if (d.my_registration?.search_expires_at) {
+            const exp = new Date(d.my_registration.search_expires_at) < new Date();
+            setExpired(exp);
+            if (d.my_registration.search_started_at) {
+              const total = new Date(d.my_registration.search_expires_at).getTime()
+                - new Date(d.my_registration.search_started_at).getTime();
+              setEventDuration(total / 60000);
+            }
           }
         }
         setLoading(false);
@@ -554,9 +574,9 @@ export default function SearchPage() {
             }}>N&apos;GAGE</span>
           </span>
 
-          {myReg.search_expires_at && (
+          {(hasGlobalWindow ? searchEndTime : myReg.search_expires_at) && (
             <Timer
-              expiresAt={myReg.search_expires_at}
+              expiresAt={(hasGlobalWindow ? searchEndTime! : myReg.search_expires_at!) as string}
               totalMinutes={eventDuration}
               onExpire={() => setExpired(true)}
             />

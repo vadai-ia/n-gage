@@ -13,16 +13,27 @@ export async function POST(
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    select: { search_duration_minutes: true },
+    select: {
+      search_duration_minutes: true,
+      search_start_time: true,
+      search_end_time: true,
+    },
   });
   if (!event) return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
 
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + event.search_duration_minutes * 60 * 1000);
+  // If a global window is configured, ALL users share it — pin per-user fields to it
+  // so the timer is identical for everyone, regardless of when they pressed start.
+  const expiresAt = event.search_end_time
+    ? event.search_end_time
+    : new Date(now.getTime() + event.search_duration_minutes * 60 * 1000);
+  const startedAt = event.search_start_time && now > event.search_start_time
+    ? event.search_start_time
+    : now;
 
   const registration = await prisma.eventRegistration.update({
     where: { event_id_user_id: { event_id: eventId, user_id: user.id } },
-    data: { search_started_at: now, search_expires_at: expiresAt },
+    data: { search_started_at: startedAt, search_expires_at: expiresAt },
   });
 
   return NextResponse.json({ registration });
