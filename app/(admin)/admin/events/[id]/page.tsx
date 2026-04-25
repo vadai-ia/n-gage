@@ -57,14 +57,6 @@ type Registration = {
   user: { id: string; full_name: string; email: string; avatar_url: string | null };
 };
 
-type Match = {
-  id: string;
-  matched_at: string;
-  user_a: { full_name: string; avatar_url: string | null };
-  user_b: { full_name: string; avatar_url: string | null };
-  _count: { messages: number };
-};
-
 type Photo = {
   id: string;
   cloudinary_url: string;
@@ -201,7 +193,6 @@ export default function AdminEventDetailPage() {
 
   // Tab data
   const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [likes, setLikes] = useState<Like[]>([]);
   const [accessCodes, setAccessCodes] = useState<AccessCode[]>([]);
@@ -285,12 +276,9 @@ export default function AdminEventDetailPage() {
         .catch(() => setTabLoading(false));
     } else if (tab === "matches") {
       setAnalyticsLoading(true);
-      Promise.all([
-        fetch(`/api/v1/events/${id}/matches`).then((r) => r.json()),
-        fetch(`/api/v1/events/${id}/analytics`).then((r) => r.json()),
-      ])
-        .then(([mData, aData]) => {
-          setMatches(mData.matches ?? []);
+      fetch(`/api/v1/events/${id}/analytics`)
+        .then((r) => r.json())
+        .then((aData) => {
           if (!aData.error) setAnalytics(aData);
           setTabLoading(false);
           setAnalyticsLoading(false);
