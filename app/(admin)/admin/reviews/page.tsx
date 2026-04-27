@@ -37,12 +37,20 @@ type ByEvent = {
   would_use_again_pct: number;
 };
 
+type ListPayload = {
+  order: "latest" | "top" | "bottom";
+  page: number;
+  limit: number; // 0 = all
+  page_size: number;
+  total: number;
+  total_pages: number;
+  items: Review[];
+};
+
 type AdminReviewsResponse = {
   summary: Summary;
   by_event: ByEvent[];
-  latest: Review[];
-  top: Review[];
-  bottom: Review[];
+  list: ListPayload;
 };
 
 type Tab = "latest" | "top" | "bottom";
@@ -52,6 +60,14 @@ const TAB_LABEL: Record<Tab, string> = {
   top: "Mejores reseñas",
   bottom: "Peores reseñas",
 };
+
+const PAGE_SIZE_OPTIONS: { value: number; label: string }[] = [
+  { value: 10, label: "10" },
+  { value: 25, label: "25" },
+  { value: 50, label: "50" },
+  { value: 100, label: "100" },
+  { value: 0, label: "Todas" },
+];
 
 function StarRow({ rating, size = 14 }: { rating: number; size?: number }) {
   return (
@@ -93,22 +109,45 @@ function StatCard({ label, value, sub, color = "#F0F0FF" }: {
 export default function AdminReviewsPage() {
   const [data, setData] = useState<AdminReviewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(false);
   const [tab, setTab] = useState<Tab>("latest");
+  const [pageSize, setPageSize] = useState<number>(10); // 0 means all
+  const [page, setPage] = useState<number>(1);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    fetch(`/api/v1/admin/reviews`)
+    const isInitial = data === null;
+    if (isInitial) setLoading(true);
+    else setListLoading(true);
+    const url = `/api/v1/admin/reviews?order=${tab}&page=${page}&limit=${pageSize === 0 ? "all" : pageSize}`;
+    fetch(url)
       .then((r) => r.json())
       .then((d: AdminReviewsResponse | { error: string }) => {
         if ("error" in d) return;
         setData(d);
+        // Server clamps the page to total_pages — keep UI in sync
+        if (d.list.page !== page) setPage(d.list.page);
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => {
+        setLoading(false);
+        setListLoading(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, pageSize, page]);
+
+  // Reset to page 1 when changing the order or page size
+  function changeTab(t: Tab) {
+    setTab(t);
+    setPage(1);
+  }
+  function changePageSize(n: number) {
+    setPageSize(n);
+    setPage(1);
+  }
 
   const reviews = useMemo<Review[]>(() => {
     if (!data) return [];
-    const base = data[tab];
+    const base = data.list.items;
     if (!query.trim()) return base;
     const q = query.toLowerCase();
     return base.filter((r) =>
@@ -117,7 +156,7 @@ export default function AdminReviewsPage() {
       (r.comment ?? "").toLowerCase().includes(q) ||
       r.event.name.toLowerCase().includes(q)
     );
-  }, [data, tab, query]);
+  }, [data, query]);
 
   if (loading) {
     return (
@@ -230,25 +269,48 @@ export default function AdminReviewsPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-3 flex-wrap">
-        {(Object.keys(TAB_LABEL) as Tab[]).map((t) => {
-          const active = tab === t;
-          return (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className="px-4 py-2 rounded-xl text-xs font-bold transition-all"
-              style={{
-                background: active ? "rgba(255,45,120,0.12)" : "rgba(255,255,255,0.04)",
-                border: `1px solid ${active ? "rgba(255,45,120,0.4)" : "rgba(255,255,255,0.06)"}`,
-                color: active ? "#FF2D78" : "#8585A8",
-              }}
-            >
-              {TAB_LABEL[t]}
-            </button>
-          );
-        })}
+      {/* Tabs + page size */}
+      <div className="flex flex-wrap gap-2 mb-3 items-center justify-between">
+        <div className="flex gap-2 flex-wrap">
+          {(Object.keys(TAB_LABEL) as Tab[]).map((t) => {
+            const active = tab === t;
+            return (
+              <button
+                key={t}
+                onClick={() => changeTab(t)}
+                className="px-4 py-2 rounded-xl text-xs font-bold transition-all"
+                style={{
+                  background: active ? "rgba(255,45,120,0.12)" : "rgba(255,255,255,0.04)",
+                  border: `1px solid ${active ? "rgba(255,45,120,0.4)" : "rgba(255,255,255,0.06)"}`,
+                  color: active ? "#FF2D78" : "#8585A8",
+                }}
+              >
+                {TAB_LABEL[t]}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-[10px] uppercase tracking-wider font-bold" style={{ color: "#44445A" }}>
+            Mostrar
+          </label>
+          <select
+            value={pageSize}
+            onChange={(e) => changePageSize(Number(e.target.value))}
+            className="px-3 py-2 rounded-xl text-xs font-bold outline-none cursor-pointer"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              color: "#F0F0FF",
+            }}
+          >
+            {PAGE_SIZE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value} style={{ background: "#0F0F1A" }}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Search */}
@@ -279,7 +341,14 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Reviews list */}
-      <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)" }}>
+      <div
+        className="rounded-2xl overflow-hidden relative transition-opacity"
+        style={{
+          background: "rgba(255,255,255,0.02)",
+          border: "1px solid rgba(255,255,255,0.04)",
+          opacity: listLoading ? 0.55 : 1,
+        }}
+      >
         {/* Header row */}
         <div className="hidden md:grid px-4 py-3 text-[10px] font-bold uppercase tracking-wider"
           style={{ color: "#44445A", borderBottom: "1px solid rgba(255,255,255,0.04)", gridTemplateColumns: "1.4fr 1.2fr 1fr 2fr 0.6fr" }}>
@@ -367,6 +436,60 @@ export default function AdminReviewsPage() {
           })
         )}
       </div>
+
+      {/* Pagination */}
+      {pageSize > 0 && data.list.total > 0 && (
+        <div className="flex items-center justify-between gap-3 mt-4">
+          <p className="text-xs" style={{ color: "#44445A" }}>
+            {(() => {
+              const from = (data.list.page - 1) * pageSize + 1;
+              const to = Math.min(data.list.page * pageSize, data.list.total);
+              return `Mostrando ${from}–${to} de ${data.list.total}`;
+            })()}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={data.list.page <= 1 || listLoading}
+              aria-label="Pagina anterior"
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform active:scale-95 disabled:opacity-40"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                color: "#F0F0FF",
+              }}
+            >
+              <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <span className="text-xs font-bold px-2" style={{ color: "#F0F0FF" }}>
+              {data.list.page} <span style={{ color: "#44445A" }}>de {data.list.total_pages}</span>
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(data.list.total_pages, p + 1))}
+              disabled={data.list.page >= data.list.total_pages || listLoading}
+              aria-label="Pagina siguiente"
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform active:scale-95 disabled:opacity-40"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                color: "#F0F0FF",
+              }}
+            >
+              <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {pageSize === 0 && data.list.total > 0 && (
+        <p className="text-xs mt-4 text-right" style={{ color: "#44445A" }}>
+          Mostrando las {data.list.total} reseñas.
+        </p>
+      )}
     </div>
   );
 }
