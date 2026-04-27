@@ -269,48 +269,25 @@ export default function AdminReviewsPage() {
         </div>
       </div>
 
-      {/* Tabs + page size */}
-      <div className="flex flex-wrap gap-2 mb-3 items-center justify-between">
-        <div className="flex gap-2 flex-wrap">
-          {(Object.keys(TAB_LABEL) as Tab[]).map((t) => {
-            const active = tab === t;
-            return (
-              <button
-                key={t}
-                onClick={() => changeTab(t)}
-                className="px-4 py-2 rounded-xl text-xs font-bold transition-all"
-                style={{
-                  background: active ? "rgba(255,45,120,0.12)" : "rgba(255,255,255,0.04)",
-                  border: `1px solid ${active ? "rgba(255,45,120,0.4)" : "rgba(255,255,255,0.06)"}`,
-                  color: active ? "#FF2D78" : "#8585A8",
-                }}
-              >
-                {TAB_LABEL[t]}
-              </button>
-            );
-          })}
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-[10px] uppercase tracking-wider font-bold" style={{ color: "#44445A" }}>
-            Mostrar
-          </label>
-          <select
-            value={pageSize}
-            onChange={(e) => changePageSize(Number(e.target.value))}
-            className="px-3 py-2 rounded-xl text-xs font-bold outline-none cursor-pointer"
-            style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              color: "#F0F0FF",
-            }}
-          >
-            {PAGE_SIZE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value} style={{ background: "#0F0F1A" }}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Tabs */}
+      <div className="flex gap-2 mb-3 flex-wrap">
+        {(Object.keys(TAB_LABEL) as Tab[]).map((t) => {
+          const active = tab === t;
+          return (
+            <button
+              key={t}
+              onClick={() => changeTab(t)}
+              className="px-4 py-2 rounded-xl text-xs font-bold transition-all"
+              style={{
+                background: active ? "rgba(255,45,120,0.12)" : "rgba(255,255,255,0.04)",
+                border: `1px solid ${active ? "rgba(255,45,120,0.4)" : "rgba(255,255,255,0.06)"}`,
+                color: active ? "#FF2D78" : "#8585A8",
+              }}
+            >
+              {TAB_LABEL[t]}
+            </button>
+          );
+        })}
       </div>
 
       {/* Search */}
@@ -437,58 +414,77 @@ export default function AdminReviewsPage() {
         )}
       </div>
 
-      {/* Pagination */}
-      {pageSize > 0 && data.list.total > 0 && (
-        <div className="flex items-center justify-between gap-3 mt-4">
+      {/* Footer: counter (left) + page size + pagination (right) */}
+      {data.list.total > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
           <p className="text-xs" style={{ color: "#44445A" }}>
-            {(() => {
-              const from = (data.list.page - 1) * pageSize + 1;
-              const to = Math.min(data.list.page * pageSize, data.list.total);
-              return `Mostrando ${from}–${to} de ${data.list.total}`;
-            })()}
+            {pageSize === 0
+              ? `Mostrando las ${data.list.total} reseñas.`
+              : (() => {
+                  const from = (data.list.page - 1) * pageSize + 1;
+                  const to = Math.min(data.list.page * pageSize, data.list.total);
+                  return `Mostrando ${from}–${to} de ${data.list.total}`;
+                })()}
           </p>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={data.list.page <= 1 || listLoading}
-              aria-label="Pagina anterior"
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform active:scale-95 disabled:opacity-40"
+            <label className="text-[10px] uppercase tracking-wider font-bold" style={{ color: "#44445A" }}>
+              Mostrar
+            </label>
+            <select
+              value={pageSize}
+              onChange={(e) => changePageSize(Number(e.target.value))}
+              className="px-3 py-2 rounded-xl text-xs font-bold outline-none cursor-pointer"
               style={{
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.06)",
                 color: "#F0F0FF",
               }}
             >
-              <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-            <span className="text-xs font-bold px-2" style={{ color: "#F0F0FF" }}>
-              {data.list.page} <span style={{ color: "#44445A" }}>de {data.list.total_pages}</span>
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(data.list.total_pages, p + 1))}
-              disabled={data.list.page >= data.list.total_pages || listLoading}
-              aria-label="Pagina siguiente"
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform active:scale-95 disabled:opacity-40"
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                color: "#F0F0FF",
-              }}
-            >
-              <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
+              {PAGE_SIZE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value} style={{ background: "#0F0F1A" }}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            {pageSize > 0 && (
+              <>
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={data.list.page <= 1 || listLoading}
+                  aria-label="Pagina anterior"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform active:scale-95 disabled:opacity-40"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    color: "#F0F0FF",
+                  }}
+                >
+                  <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <span className="text-xs font-bold px-2" style={{ color: "#F0F0FF" }}>
+                  {data.list.page} <span style={{ color: "#44445A" }}>de {data.list.total_pages}</span>
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(data.list.total_pages, p + 1))}
+                  disabled={data.list.page >= data.list.total_pages || listLoading}
+                  aria-label="Pagina siguiente"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform active:scale-95 disabled:opacity-40"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    color: "#F0F0FF",
+                  }}
+                >
+                  <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
         </div>
-      )}
-
-      {pageSize === 0 && data.list.total > 0 && (
-        <p className="text-xs mt-4 text-right" style={{ color: "#44445A" }}>
-          Mostrando las {data.list.total} reseñas.
-        </p>
       )}
     </div>
   );

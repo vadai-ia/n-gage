@@ -4,8 +4,8 @@
  *
  * Crea:
  *  1. Super Admin   — alejandro.martinez@vadai.com.mx
- *  2. Organizer     — organizer@ngage.app
- *  3. Host          — host@ngage.app
+ *  2. Organizer     — organizer@ngage.com.mx
+ *  3. Host          — host@ngage.com.mx
  */
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
@@ -32,13 +32,13 @@ const USERS = [
     role: "SUPER_ADMIN" as const,
   },
   {
-    email: "organizer@ngage.app",
+    email: "organizer@ngage.com.mx",
     name: "Organizador Demo",
     password: "Demo2025!",
     role: "EVENT_ORGANIZER" as const,
   },
   {
-    email: "host@ngage.app",
+    email: "host@ngage.com.mx",
     name: "Host Demo",
     password: "Demo2025!",
     role: "EVENT_HOST" as const,
@@ -180,8 +180,8 @@ async function main() {
   console.log("\n=== LISTO ===");
   console.log("Usuarios creados:");
   console.log("  1. SUPER_ADMIN    — alejandro.martinez@vadai.com.mx / #VA2025&InteligYour");
-  console.log("  2. EVENT_ORGANIZER — organizer@ngage.app / Demo2025!");
-  console.log("  3. EVENT_HOST      — host@ngage.app / Demo2025!");
+  console.log("  2. EVENT_ORGANIZER — organizer@ngage.com.mx / Demo2025!");
+  console.log("  3. EVENT_HOST      — host@ngage.com.mx / Demo2025!");
   console.log("\nAccede en: http://localhost:3000/login\n");
 
   await prisma.$disconnect();

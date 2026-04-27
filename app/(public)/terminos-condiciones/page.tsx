@@ -121,9 +121,9 @@ export default function TerminosPage() {
           <p className="text-xs"><strong style={{ color: "#F0F0FF" }}>12.1 Responsable:</strong> VADAI, Ciudad de Mexico, Mexico.</p>
           <p className="text-xs mt-2"><strong style={{ color: "#F0F0FF" }}>12.2 Datos que recabamos:</strong> Nombre, edad, fotografias, correo electronico, genero, orientacion de busqueda, intereses, bio, contenido generado (fotos, likes), y datos tecnicos (IP, user agent, sesion).</p>
           <p className="text-xs mt-2"><strong style={{ color: "#F0F0FF" }}>12.3 Finalidades primarias:</strong> Crear tu cuenta, permitir tu participacion en eventos, mostrar tu perfil, enviarte notificaciones, operar albums, cumplir obligaciones legales y prevenir fraude.</p>
-          <p className="text-xs mt-2"><strong style={{ color: "#F0F0FF" }}>12.4 Finalidades secundarias:</strong> Comunicaciones promocionales, encuestas de satisfaccion y analisis estadistico agregado. Puedes negarte enviando correo a privacidad@ngage.app.</p>
+          <p className="text-xs mt-2"><strong style={{ color: "#F0F0FF" }}>12.4 Finalidades secundarias:</strong> Comunicaciones promocionales, encuestas de satisfaccion y analisis estadistico agregado. Puedes negarte enviando correo a privacidad@ngage.com.mx.</p>
           <p className="text-xs mt-2"><strong style={{ color: "#F0F0FF" }}>12.5 Transferencias:</strong> A organizadores del evento, Event Hosts, proveedores de infraestructura y autoridades competentes. No vendemos ni rentamos datos a terceros.</p>
-          <p className="text-xs mt-2"><strong style={{ color: "#F0F0FF" }}>12.6 Derechos ARCO:</strong> Puedes ejercer tus derechos de Acceso, Rectificacion, Cancelacion y Oposicion enviando solicitud a privacidad@ngage.app. Responderemos en maximo 20 dias habiles.</p>
+          <p className="text-xs mt-2"><strong style={{ color: "#F0F0FF" }}>12.6 Derechos ARCO:</strong> Puedes ejercer tus derechos de Acceso, Rectificacion, Cancelacion y Oposicion enviando solicitud a privacidad@ngage.com.mx. Responderemos en maximo 20 dias habiles.</p>
           <p className="text-xs mt-2"><strong style={{ color: "#F0F0FF" }}>12.7 Conservacion:</strong> Datos del evento se conservan por el plazo fijado por el organizador. Datos de cuenta mientras permanezca activa. Copias de respaldo hasta 90 dias.</p>
           <p className="text-xs mt-2"><strong style={{ color: "#F0F0FF" }}>12.8 Seguridad:</strong> Cifrado en transito (HTTPS/TLS), cifrado en reposo, control de acceso por roles, hash de contrasenas y soft delete.</p>
         </section>
@@ -161,9 +161,9 @@ export default function TerminosPage() {
 
         <section>
           <h2 className="text-base font-black mb-2" style={{ color: "#F0F0FF" }}>19. CONTACTO</h2>
-          <p className="text-xs">Correo general: soporte@ngage.app</p>
-          <p className="text-xs">Datos personales y derechos ARCO: privacidad@ngage.app</p>
-          <p className="text-xs">Reportes de abuso: abuso@ngage.app</p>
+          <p className="text-xs">Correo general: soporte@ngage.com.mx</p>
+          <p className="text-xs">Datos personales y derechos ARCO: privacidad@ngage.com.mx</p>
+          <p className="text-xs">Reportes de abuso: abuso@ngage.com.mx</p>
         </section>
 
         <div className="rounded-xl p-4 mt-4" style={{ background: "#0F0F1A", border: "1px solid rgba(255,255,255,0.06)" }}>
