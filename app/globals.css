@@ -91,7 +91,6 @@ html, body {
 }
 
 html {
-  scroll-behavior: smooth;
   /* Prevent rubber-band / pull-to-refresh on iOS */
   overscroll-behavior-y: none;
 }
@@ -119,6 +118,10 @@ body {
   -webkit-overflow-scrolling: touch;
   /* Respect device safe areas */
   padding-top: env(safe-area-inset-top, 0px);
+  /* Smooth-scroll en el contenedor real de scroll, no en <html> (que no scrollea) */
+  scroll-behavior: smooth;
+  /* Offset cuando se navega a un #anchor con navbar fijo (h-16 / lg:h-20) */
+  scroll-padding-top: 96px;
 }
 
 .gradient-text {
