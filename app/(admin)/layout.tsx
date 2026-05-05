@@ -36,6 +36,14 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: "/admin/leads", label: "Leads",
+    icon: (
+      <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <path d="M3 7h18M3 12h18M3 17h12" /><circle cx="20" cy="17" r="3" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/reviews", label: "Calificaciones",
     icon: (
       <svg width={20} height={20} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
