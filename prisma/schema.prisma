@@ -95,6 +95,38 @@ enum MatchMode {
   mosaic
 }
 
+enum LeadStatus {
+  new
+  contacted
+  qualified
+  proposal
+  won
+  lost
+}
+
+enum LeadEventType {
+  wedding
+  quinceanera
+  graduation
+  festival
+  concert
+  private_party
+  sports
+  corporate
+  cruise_hotel
+  university
+  other
+}
+
+enum LeadEventSize {
+  s_lt_100
+  s_100_250
+  s_250_500
+  s_500_2k
+  s_2k_10k
+  s_gt_10k
+}
+
 // ─────────────────────────────────────────────
 // USERS
 // ─────────────────────────────────────────────
@@ -441,6 +473,48 @@ model ApiKey {
 // ─────────────────────────────────────────────
 // INTERESTS CATALOG
 // ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+// LEADS (formulario landing comercial)
+// ─────────────────────────────────────────────
+
+model Lead {
+  id                 String         @id @default(uuid())
+  full_name          String
+  email              String
+  phone              String
+  company            String?
+  event_type         LeadEventType
+  event_type_other   String?
+  event_size         LeadEventSize
+  event_date         DateTime?      @db.Date
+  event_location     String?
+  message            String?        @db.Text
+  referral_source    String?
+  newsletter_opt_in  Boolean        @default(false)
+  status             LeadStatus     @default(new)
+  source             String         @default("landing-main")
+  utm_source         String?
+  utm_medium         String?
+  utm_campaign       String?
+  utm_content        String?
+  utm_term           String?
+  user_agent         String?
+  ip_country         String?
+  notes              String?        @db.Text
+  assigned_to        String?
+  contacted_at       DateTime?
+  qualified_at       DateTime?
+  won_at             DateTime?
+  lost_at            DateTime?
+  lost_reason        String?
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @updatedAt
+
+  @@index([status])
+  @@index([created_at])
+  @@map("leads")
+}
 
 model InterestCategory {
   id      String           @id @default(uuid())
