@@ -191,3 +191,237 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════
+   N'GAGE LANDING — Sistema de Variantes
+   3 variantes: general (default) · weddings · events
+   Aplicado vía [data-variant] en <body>
+   ═════════════════════════════════════════════════════════════════ */
+
+/* === Tokens base (general/default — heredan al :root sin data-variant) === */
+:root {
+  --brand-crimson-deep: #C71F5C;
+  --brand-champagne: #D4A574;
+  --brand-champagne-soft: #E8C9A0;
+  --brand-cobalt: #1A6EFF;
+  --brand-cobalt-deep: #0F4FCC;
+
+  /* Variant tokens — default = general */
+  --v-bg: #07070F;
+  --v-bg-2: #0F0F1A;
+  --v-bg-3: #161625;
+  --v-fg: #F0F0FF;
+  --v-fg-2: #B8B8D0;
+  --v-fg-3: #6F6F8C;
+  --v-line: rgba(240, 240, 255, 0.08);
+  --v-line-2: rgba(240, 240, 255, 0.14);
+  --v-card: rgba(15, 15, 26, 0.6);
+  --v-card-strong: rgba(15, 15, 26, 0.85);
+  --v-accent: #FF2D78;
+  --v-accent-rgb: 255, 45, 120;
+  --v-accent-soft: #FFB800;
+  --v-gradient: linear-gradient(135deg, #FF2D78 0%, #C71F5C 25%, #7B2FBE 60%, #1A6EFF 100%);
+  --v-gradient-text: linear-gradient(135deg, #FF2D78 0%, #7B2FBE 50%, #1A6EFF 100%);
+  --v-glow: 0 0 80px rgba(255, 45, 120, 0.4);
+}
+
+/* === WEDDINGS — cream / champagne / rose === */
+body[data-variant="weddings"] {
+  --v-bg: #FAFAF6;
+  --v-bg-2: #F2EEE6;
+  --v-bg-3: #EAE2D2;
+  --v-fg: #1A140E;
+  --v-fg-2: #4A3D2F;
+  --v-fg-3: #8A7560;
+  --v-line: rgba(26, 20, 14, 0.10);
+  --v-line-2: rgba(26, 20, 14, 0.18);
+  --v-card: rgba(255, 255, 255, 0.55);
+  --v-card-strong: rgba(255, 255, 255, 0.85);
+  --v-accent: #D4A574;
+  --v-accent-rgb: 212, 165, 116;
+  --v-accent-soft: #E8C9A0;
+  --v-gradient: linear-gradient(135deg, #D4A574 0%, #E8C9A0 25%, #FF6B9D 65%, #C71F5C 100%);
+  --v-gradient-text: linear-gradient(135deg, #C71F5C 0%, #D4A574 100%);
+  --v-glow: 0 0 80px rgba(212, 165, 116, 0.55);
+  background-color: var(--v-bg);
+  color: var(--v-fg);
+}
+
+/* === EVENTS — deep navy / cobalt === */
+body[data-variant="events"] {
+  --v-bg: #050912;
+  --v-bg-2: #0A1024;
+  --v-bg-3: #11183A;
+  --v-fg: #ECF1FF;
+  --v-fg-2: #A6B4D8;
+  --v-fg-3: #5C6B8E;
+  --v-line: rgba(236, 241, 255, 0.08);
+  --v-line-2: rgba(236, 241, 255, 0.16);
+  --v-card: rgba(10, 16, 36, 0.6);
+  --v-card-strong: rgba(10, 16, 36, 0.88);
+  --v-accent: #1A6EFF;
+  --v-accent-rgb: 26, 110, 255;
+  --v-accent-soft: #00D4FF;
+  --v-gradient: linear-gradient(135deg, #0F4FCC 0%, #1A6EFF 35%, #B8B8C8 65%, #D4A574 100%);
+  --v-gradient-text: linear-gradient(135deg, #1A6EFF 0%, #D4A574 100%);
+  --v-glow: 0 0 80px rgba(26, 110, 255, 0.5);
+  background-color: var(--v-bg);
+  color: var(--v-fg);
+}
+
+/* Smooth fade entre variantes */
+body[data-variant] {
+  transition: background-color 0.6s ease, color 0.6s ease;
+}
+
+/* Variant-aware gradient text */
+.gradient-text-v {
+  background: var(--v-gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Inline accent highlights (usados en ledeHtml/manifestoHtml/pullquoteHtml) */
+.accent {
+  color: var(--v-accent);
+  font-style: italic;
+  font-weight: 500;
+}
+.accent-2 {
+  background: var(--v-gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+.accent-underline {
+  background-image: linear-gradient(
+    to top,
+    rgba(var(--v-accent-rgb), 0.32) 0%,
+    rgba(var(--v-accent-rgb), 0.32) 32%,
+    transparent 32%
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  padding: 0 0.08em;
+  border-radius: 2px;
+}
+
+/* Eyebrow utility: mono small uppercase con barra delante */
+.eyebrow-v {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--v-fg-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+.eyebrow-v::before {
+  content: "";
+  width: 24px;
+  height: 1px;
+  background: currentColor;
+}
+
+/* Aurora variant blobs — usadas en Hero */
+.aurora-v {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.aurora-v::before,
+.aurora-v::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.45;
+  mix-blend-mode: screen;
+  animation: float 18s ease-in-out infinite;
+}
+body[data-variant="weddings"] .aurora-v::before,
+body[data-variant="weddings"] .aurora-v::after {
+  mix-blend-mode: multiply;
+  opacity: 0.30;
+}
+.aurora-v::before {
+  width: 600px;
+  height: 600px;
+  background: var(--v-accent);
+  top: -120px;
+  left: -100px;
+}
+.aurora-v::after {
+  width: 700px;
+  height: 700px;
+  background: var(--brand-purple);
+  top: 30%;
+  right: -150px;
+  animation-delay: -6s;
+  animation-duration: 22s;
+}
+body[data-variant="weddings"] .aurora-v::after {
+  background: var(--brand-crimson-deep);
+}
+body[data-variant="events"] .aurora-v::after {
+  background: var(--brand-cobalt-deep);
+}
+
+/* Scroll progress bar — variant-aware */
+.scroll-progress-v {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--v-gradient);
+  transform-origin: left;
+  transform: scaleX(0);
+  z-index: 90;
+  pointer-events: none;
+  box-shadow: 0 0 12px var(--v-accent);
+  transition: transform 0.1s linear;
+}
+
+/* Reveal-on-scroll utility (inicial -> .in via IntersectionObserver) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Grain overlay (en <body>) */
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  z-index: 1;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/></svg>");
+}
+
+/* Cursor trail particle */
+.cursor-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--v-accent-rgb), 0.9), rgba(var(--v-accent-rgb), 0) 70%);
+  mix-blend-mode: screen;
+}
+body[data-variant="weddings"] .cursor-particle {
+  mix-blend-mode: normal;
+}
