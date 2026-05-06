@@ -15,7 +15,29 @@ import {
   type LeadFormInput,
 } from "@/lib/validations/lead.schema";
 import { Reveal } from "./Reveal";
+import { useVariant } from "./VariantProvider";
 import { captureUtmFromUrl, readStoredUtm } from "@/lib/landing/utm";
+
+const HEADER = {
+  general: {
+    eyebrow: "Hablemos de tu evento",
+    title: "Cuéntanos sobre",
+    titleEm: "tu evento",
+    sub: "Te respondemos en menos de 24 horas con una propuesta personalizada y, si quieres, una demo en vivo.",
+  },
+  weddings: {
+    eyebrow: "Hablemos de su boda",
+    title: "Cuéntennos sobre",
+    titleEm: "su día",
+    sub: "Les respondemos en menos de 24 horas con una propuesta personalizada y, si lo desean, una demo con la app brandeada.",
+  },
+  events: {
+    eyebrow: "Hablemos de tu evento profesional",
+    title: "Cuéntanos sobre",
+    titleEm: "tu evento",
+    sub: "Te respondemos en menos de 24 horas con propuesta económica, deck técnico y agenda de demo. NDA disponible si lo necesitas.",
+  },
+} as const;
 
 const REFERRAL_OPTIONS = [
   "Instagram", "TikTok", "Recomendación de un colega", "Búsqueda en Google",
@@ -23,6 +45,8 @@ const REFERRAL_OPTIONS = [
 ];
 
 export function ContactForm() {
+  const { variant } = useVariant();
+  const head = HEADER[variant];
   const [submitState, setSubmitState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [utm, setUtm] = useState<Record<string, string>>({});
@@ -77,7 +101,7 @@ export function ContactForm() {
   };
 
   return (
-    <section id="contacto" className="relative py-24 lg:py-32 overflow-hidden">
+    <section id="contacto" data-screen-label={`08 Contacto · ${variant}`} className="relative py-20 lg:py-28 overflow-hidden">
       <div
         aria-hidden
         className="absolute inset-0 -z-10 opacity-60 blur-3xl"
@@ -86,14 +110,23 @@ export function ContactForm() {
 
       <div className="max-w-6xl mx-auto px-5 lg:px-8">
         <Reveal className="text-center max-w-3xl mx-auto mb-12 lg:mb-16">
-          <p className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase mb-5" style={{ color: "#FF2D78" }}>
-            Hablemos de tu evento
-          </p>
-          <h2 className="font-display font-bold leading-tight mb-5" style={{ fontSize: "clamp(2rem, 5vw, 3.75rem)", color: "#F0F0FF" }}>
-            Cuéntanos sobre <span className="gradient-text italic">tu evento</span>.
+          <p className="eyebrow-v mb-5">{head.eyebrow}</p>
+          <h2
+            className="font-display font-bold leading-tight mb-5"
+            style={{
+              fontSize: "clamp(2rem, 5vw, 3.75rem)",
+              color: "var(--v-fg)",
+              fontWeight: variant === "weddings" ? 500 : 700,
+              letterSpacing: variant === "weddings" ? "-0.02em" : "-0.03em",
+            }}
+          >
+            {head.title}{" "}
+            <span className="gradient-text-v" style={{ fontStyle: "italic" }}>
+              {head.titleEm}
+            </span>.
           </h2>
-          <p className="text-base lg:text-lg" style={{ color: "#8585A8" }}>
-            Te respondemos en menos de 24 horas con una propuesta personalizada y, si quieres, una demo en vivo.
+          <p className="text-base lg:text-lg" style={{ color: "var(--v-fg-2)", textAlign: "center" }}>
+            {head.sub}
           </p>
         </Reveal>
 

@@ -1,14 +1,36 @@
 "use client";
 
+/**
+ * UseCases — Variant-aware.
+ *
+ * - General: muestra los 8 casos (cobertura amplia).
+ * - Weddings: muestra solo casos relevantes a celebraciones íntimas.
+ * - Events: muestra solo casos profesionales/corporativos/grandes.
+ * - Header (eyebrow/título/sub) cambia por variante.
+ */
+
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { X, ArrowRight, Heart, GraduationCap, Music, Sparkles, Trophy, Briefcase, Ship, Building2 } from "lucide-react";
+import {
+  X,
+  ArrowRight,
+  Heart,
+  GraduationCap,
+  Music,
+  Sparkles,
+  Trophy,
+  Briefcase,
+  Ship,
+  Building2,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Reveal } from "./Reveal";
 import Link from "next/link";
+import { useVariant } from "./VariantProvider";
 
 type UseCase = {
   id: string;
+  variants: Array<"general" | "weddings" | "events">;
   category: string;
   title: string;
   pitch: string;
@@ -22,10 +44,13 @@ type UseCase = {
 const CASES: UseCase[] = [
   {
     id: "bodas",
+    variants: ["general", "weddings"],
     category: "Bodas y XV años",
     title: "Que tu boda no termine con el pastel.",
-    pitch: "Tus invitados solteros se conocen, se conectan, y se llevan un álbum del día más importante. Comienzan historias que nadie planeó.",
-    detail: "El protocolo dice una cosa, la noche dice otra. N'GAGE convierte la mesa de solteros en territorio de exploración: matches en vivo, fotos compartidas, y un álbum colectivo que les llega días después. Tus novios viven el evento sabiendo que algo está pasando entre los suyos. El planner se diferencia con un servicio que ningún otro ofrece.",
+    pitch:
+      "Tus invitados solteros se conocen, se conectan, y se llevan un álbum del día más importante. Comienzan historias que nadie planeó.",
+    detail:
+      "El protocolo dice una cosa, la noche dice otra. N'GAGE convierte la mesa de solteros en territorio de exploración: matches en vivo, fotos compartidas, y un álbum colectivo que les llega días después. Tus novios viven el evento sabiendo que algo está pasando entre los suyos. El planner se diferencia con un servicio que ningún otro ofrece.",
     tag: "El éxito social del evento, garantizado",
     icon: Heart,
     gradient: "linear-gradient(135deg, rgba(255,45,120,0.4), rgba(123,47,190,0.2))",
@@ -33,10 +58,13 @@ const CASES: UseCase[] = [
   },
   {
     id: "graduaciones",
+    variants: ["general", "weddings"],
     category: "Graduaciones",
     title: "La generación que nunca se olvida.",
-    pitch: "Prom, fin de carrera, semana cultural. Los estudiantes conectan más allá de su grupo de siempre. Memoria generacional con marca institucional.",
-    detail: "Una generación entera reunida una sola vez, con la misma adrenalina de cierre de etapa. N'GAGE captura ese momento con identidad de la institución: colores, escudo, hashtags. El álbum colectivo se convierte en patrimonio digital de la promoción. RH/alumni aprovecha el dato para programas de comunidad post-egreso.",
+    pitch:
+      "Prom, fin de carrera, semana cultural. Los estudiantes conectan más allá de su grupo de siempre. Memoria generacional con marca institucional.",
+    detail:
+      "Una generación entera reunida una sola vez, con la misma adrenalina de cierre de etapa. N'GAGE captura ese momento con identidad de la institución: colores, escudo, hashtags. El álbum colectivo se convierte en patrimonio digital de la promoción. RH/alumni aprovecha el dato para programas de comunidad post-egreso.",
     tag: "Branding institucional · Memoria generacional",
     icon: GraduationCap,
     gradient: "linear-gradient(135deg, rgba(26,110,255,0.4), rgba(255,45,120,0.2))",
@@ -44,10 +72,13 @@ const CASES: UseCase[] = [
   },
   {
     id: "festivales",
+    variants: ["general", "events"],
     category: "Festivales y conciertos",
     title: "Miles de personas, mismas frecuencias.",
-    pitch: "El mismo gusto musical, el mismo lugar, la misma noche. N'GAGE convierte el caos en miles de microhistorias. Brandeable con line-up, escenarios y patrocinadores.",
-    detail: "Tres días de festival son un universo paralelo. N'GAGE crea zonas (escenario A, food court, camping) y match contextual entre ellas. Los patrocinadores activan en pantalla con call-outs reales: 'Cervezas X te invita un super like esta noche'. Datos first-party de comportamiento por hora, por escenario, por género musical.",
+    pitch:
+      "El mismo gusto musical, el mismo lugar, la misma noche. N'GAGE convierte el caos en miles de microhistorias. Brandeable con line-up, escenarios y patrocinadores.",
+    detail:
+      "Tres días de festival son un universo paralelo. N'GAGE crea zonas (escenario A, food court, camping) y match contextual entre ellas. Los patrocinadores activan en pantalla con call-outs reales. Datos first-party de comportamiento por hora, por escenario, por género musical.",
     tag: "Hasta 50,000+ invitados · Zonas múltiples · Multimarca",
     icon: Music,
     gradient: "linear-gradient(135deg, rgba(123,47,190,0.4), rgba(26,110,255,0.2))",
@@ -55,10 +86,13 @@ const CASES: UseCase[] = [
   },
   {
     id: "privados",
+    variants: ["general", "weddings"],
     category: "Eventos privados",
     title: "Cuando la lista es chica, la noche es enorme.",
-    pitch: "Cumpleaños grandes, after-parties, lanzamientos íntimos. Para esa fiesta donde todos se conocen a medias y nadie quiere romper el hielo primero.",
-    detail: "Eventos donde el host curó a los invitados pero todos vienen de mundos distintos. N'GAGE elimina la incomodidad de los primeros 30 minutos: cada quién explora la red de invitados, identifica a las personas que le interesan, y conecta sin la performance del 'hola, soy amigo de…'. Privacidad absoluta: solo los invitados al evento se ven entre sí.",
+    pitch:
+      "Cumpleaños grandes, after-parties, lanzamientos íntimos. Para esa fiesta donde todos se conocen a medias y nadie quiere romper el hielo primero.",
+    detail:
+      "Eventos donde el host curó a los invitados pero todos vienen de mundos distintos. N'GAGE elimina la incomodidad de los primeros 30 minutos: cada quién explora la red de invitados, identifica a las personas que le interesan, y conecta sin la performance del 'hola, soy amigo de…'. Privacidad absoluta.",
     tag: "Lista cerrada · Privacidad total",
     icon: Sparkles,
     gradient: "linear-gradient(135deg, rgba(255,184,0,0.4), rgba(255,45,120,0.2))",
@@ -66,10 +100,13 @@ const CASES: UseCase[] = [
   },
   {
     id: "deportivos",
+    variants: ["general", "events"],
     category: "Eventos deportivos",
     title: "Comunidad antes, durante y después de la prueba.",
-    pitch: "Carreras, retos fitness, ligas amateur. Los participantes conectan, comparten energía, y construyen comunidad. Match por categoría, equipo o ciudad.",
-    detail: "El reto físico genera adrenalina compartida que las apps tradicionales no capitalizan. N'GAGE arranca antes (warm-up social entre inscritos), explota durante (matches en estaciones, después de cruzar meta), y se queda después (comunidad permanente para la siguiente temporada). Re-engagement entre eventos vía email del organizador.",
+    pitch:
+      "Carreras, retos fitness, ligas amateur. Los participantes conectan, comparten energía, y construyen comunidad. Match por categoría, equipo o ciudad.",
+    detail:
+      "El reto físico genera adrenalina compartida que las apps tradicionales no capitalizan. N'GAGE arranca antes (warm-up social entre inscritos), explota durante (matches en estaciones, después de cruzar meta), y se queda después (comunidad permanente para la siguiente temporada).",
     tag: "Comunidad post-evento · Engagement entre temporadas",
     icon: Trophy,
     gradient: "linear-gradient(135deg, rgba(255,45,120,0.4), rgba(255,184,0,0.2))",
@@ -77,10 +114,13 @@ const CASES: UseCase[] = [
   },
   {
     id: "corporativos",
+    variants: ["general", "events"],
     category: "Eventos corporativos",
     title: "Networking que de verdad ocurre.",
-    pitch: "Onboardings, kick-offs, congresos, off-sites. Rompe el hielo entre áreas, sucursales, países. Métricas reales de conexión interna para RH.",
-    detail: "El cocktail de networking corporativo es notorio: tres ejecutivos talkando entre sí, todos los demás en sus celulares. N'GAGE da estructura sin perder casualidad: ice-breakers contextuales, match por área/intereses, mensajes asíncronos para retomar al día siguiente. RH recibe reportes: cuántas conexiones cross-team se generaron, qué nodos quedaron aislados, qué áreas se conectaron más.",
+    pitch:
+      "Onboardings, kick-offs, congresos, off-sites. Rompe el hielo entre áreas, sucursales, países. Métricas reales de conexión interna para RH.",
+    detail:
+      "El cocktail de networking corporativo es notorio: tres ejecutivos hablando entre sí, todos los demás en sus celulares. N'GAGE da estructura sin perder casualidad: ice-breakers contextuales, match por área/intereses, mensajes asíncronos para retomar al día siguiente. RH recibe reportes: cuántas conexiones cross-team se generaron, qué nodos quedaron aislados, qué áreas se conectaron más.",
     tag: "Networking medible · Reportes para HR · Multidominio",
     icon: Briefcase,
     gradient: "linear-gradient(135deg, rgba(26,110,255,0.4), rgba(123,47,190,0.2))",
@@ -88,10 +128,13 @@ const CASES: UseCase[] = [
   },
   {
     id: "cruceros",
+    variants: ["general", "events"],
     category: "Cruceros, hoteles y resorts",
     title: "Multi-día, multi-zona, multi-noche.",
-    pitch: "Una semana embarcado, un resort all-inclusive, un hotel boutique. Aumenta el NPS y el tiempo de estancia social. Re-engagement nocturno garantizado.",
-    detail: "El huésped solo o en pareja libre llega con expectativa social que el operador rara vez resuelve. N'GAGE crea capas: zona piscina de día, lounge de noche, excursiones del miércoles. La estancia se convierte en un mini-festival íntimo que dura 7 noches. F&B y entretenimiento brandean activaciones in-app. NPS post-estancia sube por la dimensión social que ningún competidor ofrece.",
+    pitch:
+      "Una semana embarcado, un resort all-inclusive, un hotel boutique. Aumenta el NPS y el tiempo de estancia social. Re-engagement nocturno garantizado.",
+    detail:
+      "El huésped solo o en pareja libre llega con expectativa social que el operador rara vez resuelve. N'GAGE crea capas: zona piscina de día, lounge de noche, excursiones del miércoles. La estancia se convierte en un mini-festival íntimo que dura 7 noches. F&B y entretenimiento brandean activaciones in-app.",
     tag: "Multi-día · Multi-zona · Re-engagement nocturno",
     icon: Ship,
     gradient: "linear-gradient(135deg, rgba(255,184,0,0.4), rgba(26,110,255,0.2))",
@@ -99,10 +142,13 @@ const CASES: UseCase[] = [
   },
   {
     id: "universidades",
+    variants: ["general", "events"],
     category: "Universidades",
     title: "Tu casa de estudios, también vive en pantalla.",
-    pitch: "Bienvenida de generación, semana cultural, congresos académicos. La universidad se brandea como parte del recuerdo y de la cultura institucional.",
-    detail: "Los estudiantes se gradúan habiendo conocido al 12% de su generación. N'GAGE abre la red durante eventos clave: bienvenida, ferias, congresos. La universidad mantiene control total del branding y los datos. Casos de uso secundarios: ferias de empleo (matching estudiante–reclutador), open houses (match prospectos–programa), reuniones de exalumnos.",
+    pitch:
+      "Bienvenida de generación, semana cultural, congresos académicos. La universidad se brandea como parte del recuerdo y de la cultura institucional.",
+    detail:
+      "Los estudiantes se gradúan habiendo conocido al 12% de su generación. N'GAGE abre la red durante eventos clave: bienvenida, ferias, congresos. La universidad mantiene control total del branding y los datos.",
     tag: "Branding institucional · Comunidad académica",
     icon: Building2,
     gradient: "linear-gradient(135deg, rgba(123,47,190,0.4), rgba(255,184,0,0.2))",
@@ -110,33 +156,79 @@ const CASES: UseCase[] = [
   },
 ];
 
+const HEADER = {
+  general: {
+    eyebrow: "Casos de uso",
+    title: "Donde sea que la gente se encuentre,",
+    titleEm: "N'GAGE pertenece",
+    sub: "Una sola plataforma, infinitas configuraciones. Algunos mundos donde N'GAGE ya vive.",
+  },
+  weddings: {
+    eyebrow: "Para qué celebraciones",
+    title: "Cada celebración es",
+    titleEm: "única",
+    sub: "Bodas, XV años, graduaciones, eventos íntimos. Donde la lista la curaste tú, las conexiones también deben ser memorables.",
+  },
+  events: {
+    eyebrow: "Para qué eventos",
+    title: "Eventos donde el networking",
+    titleEm: "es el producto",
+    sub: "Congresos, festivales, off-sites, deportivos, hospitality. Donde la métrica importante es cuántas relaciones reales se llevaron tus asistentes.",
+  },
+} as const;
+
 export function UseCases() {
+  const { variant } = useVariant();
   const [active, setActive] = useState<UseCase | null>(null);
+  const head = HEADER[variant];
+  const filtered = CASES.filter((c) => c.variants.includes(variant));
+
+  // Determinar columnas: general usa 4 (8 cases); las otras usan 3 (~4-5 cases)
+  const cols = variant === "general" ? "lg:grid-cols-4" : "lg:grid-cols-3";
 
   return (
-    <section id="casos-de-uso" className="relative py-24 lg:py-32 overflow-hidden">
+    <section
+      id="casos-de-uso"
+      data-screen-label={`03 Casos · ${variant}`}
+      className="relative py-20 lg:py-28 overflow-hidden"
+    >
       <div
         aria-hidden
         className="absolute inset-0 -z-10 opacity-40"
-        style={{ background: "radial-gradient(ellipse at top, rgba(123,47,190,0.15), transparent 60%)" }}
+        style={{
+          background:
+            "radial-gradient(ellipse at top, rgba(var(--v-accent-rgb), 0.15), transparent 60%)",
+        }}
       />
 
       <div className="max-w-7xl mx-auto px-5 lg:px-8">
-        <Reveal className="text-center max-w-3xl mx-auto mb-16">
-          <p className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase mb-5" style={{ color: "#FF2D78" }}>
-            Casos de uso
-          </p>
-          <h2 className="font-display font-bold leading-tight mb-5" style={{ fontSize: "clamp(1.85rem, 4.5vw, 3.5rem)", color: "#F0F0FF" }}>
-            Donde sea que la gente se encuentre,{" "}
-            <span className="gradient-text italic">N&apos;GAGE pertenece</span>.
+        <Reveal className="text-center max-w-3xl mx-auto mb-14">
+          <p className="eyebrow-v mb-5">{head.eyebrow}</p>
+          <h2
+            className="font-display font-bold leading-tight mb-5"
+            style={{
+              fontSize: "clamp(1.85rem, 4.5vw, 3.5rem)",
+              color: "var(--v-fg)",
+              fontWeight: variant === "weddings" ? 500 : 700,
+              letterSpacing: variant === "weddings" ? "-0.02em" : "-0.03em",
+            }}
+          >
+            {head.title}{" "}
+            <span className="gradient-text-v" style={{ fontStyle: "italic" }}>
+              {head.titleEm}
+            </span>
+            .
           </h2>
-          <p className="text-base lg:text-lg" style={{ color: "#8585A8" }}>
-            Una sola plataforma, infinitas configuraciones. Estos son algunos mundos donde N&apos;GAGE ya vive.
+          <p
+            className="text-base lg:text-lg"
+            style={{ color: "var(--v-fg-2)", textAlign: "center" }}
+          >
+            {head.sub}
           </p>
         </Reveal>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5">
-          {CASES.map((c, i) => {
+        <div className={`grid sm:grid-cols-2 ${cols} gap-4 lg:gap-5`}>
+          {filtered.map((c, i) => {
             const Icon = c.icon;
             return (
               <Reveal key={c.id} delay={(i % 4) * 0.08}>
@@ -144,8 +236,8 @@ export function UseCases() {
                   onClick={() => setActive(c)}
                   className="group relative w-full h-full text-left rounded-3xl overflow-hidden transition-all duration-300"
                   style={{
-                    background: "rgba(15,15,26,0.6)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    background: "var(--v-card)",
+                    border: "1px solid var(--v-line)",
                     minHeight: 280,
                   }}
                   onMouseEnter={(e) => {
@@ -153,7 +245,7 @@ export function UseCases() {
                     e.currentTarget.style.transform = "translateY(-4px)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+                    e.currentTarget.style.borderColor = "var(--v-line)";
                     e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
@@ -165,21 +257,34 @@ export function UseCases() {
                   <div
                     aria-hidden
                     className="absolute inset-0"
-                    style={{ background: "linear-gradient(180deg, transparent 0%, rgba(7,7,15,0.85) 100%)" }}
+                    style={{
+                      background:
+                        "linear-gradient(180deg, transparent 0%, var(--v-card-overlay, rgba(7,7,15,0.85)) 100%)",
+                    }}
                   />
 
                   <div className="relative p-6 h-full flex flex-col justify-between min-h-[280px]">
                     <div>
                       <div
                         className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
-                        style={{ background: "rgba(7,7,15,0.6)", border: `1px solid ${c.accent}40`, backdropFilter: "blur(8px)" }}
+                        style={{
+                          background: "rgba(7,7,15,0.6)",
+                          border: `1px solid ${c.accent}40`,
+                          backdropFilter: "blur(8px)",
+                        }}
                       >
                         <Icon size={20} style={{ color: c.accent }} strokeWidth={1.6} />
                       </div>
-                      <p className="text-[10px] font-mono font-bold tracking-widest uppercase mb-2" style={{ color: c.accent }}>
+                      <p
+                        className="text-[10px] font-mono font-bold tracking-widest uppercase mb-2"
+                        style={{ color: c.accent }}
+                      >
                         {c.category}
                       </p>
-                      <h3 className="font-display font-bold text-lg leading-tight" style={{ color: "#F0F0FF" }}>
+                      <h3
+                        className="font-display font-bold text-lg leading-tight"
+                        style={{ color: "#F0F0FF" }}
+                      >
                         {c.title}
                       </h3>
                     </div>
@@ -187,11 +292,18 @@ export function UseCases() {
                     <div className="mt-4">
                       <span
                         className="inline-block text-[10px] font-mono font-semibold px-2.5 py-1 rounded-full mb-3"
-                        style={{ background: "rgba(7,7,15,0.6)", color: "#F0F0FF", border: "1px solid rgba(255,255,255,0.1)" }}
+                        style={{
+                          background: "rgba(7,7,15,0.6)",
+                          color: "#F0F0FF",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                        }}
                       >
                         {c.tag}
                       </span>
-                      <p className="text-xs flex items-center gap-1.5 font-medium opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: c.accent }}>
+                      <p
+                        className="text-xs flex items-center gap-1.5 font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: c.accent }}
+                      >
                         Ver caso completo <ArrowRight size={12} />
                       </p>
                     </div>
@@ -203,7 +315,6 @@ export function UseCases() {
         </div>
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {active && <UseCaseModal useCase={active} onClose={() => setActive(null)} />}
       </AnimatePresence>
@@ -255,10 +366,16 @@ function UseCaseModal({ useCase, onClose }: { useCase: UseCase; onClose: () => v
           >
             <Icon size={26} style={{ color: useCase.accent }} strokeWidth={1.5} />
           </div>
-          <p className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase mb-3" style={{ color: useCase.accent }}>
+          <p
+            className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase mb-3"
+            style={{ color: useCase.accent }}
+          >
             {useCase.category}
           </p>
-          <h3 className="font-display font-bold text-2xl lg:text-3xl leading-tight" style={{ color: "#F0F0FF" }}>
+          <h3
+            className="font-display font-bold text-2xl lg:text-3xl leading-tight"
+            style={{ color: "#F0F0FF" }}
+          >
             {useCase.title}
           </h3>
         </div>
@@ -273,7 +390,11 @@ function UseCaseModal({ useCase, onClose }: { useCase: UseCase; onClose: () => v
           </p>
           <span
             className="inline-block text-xs font-mono font-semibold px-3 py-1.5 rounded-full"
-            style={{ background: `${useCase.accent}15`, color: useCase.accent, border: `1px solid ${useCase.accent}30` }}
+            style={{
+              background: `${useCase.accent}15`,
+              color: useCase.accent,
+              border: `1px solid ${useCase.accent}30`,
+            }}
           >
             {useCase.tag}
           </span>

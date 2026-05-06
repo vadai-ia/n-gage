@@ -1,32 +1,35 @@
 "use client";
 
+/**
+ * Hero — Variant-aware.
+ *
+ * Lee copy/CTAs/meta de useVariant() y aplica tokens v-* via CSS vars.
+ * Mantiene Tailwind + Framer Motion del stack del repo.
+ */
+
 import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { ParticleField } from "./ParticleField";
 import { PhoneMockup } from "./PhoneMockup";
-
-const TITLE_WORDS = ["Conecta.", "Aquí", "y", "ahora."];
+import { useVariant } from "./VariantProvider";
 
 export function Hero() {
+  const { variant, content } = useVariant();
   const reduce = useReducedMotion();
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-12 lg:pb-16">
-      {/* Fondo: partículas */}
+    <section
+      data-screen-label={`01 Hero · ${variant}`}
+      className="relative min-h-screen flex items-center overflow-hidden pt-24 pb-12 lg:pb-16"
+    >
+      {/* Aurora variant blobs */}
+      <div className="aurora-v -z-10" aria-hidden />
+
+      {/* Particle field — pinta accent del variante actual */}
       <div className="absolute inset-0 -z-10" aria-hidden>
         <ParticleField density={45} />
       </div>
-
-      {/* Spotlight gradient detrás del título */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 opacity-60"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 50% at 30% 40%, rgba(255,45,120,0.18), transparent 60%), radial-gradient(ellipse 50% 50% at 70% 60%, rgba(26,110,255,0.18), transparent 60%)",
-        }}
-      />
 
       {/* Grid noise sutil */}
       <div
@@ -46,91 +49,124 @@ export function Hero() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 mb-6 text-[11px] font-mono font-bold tracking-[0.2em] uppercase"
-            style={{ color: "#FF2D78" }}
+            className="eyebrow-v mb-6"
           >
-            <span className="w-6 h-px" style={{ background: "#FF2D78" }} />
-            Plataforma de conexión para eventos en vivo
+            {content.eyebrow}
           </motion.p>
 
           <h1
-            className="font-display font-bold leading-[0.95] tracking-tight mb-6"
-            style={{ fontSize: "clamp(2.75rem, 7vw, 6rem)", color: "#F0F0FF" }}
+            className="font-display font-bold leading-[0.96] tracking-tight mb-6"
+            style={{
+              fontSize: variant === "weddings"
+                ? "clamp(2.4rem, 5.6vw, 5rem)"
+                : "clamp(2.75rem, 7vw, 6rem)",
+              color: "var(--v-fg)",
+              fontWeight: variant === "weddings" ? 500 : 700,
+              letterSpacing: variant === "weddings" ? "-0.025em" : "-0.035em",
+              lineHeight: variant === "weddings" ? 1.04 : 0.96,
+            }}
           >
-            {TITLE_WORDS.map((word, i) => (
-              <motion.span
-                key={i}
-                initial={reduce ? { opacity: 1 } : { opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 + i * 0.12, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className="inline-block mr-[0.25em]"
-              >
-                {i === 1 ? <span className="gradient-text">{word}</span> : word}
-              </motion.span>
-            ))}
+            <motion.span
+              initial={reduce ? { opacity: 1 } : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="inline-block mr-[0.25em]"
+            >
+              {content.h1Pre}
+            </motion.span>{" "}
+            <motion.em
+              initial={reduce ? { opacity: 1 } : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.27, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="inline-block mr-[0.25em] not-italic"
+              style={{ fontStyle: "italic", fontWeight: variant === "weddings" ? 400 : 500 }}
+            >
+              {content.h1Em}
+            </motion.em>{" "}
+            <motion.span
+              initial={reduce ? { opacity: 1 } : { opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.39, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="inline-block gradient-text-v"
+            >
+              {content.h1Post}
+            </motion.span>
           </h1>
 
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.6 }}
-            className="text-base lg:text-xl leading-relaxed mb-3 max-w-xl mx-auto lg:mx-0"
-            style={{ color: "#8585A8" }}
-          >
-            N&apos;GAGE convierte cualquier evento en una experiencia de conexión real, efímera y memorable. Bodas, festivales, conciertos, corporativos, cruceros, graduaciones — donde haya gente reunida, hay magia por detonar.
-          </motion.p>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.85, duration: 0.6 }}
-            className="font-display italic text-sm lg:text-base mb-8 max-w-xl mx-auto lg:mx-0"
-            style={{ color: "#F0F0FF" }}
-          >
-            <span className="gradient-text font-bold">No todo son looks, también son feels.</span>
-          </motion.p>
+            className="text-base lg:text-xl leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0"
+            style={{ color: "var(--v-fg-2)" }}
+            // ledeHtml es contenido nuestro literal (no input usuario), seguro de inyectar.
+            dangerouslySetInnerHTML={{ __html: content.ledeHtml }}
+          />
 
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 0.6 }}
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start mb-8"
+            className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start mb-10"
           >
             <Link
               href="#contacto"
               className="group inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full font-bold text-base transition-all"
               style={{
-                background: "linear-gradient(135deg, #FF2D78 0%, #7B2FBE 50%, #1A6EFF 100%)",
+                background: "var(--v-gradient)",
                 color: "#fff",
-                boxShadow: "0 0 30px rgba(255,45,120,0.4), 0 10px 40px rgba(123,47,190,0.3)",
+                boxShadow: "var(--v-glow)",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
               onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
             >
-              Solicita una demo gratis
+              {content.cta1}
               <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
               href="#como-funciona"
               className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full font-semibold text-base transition-all"
-              style={{ color: "#F0F0FF", border: "1px solid rgba(255,255,255,0.12)" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+              style={{
+                color: "var(--v-fg)",
+                border: "1px solid var(--v-line-2)",
+                background: "transparent",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--v-bg-2)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
             >
-              Ver cómo funciona →
+              {content.cta2} →
             </Link>
           </motion.div>
 
-          <motion.p
+          {/* Hero meta stats */}
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.6 }}
-            className="text-[11px] font-mono tracking-wider"
-            style={{ color: "#44445A" }}
+            className="flex flex-wrap gap-6 lg:gap-8 pt-6 border-t justify-center lg:justify-start"
+            style={{ borderColor: "var(--v-line)" }}
           >
-            {/* TODO: confirmar números reales con Alejandro */}
-            Eventos realizados · Conexiones generadas · Calificación de organizadores
-          </motion.p>
+            {content.heroMeta.map((m) => (
+              <div key={m.label} className="flex flex-col gap-1">
+                <span
+                  className="font-display font-bold tracking-tight"
+                  style={{ fontSize: 26, color: "var(--v-fg)" }}
+                >
+                  {m.num}
+                </span>
+                <span
+                  className="font-mono uppercase"
+                  style={{ fontSize: 10, letterSpacing: "0.16em", color: "var(--v-fg-3)" }}
+                >
+                  {m.label}
+                </span>
+              </div>
+            ))}
+          </motion.div>
         </div>
 
         {/* Phone mockup */}
@@ -149,7 +185,7 @@ export function Hero() {
         animate={{ y: [0, 8, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden lg:block"
-        style={{ color: "#44445A" }}
+        style={{ color: "var(--v-fg-3)" }}
         aria-hidden
       >
         <ChevronDown size={20} />

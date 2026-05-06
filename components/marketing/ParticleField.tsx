@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useVariant } from "./VariantProvider";
 
-const COLORS = ["#FF2D78", "#7B2FBE", "#1A6EFF", "#FFB800"];
+const COLOR_SETS: Record<"general" | "weddings" | "events", string[]> = {
+  general: ["#FF2D78", "#7B2FBE", "#1A6EFF", "#FFB800"],
+  weddings: ["#D4A574", "#C9A87C", "#E8D5B8", "#B5895C"],
+  events: ["#1A6EFF", "#3A85FF", "#7B2FBE", "#00D4FF"],
+};
 
 type Particle = {
   x: number;
@@ -21,10 +26,12 @@ type Props = {
 };
 
 export function ParticleField({ density = 50, className, speed = 0.18 }: Props) {
+  const { variant } = useVariant();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    const COLORS = COLOR_SETS[variant];
     if (typeof window === "undefined") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -88,7 +95,7 @@ export function ParticleField({ density = 50, className, speed = 0.18 }: Props) 
       window.removeEventListener("resize", resize);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [density, speed]);
+  }, [density, speed, variant]);
 
   return (
     <canvas
