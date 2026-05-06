@@ -5,25 +5,26 @@ import { CONTENT } from "@/lib/landing/variant";
 export const dynamic = "force-dynamic";
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.ngage.com.mx";
-const c = CONTENT.general;
+const PAGE_URL = `${SITE_URL}/eventos`;
+const c = CONTENT.events;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: c.seoTitle,
   description: c.seoDescription,
   keywords: [
-    "app eventos", "matching eventos", "networking eventos", "app boda",
-    "app festival", "engagement evento", "plataforma eventos", "QR evento",
-    "N'GAGE", "ngage", "conexion eventos", "matching social",
+    "networking eventos", "app evento corporativo", "festival app",
+    "matching profesional", "ROI evento", "engagement corporativo",
+    "app conferencia", "white label evento",
   ],
   openGraph: {
     type: "website",
     locale: "es_MX",
-    url: SITE_URL,
-    siteName: "N'GAGE",
+    url: PAGE_URL,
+    siteName: "N'GAGE / Events",
     title: c.seoTitle,
     description: c.seoDescription,
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "N'GAGE" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "N'GAGE Events" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -31,13 +32,13 @@ export const metadata: Metadata = {
     description: c.seoDescription,
     images: ["/og-image.png"],
   },
-  robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
+  robots: { index: true, follow: true },
   alternates: {
-    canonical: SITE_URL,
-    languages: { "es-MX": SITE_URL },
+    canonical: PAGE_URL,
+    languages: { "es-MX": PAGE_URL },
   },
 };
 
-export default function Page() {
-  return <LandingPage variant="general" />;
+export default function EventosPage() {
+  return <LandingPage variant="events" />;
 }
