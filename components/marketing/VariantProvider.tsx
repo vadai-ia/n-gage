@@ -1,13 +1,5 @@
 "use client";
 
-/**
- * VariantProvider — Aplica `data-variant` al <body>, expone el variant via Context.
- *
- * Cada landing page (general, /bodas, /eventos) wrappea su árbol con
- * <VariantProvider variant="..."> y los componentes hijos consumen useVariant()
- * para obtener el copy + content + tokens correspondientes.
- */
-
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import type { Variant, VariantContent } from "@/lib/landing/variant";
 import { CONTENT } from "@/lib/landing/variant";
@@ -26,17 +18,15 @@ export function VariantProvider({
   variant: Variant;
   children: ReactNode;
 }) {
-  // Aplica data-variant al <body> para que los tokens CSS scopeados respondan.
+  // El bundle aplica data-variant a <html> y <body>; este repo además
+  // necesita aplicarlo al .app-root (que es el contenedor real de scroll).
   useEffect(() => {
+    const html = document.documentElement;
     const body = document.body;
-    if (!body) return;
-    const prev = body.getAttribute("data-variant");
+    const root = document.querySelector(".app-root") as HTMLElement | null;
+    html.setAttribute("data-variant", variant);
     body.setAttribute("data-variant", variant);
-    return () => {
-      // No limpiamos al unmount para evitar flash al navegar entre rutas;
-      // el siguiente provider sobrescribirá el atributo.
-      if (prev) body.setAttribute("data-variant", prev);
-    };
+    root?.setAttribute("data-variant", variant);
   }, [variant]);
 
   return (
@@ -49,12 +39,6 @@ export function VariantProvider({
 export function useVariant(): VariantContextValue {
   const ctx = useContext(VariantContext);
   if (!ctx) {
-    // Fallback graceful: si por alguna razón un componente se usa fuera del provider,
-    // asumimos "general". Mejor que crashear en producción.
-    if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console
-      console.warn("[useVariant] usado fuera de VariantProvider, usando general como fallback.");
-    }
     return { variant: "general", content: CONTENT.general };
   }
   return ctx;

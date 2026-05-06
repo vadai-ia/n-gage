@@ -1,42 +1,41 @@
 "use client";
 
+import { useEffect } from "react";
+
 /**
- * ScrollFx — efectos visuales globales que dependen del scroll:
- *   - Barra de progreso superior con gradient de la variante.
- *   - Reveal-on-scroll para cualquier elemento con clase `.reveal`
- *     (añade `.in` al entrar al viewport).
- *
- * El scroll real vive en `.app-root` (no en <html>) por la arquitectura del repo.
+ * ScrollFx — barra de progreso superior + parallax aurora-blobs +
+ * reveal-on-scroll observer. Adaptado del bundle para usar el .app-root
+ * como contenedor de scroll real (en lugar de window).
  */
-
-import { useEffect, useRef } from "react";
-
 export function ScrollFx() {
-  const barRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const root = document.querySelector(".app-root") as HTMLElement | null;
+    const root = (document.querySelector(".app-root") as HTMLElement | null) ?? null;
     const target: HTMLElement | Window = root ?? window;
+    const bar = document.getElementById("scroll-progress");
 
-    function update() {
-      const bar = barRef.current;
-      if (!bar) return;
-      let scrolled: number;
-      let max: number;
+    function getMetrics() {
       if (root) {
-        scrolled = root.scrollTop;
-        max = root.scrollHeight - root.clientHeight;
-      } else {
-        scrolled = window.scrollY;
-        max = document.documentElement.scrollHeight - window.innerHeight;
+        return {
+          top: root.scrollTop,
+          max: root.scrollHeight - root.clientHeight,
+        };
       }
-      const pct = max > 0 ? scrolled / max : 0;
-      bar.style.transform = `scaleX(${pct})`;
+      const el = document.documentElement;
+      return { top: el.scrollTop, max: el.scrollHeight - el.clientHeight };
     }
-    update();
-    target.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+
+    const onScroll = () => {
+      const { top, max } = getMetrics();
+      const p = max > 0 ? top / max : 0;
+      if (bar) bar.style.transform = `scaleX(${p})`;
+      document.querySelectorAll<HTMLElement>(".aurora-blob").forEach((el, i) => {
+        const y = top * (0.05 + i * 0.04);
+        el.style.transform = `translate3d(0, ${y}px, 0)`;
+      });
+    };
+
+    target.addEventListener("scroll", onScroll, { passive: true } as AddEventListenerOptions);
+    onScroll();
 
     // Reveal-on-scroll
     const els = document.querySelectorAll<HTMLElement>(".reveal:not(.in)");
@@ -54,11 +53,10 @@ export function ScrollFx() {
     els.forEach((el) => io.observe(el));
 
     return () => {
-      target.removeEventListener("scroll", update as EventListener);
-      window.removeEventListener("resize", update);
+      target.removeEventListener("scroll", onScroll as EventListener);
       io.disconnect();
     };
   }, []);
 
-  return <div ref={barRef} className="scroll-progress-v" aria-hidden />;
+  return <div id="scroll-progress" className="scroll-progress" aria-hidden />;
 }

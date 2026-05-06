@@ -1,92 +1,97 @@
 "use client";
 
-/**
- * CursorTrail — Estela elegante del cursor.
- *
- * El puntero nativo se mantiene; al moverse deja partículas que flotan hacia
- * arriba y se desvanecen.
- *
- * - General/Events → chispas circulares con glow del accent.
- * - Weddings → corazones SVG champagne.
- *
- * Auto-deshabilita en touch devices (no hay cursor) y respeta
- * prefers-reduced-motion.
- */
-
 import { useEffect, useRef } from "react";
-import { useVariant } from "./VariantProvider";
 
-const HEART_SVG = `<svg viewBox="0 0 16 16" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M8 13.5l-5.5-5A3.5 3.5 0 1 1 8 4.5a3.5 3.5 0 1 1 5.5 4l-5.5 5z" fill="rgba(212,165,116,0.85)" stroke="rgba(199,31,92,0.6)" stroke-width="0.8"/></svg>`;
-
+/**
+ * CursorTrail — Port directo del bundle.
+ * General/Events: chispas glow accent. Weddings: corazones champagne.
+ */
 export function CursorTrail() {
-  const { variant } = useVariant();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // Skip on touch / coarse pointer / reduced motion
     if (window.matchMedia("(pointer: coarse)").matches) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const container = containerRef.current;
-    if (!container) return;
+    const layer = layerRef.current;
+    if (!layer) return;
 
     let lastX = 0;
     let lastY = 0;
-    let lastEmit = 0;
-    const minDistance = 22;
-    const minInterval = 16;
+    let lastT = 0;
 
-    function emit(x: number, y: number) {
-      if (!container) return;
-      const el = document.createElement("span");
-      el.className = "cursor-particle";
-      el.style.left = `${x - 6}px`;
-      el.style.top = `${y - 6}px`;
-      if (variant === "weddings") {
+    const variantOf = () => document.body.getAttribute("data-variant") || "general";
+    const accentColor = () =>
+      getComputedStyle(document.documentElement).getPropertyValue("--accent-lead-rgb").trim() || "255,45,120";
+
+    function spawn(x: number, y: number, _speed: number, v: string) {
+      if (!layer) return;
+      const el = document.createElement("div");
+      el.className = "trail-particle";
+      const rgb = accentColor();
+      const jitterX = (Math.random() - 0.5) * 12;
+      const jitterY = (Math.random() - 0.5) * 12;
+      const driftX = (Math.random() - 0.5) * 24;
+      const driftY = -10 - Math.random() * 30;
+      const dur = 700 + Math.random() * 500;
+
+      if (v === "weddings") {
+        const size = 14 + Math.random() * 8;
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
         el.style.background = "transparent";
-        el.style.mixBlendMode = "normal";
-        el.innerHTML = HEART_SVG;
+        el.innerHTML = `<svg viewBox="0 0 24 24" width="100%" height="100%" style="filter: drop-shadow(0 0 6px rgba(${rgb},0.6));">
+          <path d="M12 21s-7-4.5-9.5-9C0.5 7.5 3 3 7 3c2 0 3.5 1 5 3 1.5-2 3-3 5-3 4 0 6.5 4.5 4.5 9-2.5 4.5-9.5 9-9.5 9z"
+            fill="rgb(${rgb})" opacity="0.85"/></svg>`;
+      } else {
+        const size = 6 + Math.random() * 8 + Math.min(_speed / 8, 6);
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+        el.style.background = `radial-gradient(circle, rgba(${rgb},0.95) 0%, rgba(${rgb},0.6) 40%, rgba(${rgb},0) 75%)`;
+        el.style.filter = "blur(0.5px)";
       }
-      const dx = (Math.random() - 0.5) * 30;
-      const dy = -16 - Math.random() * 24;
-      const scale = 0.6 + Math.random() * 0.7;
-      const dur = 800 + Math.random() * 500;
-      el.animate(
-        [
-          { transform: `translate(0, 0) scale(${scale})`, opacity: 0.85 },
-          { transform: `translate(${dx}px, ${dy}px) scale(${scale * 0.4})`, opacity: 0 },
-        ],
-        { duration: dur, easing: "cubic-bezier(0.16, 1, 0.3, 1)", fill: "forwards" }
-      );
-      container.appendChild(el);
+
+      el.style.left = `${x + jitterX}px`;
+      el.style.top = `${y + jitterY}px`;
+      el.style.transform = `translate(-50%, -50%) scale(1) rotate(${(Math.random() - 0.5) * 40}deg)`;
+      el.style.opacity = "1";
+      el.style.transition = `transform ${dur}ms cubic-bezier(.2,.6,.3,1), opacity ${dur}ms ease-out`;
+      layer.appendChild(el);
+
+      requestAnimationFrame(() => {
+        el.style.transform = `translate(calc(-50% + ${driftX}px), calc(-50% + ${driftY}px)) scale(0.2) rotate(${
+          (Math.random() - 0.5) * 120
+        }deg)`;
+        el.style.opacity = "0";
+      });
       setTimeout(() => el.remove(), dur + 50);
     }
 
-    function onMove(e: MouseEvent) {
-      const x = e.clientX;
-      const y = e.clientY;
+    const onMove = (e: MouseEvent) => {
       const now = performance.now();
-      const dist = Math.hypot(x - lastX, y - lastY);
-      if (dist > minDistance && now - lastEmit > minInterval) {
-        emit(x, y);
-        lastX = x;
-        lastY = y;
-        lastEmit = now;
-      }
-    }
-    window.addEventListener("mousemove", onMove);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
+      if (now - lastT < 16) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      const speed = Math.hypot(dx, dy);
+      lastT = now;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      if (speed < 1.5) return;
+      const v = variantOf();
+      const count = v === "weddings" ? 1 : Math.min(2, Math.ceil(speed / 18));
+      for (let i = 0; i < count; i++) spawn(e.clientX, e.clientY, speed, v);
     };
-  }, [variant]);
+
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
 
   return (
     <div
-      ref={containerRef}
+      ref={layerRef}
+      className="trail-layer"
+      style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 9998 }}
       aria-hidden
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 9998 }}
     />
   );
 }
