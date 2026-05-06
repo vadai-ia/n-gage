@@ -7,6 +7,8 @@ import { ChevronDown, LogOut, Menu, X, ArrowRight, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import type { LandingUserContext } from "@/lib/landing/get-user-context";
+import { useVariant } from "./VariantProvider";
+import { VariantSwitcher } from "./VariantSwitcher";
 
 const NAV_LINKS = [
   { href: "#como-funciona",   label: "Cómo funciona" },
@@ -17,6 +19,7 @@ const NAV_LINKS = [
 ];
 
 export function Navbar({ user }: { user: LandingUserContext }) {
+  const { variant, content } = useVariant();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -58,51 +61,87 @@ export function Navbar({ user }: { user: LandingUserContext }) {
     .join("")
     .toUpperCase();
 
+  const isWeddings = variant === "weddings";
+
   return (
     <header
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        background: scrolled ? "rgba(7,7,15,0.72)" : "transparent",
+        background: scrolled
+          ? isWeddings
+            ? "rgba(250,250,246,0.78)"
+            : "var(--v-card-strong)"
+          : "transparent",
         backdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
         WebkitBackdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.06)" : "1px solid transparent",
+        borderBottom: scrolled ? "1px solid var(--v-line)" : "1px solid transparent",
       }}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-5 lg:px-8 h-16 lg:h-20">
-        <Link href="/" className="flex items-center gap-2.5 group" aria-label="N'GAGE inicio">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-5 lg:px-8 h-16 lg:h-20 gap-4">
+        {/* Wordmark */}
+        <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0" aria-label="N'GAGE inicio">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm transition-transform group-hover:scale-110"
-            style={{ background: "linear-gradient(135deg, #FF2D78 0%, #7B2FBE 50%, #1A6EFF 100%)", boxShadow: "0 0 20px rgba(255,45,120,0.35)" }}
+            style={{
+              background: "var(--v-gradient)",
+              color: isWeddings ? "#fff" : "#fff",
+              boxShadow: "0 0 20px rgba(var(--v-accent-rgb), 0.35)",
+            }}
           >
             N
           </div>
-          <span className="font-display font-bold text-lg tracking-tight" style={{ color: "#F0F0FF" }}>
+          <span
+            className="font-display font-bold text-lg tracking-tight whitespace-nowrap"
+            style={{ color: "var(--v-fg)" }}
+          >
             N&apos;GAGE
+            {content.sub && (
+              <span
+                className="font-mono ml-1.5"
+                style={{
+                  fontSize: 10,
+                  letterSpacing: "0.18em",
+                  color: "var(--v-fg-3)",
+                  fontWeight: 600,
+                }}
+              >
+                {content.sub}
+              </span>
+            )}
           </span>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-1">
+        {/* Variant switcher (desktop) — pill segmentado */}
+        <div className="hidden lg:flex flex-1 justify-center">
+          <VariantSwitcher />
+        </div>
+
+        {/* Inline links (desktop, después del switcher si hay espacio) */}
+        <nav className="hidden xl:flex items-center gap-1">
           {NAV_LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               className="px-3 py-2 text-sm font-medium transition-colors rounded-lg"
-              style={{ color: "#8585A8" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#F0F0FF")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#8585A8")}
+              style={{ color: "var(--v-fg-3)" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--v-fg)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--v-fg-3)")}
             >
               {l.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {user.isLoggedIn ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setOpen((v) => !v)}
                 className="flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full transition-all"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+                style={{
+                  background: "var(--v-bg-2)",
+                  border: "1px solid var(--v-line-2)",
+                }}
                 aria-label="Menú de usuario"
               >
                 {user.avatarUrl ? (
@@ -111,12 +150,16 @@ export function Navbar({ user }: { user: LandingUserContext }) {
                 ) : (
                   <span
                     className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold"
-                    style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE)", color: "#fff" }}
+                    style={{ background: "var(--v-gradient)", color: "#fff" }}
                   >
                     {initials || <User size={14} />}
                   </span>
                 )}
-                <ChevronDown size={14} style={{ color: "#8585A8" }} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  size={14}
+                  style={{ color: "var(--v-fg-3)" }}
+                  className={`transition-transform ${open ? "rotate-180" : ""}`}
+                />
               </button>
 
               <AnimatePresence>
@@ -127,27 +170,34 @@ export function Navbar({ user }: { user: LandingUserContext }) {
                     exit={{ opacity: 0, y: -8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
                     className="absolute right-0 mt-2 w-64 rounded-2xl overflow-hidden"
-                    style={{ background: "rgba(15,15,26,0.96)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}
+                    style={{
+                      background: "var(--v-card-strong)",
+                      backdropFilter: "blur(20px)",
+                      border: "1px solid var(--v-line-2)",
+                      boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+                    }}
                   >
-                    <div className="px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-                      <p className="text-sm font-semibold truncate" style={{ color: "#F0F0FF" }}>{user.fullName ?? "Sin nombre"}</p>
-                      <p className="text-xs truncate" style={{ color: "#8585A8" }}>{user.email}</p>
+                    <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--v-line)" }}>
+                      <p className="text-sm font-semibold truncate" style={{ color: "var(--v-fg)" }}>
+                        {user.fullName ?? "Sin nombre"}
+                      </p>
+                      <p className="text-xs truncate" style={{ color: "var(--v-fg-3)" }}>{user.email}</p>
                     </div>
                     <Link
                       href={user.dashboardUrl}
                       className="flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors"
-                      style={{ color: "#F0F0FF" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                      style={{ color: "var(--v-fg)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--v-bg-2)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       onClick={() => setOpen(false)}
                     >
-                      Ir a mi panel <ArrowRight size={16} style={{ color: "#FF2D78" }} />
+                      Ir a mi panel <ArrowRight size={16} style={{ color: "var(--v-accent)" }} />
                     </Link>
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors text-left"
-                      style={{ color: "#8585A8" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+                      style={{ color: "var(--v-fg-3)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--v-bg-2)")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       <LogOut size={16} /> Cerrar sesión
@@ -160,9 +210,9 @@ export function Navbar({ user }: { user: LandingUserContext }) {
             <Link
               href="/login"
               className="hidden sm:inline-flex px-4 py-2 text-sm font-semibold rounded-full transition-all"
-              style={{ color: "#F0F0FF", border: "1px solid rgba(255,255,255,0.12)" }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+              style={{ color: "var(--v-fg)", border: "1px solid var(--v-line-2)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--v-bg-2)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
             >
               Entrar
             </Link>
@@ -171,17 +221,22 @@ export function Navbar({ user }: { user: LandingUserContext }) {
           <Link
             href="#contacto"
             className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-full transition-all"
-            style={{ background: "linear-gradient(135deg, #FF2D78 0%, #7B2FBE 50%, #1A6EFF 100%)", color: "#fff", boxShadow: "0 0 20px rgba(255,45,120,0.35)" }}
+            style={{
+              background: "var(--v-gradient)",
+              color: "#fff",
+              boxShadow: "0 0 20px rgba(var(--v-accent-rgb), 0.35)",
+            }}
             onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
             onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
           >
-            Solicita demo <ArrowRight size={14} />
+            {variant === "events" ? "Cuéntanos" : variant === "weddings" ? "Reservar fecha" : "Solicita demo"}
+            <ArrowRight size={14} />
           </Link>
 
           <button
             onClick={() => setMenuOpen(true)}
             className="lg:hidden p-2 -mr-2"
-            style={{ color: "#F0F0FF" }}
+            style={{ color: "var(--v-fg)" }}
             aria-label="Abrir menú"
           >
             <Menu size={22} />
@@ -196,7 +251,10 @@ export function Navbar({ user }: { user: LandingUserContext }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="lg:hidden fixed inset-0 z-50"
-            style={{ background: "rgba(7,7,15,0.85)", backdropFilter: "blur(8px)" }}
+            style={{
+              background: isWeddings ? "rgba(250,250,246,0.85)" : "rgba(7,7,15,0.85)",
+              backdropFilter: "blur(8px)",
+            }}
             onClick={() => setMenuOpen(false)}
           >
             <motion.aside
@@ -205,41 +263,57 @@ export function Navbar({ user }: { user: LandingUserContext }) {
               exit={{ x: "100%" }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="absolute right-0 top-0 h-full w-[85%] max-w-sm flex flex-col"
-              style={{ background: "rgba(15,15,26,0.98)", borderLeft: "1px solid rgba(255,255,255,0.06)" }}
+              style={{
+                background: "var(--v-card-strong)",
+                borderLeft: "1px solid var(--v-line)",
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-                <span className="font-display font-bold" style={{ color: "#F0F0FF" }}>Menú</span>
-                <button onClick={() => setMenuOpen(false)} aria-label="Cerrar"><X size={22} style={{ color: "#8585A8" }} /></button>
+              <div
+                className="flex items-center justify-between p-5"
+                style={{ borderBottom: "1px solid var(--v-line)" }}
+              >
+                <span className="font-display font-bold" style={{ color: "var(--v-fg)" }}>Menú</span>
+                <button onClick={() => setMenuOpen(false)} aria-label="Cerrar">
+                  <X size={22} style={{ color: "var(--v-fg-3)" }} />
+                </button>
               </div>
-              <nav className="flex-1 px-3 py-4 space-y-1">
+
+              {/* Variant switcher mobile */}
+              <div className="px-5 py-4" style={{ borderBottom: "1px solid var(--v-line)" }}>
+                <div className="flex justify-center">
+                  <VariantSwitcher />
+                </div>
+              </div>
+
+              <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                 {NAV_LINKS.map((l) => (
                   <Link
                     key={l.href}
                     href={l.href}
                     onClick={() => setMenuOpen(false)}
                     className="block px-4 py-3 rounded-xl text-base font-medium"
-                    style={{ color: "#F0F0FF" }}
+                    style={{ color: "var(--v-fg)" }}
                   >
                     {l.label}
                   </Link>
                 ))}
               </nav>
-              <div className="p-5 space-y-3 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+              <div className="p-5 space-y-3" style={{ borderTop: "1px solid var(--v-line)" }}>
                 {user.isLoggedIn ? (
                   <>
                     <Link
                       href={user.dashboardUrl}
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center justify-center gap-2 w-full py-3 rounded-full font-bold text-sm"
-                      style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE, #1A6EFF)", color: "#fff" }}
+                      style={{ background: "var(--v-gradient)", color: "#fff" }}
                     >
                       Ir a mi panel <ArrowRight size={14} />
                     </Link>
                     <button
                       onClick={async () => { await handleLogout(); setMenuOpen(false); }}
                       className="w-full py-3 rounded-full font-medium text-sm"
-                      style={{ color: "#8585A8", border: "1px solid rgba(255,255,255,0.08)" }}
+                      style={{ color: "var(--v-fg-3)", border: "1px solid var(--v-line-2)" }}
                     >
                       Cerrar sesión
                     </button>
@@ -250,7 +324,7 @@ export function Navbar({ user }: { user: LandingUserContext }) {
                       href="#contacto"
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center justify-center gap-2 w-full py-3 rounded-full font-bold text-sm"
-                      style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE, #1A6EFF)", color: "#fff" }}
+                      style={{ background: "var(--v-gradient)", color: "#fff" }}
                     >
                       Solicita una demo <ArrowRight size={14} />
                     </Link>
@@ -258,7 +332,7 @@ export function Navbar({ user }: { user: LandingUserContext }) {
                       href="/login"
                       onClick={() => setMenuOpen(false)}
                       className="block text-center w-full py-3 rounded-full font-semibold text-sm"
-                      style={{ color: "#F0F0FF", border: "1px solid rgba(255,255,255,0.12)" }}
+                      style={{ color: "var(--v-fg)", border: "1px solid var(--v-line-2)" }}
                     >
                       Entrar
                     </Link>

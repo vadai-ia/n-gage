@@ -2,74 +2,103 @@
 
 import Link from "next/link";
 import { Instagram, Linkedin } from "lucide-react";
+import { useVariant } from "./VariantProvider";
 
 const COLUMNS = [
   {
     title: "Producto",
     links: [
-      { label: "Cómo funciona", href: "#como-funciona" },
-      { label: "Casos de uso",   href: "#casos-de-uso" },
-      { label: "Branding",       href: "#para-tu-evento" },
-      { label: "Precios",        href: "/precios" },
-      { label: "Solicitar demo", href: "#contacto" },
+      { label: "Cómo funciona",       href: "#como-funciona" },
+      { label: "Casos de uso",        href: "#casos-de-uso" },
+      { label: "Branding",            href: "#para-tu-evento" },
+      { label: "Precios",             href: "/precios" },
+      { label: "Solicitar demo",      href: "#contacto" },
+    ],
+  },
+  {
+    title: "Variantes",
+    links: [
+      { label: "N'GAGE general",      href: "/" },
+      { label: "/ Weddings",          href: "/bodas" },
+      { label: "/ Events",            href: "/eventos" },
     ],
   },
   {
     title: "Empresa",
     links: [
-      { label: "Sobre N'GAGE",   href: "#" },
-      { label: "Para invitados", href: "/welcome" },
-      { label: "Para anfitriones", href: "/login" },
-      { label: "Para organizadores", href: "/login" },
-    ],
-  },
-  {
-    title: "Recursos",
-    links: [
-      { label: "Centro de ayuda", href: "#" },
-      { label: "API & Webhooks",  href: "#" },
-      { label: "Estado del sistema", href: "#" },
-      { label: "Contacto",        href: "#contacto" },
+      { label: "Para invitados",      href: "/welcome" },
+      { label: "Para anfitriones",    href: "/login" },
+      { label: "Para organizadores",  href: "/login" },
+      { label: "Contacto",            href: "#contacto" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { label: "Aviso de privacidad",  href: "/privacidad" },
+      { label: "Aviso de privacidad",   href: "/privacidad" },
       { label: "Términos y condiciones", href: "/terminos-condiciones" },
-      { label: "Política de cookies",  href: "/privacidad#cookies" },
+      { label: "Política de cookies",    href: "/privacidad#cookies" },
     ],
   },
 ];
 
 export function Footer() {
+  const { content } = useVariant();
+
   return (
-    <footer className="relative pt-20 pb-10 overflow-hidden border-t" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+    <footer
+      className="relative pt-20 pb-10 overflow-hidden"
+      style={{ borderTop: "1px solid var(--v-line)" }}
+    >
       <div
         aria-hidden
         className="absolute inset-0 -z-10 opacity-50"
-        style={{ background: "radial-gradient(ellipse at top, rgba(123,47,190,0.12), transparent 60%)" }}
+        style={{
+          background:
+            "radial-gradient(ellipse at top, rgba(var(--v-accent-rgb), 0.10), transparent 60%)",
+        }}
       />
 
       <div className="max-w-7xl mx-auto px-5 lg:px-8">
         <div className="grid lg:grid-cols-12 gap-10 mb-12">
-          {/* Brand block */}
           <div className="lg:col-span-4">
             <Link href="/" className="flex items-center gap-2.5 mb-5">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm"
-                style={{ background: "linear-gradient(135deg, #FF2D78, #7B2FBE, #1A6EFF)", boxShadow: "0 0 20px rgba(255,45,120,0.35)" }}
+                style={{
+                  background: "var(--v-gradient)",
+                  color: "#fff",
+                  boxShadow: "0 0 20px rgba(var(--v-accent-rgb), 0.35)",
+                }}
               >
                 N
               </div>
-              <span className="font-display font-bold text-xl tracking-tight" style={{ color: "#F0F0FF" }}>
+              <span
+                className="font-display font-bold text-xl tracking-tight"
+                style={{ color: "var(--v-fg)" }}
+              >
                 N&apos;GAGE
+                {content.sub && (
+                  <span
+                    className="font-mono ml-1.5"
+                    style={{
+                      fontSize: 11,
+                      letterSpacing: "0.18em",
+                      color: "var(--v-fg-3)",
+                    }}
+                  >
+                    {content.sub}
+                  </span>
+                )}
               </span>
             </Link>
-            <p className="font-display italic text-base mb-2" style={{ color: "#F0F0FF" }}>
-              <span className="gradient-text font-bold">Conecta. Aquí y ahora.</span>
+            <p className="font-display italic text-base mb-2" style={{ color: "var(--v-fg)" }}>
+              <span className="gradient-text-v font-bold">Conecta. Aquí y ahora.</span>
             </p>
-            <p className="text-sm leading-relaxed mb-5" style={{ color: "#8585A8" }}>
+            <p
+              className="text-sm leading-relaxed mb-5"
+              style={{ color: "var(--v-fg-2)" }}
+            >
               La plataforma de conexión social para eventos en vivo. Brandeable, efímera, inolvidable.
             </p>
             <div className="flex gap-2">
@@ -85,16 +114,20 @@ export function Footer() {
                   rel="noopener"
                   aria-label={label}
                   className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "#8585A8" }}
+                  style={{
+                    background: "var(--v-bg-2)",
+                    border: "1px solid var(--v-line)",
+                    color: "var(--v-fg-3)",
+                  }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "linear-gradient(135deg, #FF2D78, #7B2FBE)";
+                    e.currentTarget.style.background = "var(--v-gradient)";
                     e.currentTarget.style.color = "#fff";
                     e.currentTarget.style.borderColor = "transparent";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                    e.currentTarget.style.color = "#8585A8";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+                    e.currentTarget.style.background = "var(--v-bg-2)";
+                    e.currentTarget.style.color = "var(--v-fg-3)";
+                    e.currentTarget.style.borderColor = "var(--v-line)";
                   }}
                 >
                   <Icon size={16} />
@@ -103,11 +136,13 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Columns */}
           <div className="lg:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-6">
             {COLUMNS.map((col) => (
               <div key={col.title}>
-                <h4 className="text-[11px] font-mono font-bold uppercase tracking-widest mb-4" style={{ color: "#FF2D78" }}>
+                <h4
+                  className="text-[11px] font-mono font-bold uppercase tracking-widest mb-4"
+                  style={{ color: "var(--v-accent)" }}
+                >
                   {col.title}
                 </h4>
                 <ul className="space-y-2.5">
@@ -116,9 +151,9 @@ export function Footer() {
                       <Link
                         href={l.href}
                         className="text-sm transition-colors"
-                        style={{ color: "#8585A8" }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = "#F0F0FF")}
-                        onMouseLeave={(e) => (e.currentTarget.style.color = "#8585A8")}
+                        style={{ color: "var(--v-fg-2)" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "var(--v-fg)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "var(--v-fg-2)")}
                       >
                         {l.label}
                       </Link>
@@ -132,11 +167,11 @@ export function Footer() {
 
         <div
           className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.04)", color: "#44445A" }}
+          style={{ borderTop: "1px solid var(--v-line)", color: "var(--v-fg-3)" }}
         >
           <p>© {new Date().getFullYear()} N&apos;GAGE · Todos los derechos reservados.</p>
           <p>
-            Hecho con <span style={{ color: "#FF2D78" }}>❤</span> en México.
+            Hecho con <span style={{ color: "var(--v-accent)" }}>❤</span> en CDMX.
           </p>
         </div>
       </div>
