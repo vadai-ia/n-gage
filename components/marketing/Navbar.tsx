@@ -84,8 +84,6 @@ export function Navbar({ user }: { user: LandingUserContext }) {
 
       {/* Topnav (top-right) */}
       <div className="topnav">
-        <Link href="/precios" className="topnav-link hide-mobile">Precios</Link>
-
         {user.isLoggedIn ? (
           <div className="relative" ref={dropdownRef}>
             <button

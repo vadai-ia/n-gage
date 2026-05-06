@@ -35,7 +35,6 @@ export function Footer() {
             <Link href="/">General</Link>
             <Link href="/bodas">Weddings</Link>
             <Link href="/eventos">Events</Link>
-            <Link href="/precios">Pricing</Link>
           </div>
           <div className="footer-col">
             <h5>Empresa</h5>

@@ -8,7 +8,6 @@ import { Manifesto } from "./Manifesto";
 import { HowItWorks } from "./HowItWorks";
 import { UseCases } from "./UseCases";
 import { BrandingShowcase } from "./BrandingShowcase";
-import { PricingTeaser } from "./PricingTeaser";
 import { Testimonials } from "./Testimonials";
 import { FAQ } from "./FAQ";
 import { PreFooter } from "./PreFooter";
@@ -67,7 +66,6 @@ export async function LandingPage({ variant }: { variant: Variant }) {
       <HowItWorks />
       <UseCases />
       <BrandingShowcase />
-      <PricingTeaser />
       <Testimonials />
       <FAQ />
       <PreFooter />
