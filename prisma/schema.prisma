@@ -220,6 +220,9 @@ model Event {
   unique_slug           String      @unique
   max_guests            Int?
 
+  // Recap: código del portal público de recuerdos (/recuerdos/[slug]). Nunca expira.
+  recap_code            String?
+
   // Plan
   plan                  Plan        @default(vibe)
   plan_guest_limit      Int?

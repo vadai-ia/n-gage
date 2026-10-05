@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { formatEventDate } from "@/lib/utils/date";
+import RecapAccessCard from "@/components/recap/RecapAccessCard";
 
 type EventData = {
   id: string;
@@ -274,6 +275,11 @@ export default function HostHomePage() {
               </div>
             </div>
           </motion.div>
+        </div>
+
+        {/* Portal de recuerdos */}
+        <div className="mt-4">
+          <RecapAccessCard eventId={eventId} eventName={event.name} />
         </div>
 
         {/* Reviews Section */}

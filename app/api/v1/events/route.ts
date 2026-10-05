@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/is-admin";
 import { z } from "zod";
 import QRCode from "qrcode";
+import { generateRecapCode } from "@/lib/recap/code";
 
 const CreateEventSchema = z.object({
   name: z.string().min(3),
@@ -124,6 +125,7 @@ export async function POST(req: Request) {
         whatsapp_group_url: d.whatsapp_group_url?.trim() || null,
         event_photos: d.event_photos ?? [],
         qr_code_url: qrDataUrl,
+        recap_code: generateRecapCode(),
         access_codes: {
           create: {
             code: d.access_code,

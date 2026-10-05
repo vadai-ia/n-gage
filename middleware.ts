@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Rutas públicas — no requieren autenticación
 const PUBLIC_ROUTES = ["/", "/bodas", "/eventos", "/login", "/register", "/welcome", "/terminos-condiciones", "/precios", "/privacidad", "/sitemap.xml", "/robots.txt"];
 const EVENT_LANDING_PATTERN = /^\/e\/[^/]+/; // /e/[slug]
+const RECAP_PATTERN = /^\/recuerdos\/[^/]+/; // /recuerdos/[slug] — protegido por código, no por sesión
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -42,6 +43,7 @@ export async function middleware(request: NextRequest) {
   if (
     PUBLIC_ROUTES.includes(pathname) ||
     EVENT_LANDING_PATTERN.test(pathname) ||
+    RECAP_PATTERN.test(pathname) ||
     pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next") ||

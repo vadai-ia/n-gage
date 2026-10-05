@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import RecapAccessCard from "@/components/recap/RecapAccessCard";
 
 /* ─── Types ─── */
 
@@ -583,6 +584,9 @@ export default function AdminEventDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Portal de recuerdos */}
+      <RecapAccessCard eventId={event.id} eventName={event.name} />
 
       {/* Stats Cards */}
       {stats && (

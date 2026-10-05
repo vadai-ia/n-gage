@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import RecapAccessCard from "@/components/recap/RecapAccessCard";
 import { getRelationLabel } from "@/lib/utils/relationLabels";
 import { formatEventDate } from "@/lib/utils/date";
 import { createClient } from "@/lib/supabase/client";
@@ -587,6 +588,9 @@ export default function EventDetailPage() {
           <span className="text-xs" style={{ color: "#44445A" }}>Embebido en el QR</span>
         </div>
       )}
+
+      {/* ─── Portal de recuerdos ─────────────────────────── */}
+      <RecapAccessCard eventId={event.id} eventName={event.name} />
 
       {/* ─── Hosts Section ──────────────────────────────── */}
       <div className="rounded-2xl p-4 mb-6" style={cardStyle}>
